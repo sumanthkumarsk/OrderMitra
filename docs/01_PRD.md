@@ -1,120 +1,1174 @@
-# Product Requirements Document — OrderMitra
+# Product Requirements Document (PRD) — OrderMitra
 
-**Doc reference:** PRD-ORDERMITRA-2026-V1
-**Status:** Foundation — approved for Phase 0 implementation
-**Owner:** Founding team (3 members)
-**Last updated:** 2026-08-29 (append changes to `06_DECISION_LOG.md`, don't silently edit history here — see versioning note at bottom)
+> **Working product name:** *OrderMitra* (ScanServe platform)
+> **Positioning:** Not "another QR menu." An **AI-powered dine-in restaurant operating and customer-experience platform built for Indian restaurants.**
+
+| Field | Detail |
+|---|---|
+| Document Version | **v2.0** |
+| Date | 2026-08-29 |
+| Status | Approved — Active Specification |
+| Author | Product & Founding Team |
+| Audience | Founders, Engineering, Design, QA, Sales |
+| Doc Reference | **PRD-ORDERMITRA-2026-V2.0** |
+| Supersedes | v1.0 / v1.1 |
+
+### Changelog (v1.1 → v2.0)
+- Repositioned product vision & market positioning (platform, not QR-menu tool).
+- Added: **Intelligent Table Session**, **Smart Waiter Assignment & Zones**, **AI Conversational Menu Discovery (deep)**, **AI Meal Planner**, **AI Upselling/Smart Recommendations**, **Indian-Language-First Experience**, **Multilingual Voice AI (future)**, **POS/Billing Integration Modes**, **≤10-Minute AI Onboarding program**, **AI Owner Assistant (Conversational Analytics)**, **Advanced Service Requests**, **Restaurant-Controlled AI**, **Offline/Idempotency Resilience**, **Thermal Printer Support**, **Customer Reordering**, **QR & Session Protection**.
+- Added sections: **Competitive Moat**, **First-Customer Validation Strategy**.
+- Rebuilt roadmap into **MVP / Phase 2 / Phase 3**; expanded KPIs, data model, architecture (realtime, AI, POS, offline), risks & open questions.
+- Preserved all v1.x requirement IDs wherever possible; new features use new ID ranges (FR-4xx, FR-5xx, FR-6xx, FR-65x, FR-7xx, FR-75x, FR-8xx, FR-85x, FR-90x, FR-95x, FR-97x, FR-99x).
 
 ---
 
-## 1. Problem Statement
+## Table of Contents
 
-Small independent restaurants, cafes, and dhabas in India (single outlet, 1–15 tables, often no dedicated IT staff) are stuck between two bad options:
+1. [Executive Summary](#1-executive-summary)
+2. [Product Vision & Goals](#2-product-vision--goals)
+3. [Problem Statement](#3-problem-statement)
+4. [Market Opportunity & Positioning](#4-market-opportunity--positioning)
+5. [Competitive Moat](#5-competitive-moat)
+6. [Target Users & Personas](#6-target-users--personas)
+7. [Subscription Tiers & Feature Matrix](#7-subscription-tiers--feature-matrix)
+8. [Build Philosophy & Scope Principles](#8-build-philosophy--scope-principles)
+9. [Functional Requirements](#9-functional-requirements)
+10. [User Journeys & Flows](#10-user-journeys--flows)
+11. [Non-Functional Requirements](#11-non-functional-requirements)
+12. [Suggested Technical Architecture](#12-suggested-technical-architecture)
+13. [High-Level Data Model](#13-high-level-data-model)
+14. [MVP & Phased Roadmap](#14-mvp--phased-roadmap)
+15. [First-Customer Validation Strategy](#15-first-customer-validation-strategy)
+16. [Success Metrics / KPIs](#16-success-metrics--kpis)
+17. [Assumptions, Risks & Open Questions](#17-assumptions-risks--open-questions)
+18. [Glossary](#18-glossary)
 
-1. **Paper menus + manual order-taking** — slow, error-prone, no data, reprinting cost every price change.
-2. **Existing QR/POS platforms** (Petpooja, DotPe, UrbanPiper, and dozens of clones) — built for scale, priced with hidden middleware costs (₹4,000–15,000/month) or percentage commissions that punish success, require dedicated hardware, and take 15–30 minutes to reflect a menu change.
+---
 
-There is no product priced and designed for a **single-outlet, budget-constrained owner** that also gives them things that actually move revenue: AI-assisted upsell, WhatsApp-native communication, and help getting found (reviews), instead of just digitizing the paper menu.
+## 1. Executive Summary
 
-## 2. Vision
+**OrderMitra** (ScanServe) is an **AI-powered dine-in restaurant operating and customer-experience platform for Indian restaurants**. A customer scans a QR code on the table, chooses their **language** (English, ಕನ್ನಡ, हिंदी, தமிழ், తెలుగు), and enters a persistent, intelligent dining session: they discover dishes by **asking an AI assistant in their own language**, order, watch the kitchen progress in real time, summon a waiter digitally, add more items to a running tab, and close with a single combined bill.
 
-OrderMitra is the cheapest, most reliable QR ordering companion for small Indian restaurants — built AI-first so a single owner with no staff and unreliable WiFi gets outsized value: an AI that suggests dishes to diners, writes their menu copy, tells them what to cook more of tomorrow, and nudges happy customers to leave reviews — all for a flat, low monthly fee with zero commission.
+On the operations side, owners onboard in **~10 minutes by photographing their physical menu** (AI extracts, structures, and translates it for human approval), manage waiters and table zones, run kitchens through a real-time KDS, generate GST-compliant bills, integrate with **existing POS systems** (without replacing them), and ask an **AI Owner Assistant** natural-language questions about their business.
 
-## 3. Non-Negotiable Principles (read before changing anything)
+### Core Customer Flow
+```text
+SCAN → CHOOSE LANGUAGE → DISCOVER / ASK AI → ORDER → KITCHEN → TRACK
+     → WAITER SERVICE → ADD MORE → BILL → PAY
+```
 
-These principles override any single feature idea. Any proposed feature or architecture change that conflicts with these must be flagged in the decision log, not silently implemented.
+### Core Restaurant Operational Flow
+```text
+OWNER → AI MENU SETUP → MENU MANAGEMENT → ORDERS → KITCHEN → WAITERS
+      → BILLING / POS → ANALYTICS → AI BUSINESS INSIGHTS
+```
 
-1. **Cheap and flat-fee.** No percentage commission on orders, ever. Flat monthly subscription only.
-2. **Works on bad infrastructure.** The owner's existing phone is the "kitchen screen." No dedicated hardware requirement. Must degrade gracefully offline and sync when back online.
-3. **No app download for diners.** Web-based QR menu only (PWA), for both customer and, at MVP stage, the owner.
-4. **We are not a payment aggregator.** We integrate with an RBI-licensed PA (Razorpay/Cashfree) for all payment collection. We never hold merchant funds ourselves. (Legal boundary — see Architecture doc §8.)
-5. **Single-outlet first.** Multi-location/enterprise features are explicitly out of scope until Phase 4+ and real paying customers justify them.
-6. **AI serves the owner, not just the diner.** Every phase must ship at least one feature that helps the owner directly (menu copy, sales insight, pricing suggestion), not only customer-facing AI.
-7. **Every irreversible or costly decision gets logged** in `06_DECISION_LOG.md` before implementation.
+### Subscription Tiers
 
-## 4. Target Users
-
-### Primary: The Owner-Operator
-- Runs 1 outlet: cafe, dhaba, small multi-cuisine restaurant, or QSR.
-- Not tech-savvy; manages the business from their personal phone.
-- Price-sensitive: currently pays ₹0–₹1,000/month for any digital tools, or nothing.
-- Speaks and thinks in a regional language + Hindi/English mix.
-- Wants: fewer order mistakes, faster table turnover, some way to look "modern," and ideally more revenue per table — without hiring anyone or learning new software.
-
-### Secondary: The Diner
-- Has a smartphone, is comfortable scanning a QR code, does not want to download an app.
-- Wants: fast menu browsing, accurate order, no waiting for a waiter to take the order, easy payment.
-
-### Tertiary (Phase 3+): Kitchen staff
-- Needs a simple, loud, clear order queue display — not a full POS terminal.
-
-## 5. Core User Journeys
-
-### Journey A — Diner orders (MVP)
-1. Diner scans QR code on the table.
-2. Web menu loads (PWA, no login required, works on 3G).
-3. Diner browses categories, sees photos, gets AI-suggested add-ons ("goes well with...").
-4. Diner places order; order appears instantly on the owner's phone/tablet (kitchen view) with table number.
-5. Diner pays via UPI/card through embedded Razorpay/Cashfree checkout, or chooses "pay at counter."
-6. Diner optionally gets a WhatsApp/SMS receipt and, after order completion, a one-tap Google review prompt.
-
-### Journey B — Owner manages menu (MVP)
-1. Owner logs into admin panel (own phone or laptop).
-2. Adds/edits items, prices, photos (camera upload), marks items "out of stock" instantly.
-3. Changes reflect on the live customer menu within seconds, not 15–30 minutes.
-4. Owner gets a daily WhatsApp digest: total orders, top sellers, AI-suggested action ("Butter Naan sold out by 8pm three days running — consider prepping more").
-
-### Journey C — Owner onboards (MVP)
-1. Owner signs up (phone number + OTP, no long form).
-2. Guided menu setup: AI helps generate item descriptions from a photo + item name, minimizing typing.
-3. QR codes auto-generated per table, downloadable/printable PDF.
-4. Owner is live and taking orders same day — this is a hard product requirement, not aspirational.
-
-## 6. Functional Requirements by Phase (summary — full breakdown in `04_ROADMAP_AND_FEATURES.md`)
-
-| Phase | Theme | Examples |
+| Tier | Name | One-line Summary |
 |---|---|---|
-| 0 | Validation | Customer interviews, pricing test, no code |
-| 1 | MVP | QR menu, ordering, AI dish suggestions, admin panel, Razorpay/Cashfree checkout, WhatsApp notifications |
-| 2 | Retention & insight | Loyalty (phone-based), daily AI sales digest, review nudge, offline-first sync |
-| 3 | Kitchen & scale | Kitchen display view, multi-staff roles, basic POS/printer integration, regional language packs |
-| 4 | Growth | Multi-outlet support, analytics dashboard, first real POS API integrations, marketing tools |
-| 5 | Enterprise (conditional) | Multi-tenant enterprise features, hotel/multi-property support, deeper POS/PMS integration — only if Phase 1–4 metrics justify it |
+| **Tier 1** | **Basic** | QR scan → language selection → digital menu + **AI menu generation (photo → menu)** + **AI chat menu assistant** |
+| **Tier 2** | **Standard** | Everything in Basic + ordering via **Admin-Bill Flow** (Order ID → admin → bill → serve) + billing engine + thermal bill printing |
+| **Tier 3** | **Premium** | Everything in Standard + **intelligent table sessions**, **table-based ordering with real-time KDS**, **smart waiter assignment & zones**, **advanced service requests**, **AI meal planner & smart recommendations***, **analytics dashboard**, **AI Owner Assistant*** |
 
-## 7. Non-Functional Requirements
+*\* Meal planner, upselling, and advanced owner-AI ship in Phase 2 (see Roadmap); tier entitlement is defined now.*
 
-- **Reliability:** Order placement must succeed even on a flaky connection (client-side queue + retry). A dropped order is a lost sale and a trust-breaking event — treat as a P0 bug class forever.
-- **Latency:** Menu load under 2 seconds on 3G/4G. Order-to-kitchen-screen latency under 3 seconds.
-- **Cost to serve:** Infrastructure cost per restaurant per month must stay low enough that the flat ₹299–₹599 price remains profitable at small scale — this constrains architecture choices (see Tech Stack doc, serverless-first reasoning).
-- **Security & privacy:** No storage of full payment card data (PCI scope stays with the payment aggregator). Diner phone numbers used for loyalty/receipts must have a clear, purpose-specific consent flow (DPDP Act, India) and be deletable on request. Full compliance requirements, including consent implementation, data retention, and breach notification procedures, are in `10_COMPLIANCE.md` — these are Phase 1 requirements, not deferred.
-- **Localization:** UI and AI-generated content must support English + Hindi + at least 2 additional regional languages by Phase 3.
-- **Accessibility:** Menu must be usable with screen readers and at minimum font-scaling; touch targets sized for one-handed phone use.
+A native **payment system** is planned for Phase 2; v1/MVP billing is generated by staff and settled offline (cash/UPI/card).
 
-## 8. Explicit Out-of-Scope (for now)
+---
 
-- Building our own payment aggregation/escrow (illegal without RBI PA license).
-- Native mobile apps (customer or owner) before Phase 4.
-- Deep POS integrations before Phase 3.
-- Multi-location/franchise management before Phase 4.
-- Delivery logistics/rider management — we are dine-in/takeaway ordering, not a delivery marketplace.
+## 2. Product Vision & Goals
 
-## 9. Success Metrics
+### 2.1 Vision
+> "Every Indian restaurant — from a 20-seat darshini to a 300-seat family restaurant — runs its dine-in floor on OrderMitra: multilingual AI-assisted guests, coordinated kitchens and waiters, integrated billing, and an owner who asks questions instead of reading dashboards."
 
-- **Phase 0:** 15–20 structured owner interviews completed; validated willingness to pay at target price point.
-- **Phase 1:** 10 paying restaurants live; order success rate >99%; menu update reflected in <10 seconds.
-- **Phase 2:** >30% of diners recognized as repeat (phone-based) within 60 days at a given restaurant; measurable average-order-value lift vs. pre-OrderMitra baseline (owner-reported or POS-confirmed).
-- **Phase 3+:** Defined once Phase 1–2 data exists — do not pre-commit numbers you can't yet justify.
+### 2.2 Business Goals
+1. Win the first 10–50 pilot restaurants by making onboarding almost effortless (photo → live menu in ~10 minutes).
+2. Convert operational value (orders, kitchen, waiters, bills) into retention — the product is used every day, at every table.
+3. Build a data moat: menu graphs, order-pairing data, service-response data, and language-preference data that compound over time.
+4. Expand via India-first differentiation (languages, GST billing, POS coexistence, UPI-ready rails later).
 
-## 10. Risks & Mitigations
+### 2.3 Product Goals
+- **G1:** Physical menu → functioning digital menu in **≈ 10 minutes**.
+- **G2:** Sub-second menu load after scan on low-end phones and weak networks.
+- **G3:** Real-time floor coordination: order → KDS < 2s; service-request routing < 1s.
+- **G4:** Complete customer journey in the guest's language — including AI conversation.
+- **G5:** AI measurably helps discovery and increases AOV without ever inventing facts.
+- **G6:** Restaurants keep their existing POS; OrderMitra coexists (Mode B).
+- **G7:** Zero duplicate orders even on flaky networks (idempotency everywhere).
 
-| Risk | Mitigation |
+---
+
+## 3. Problem Statement
+
+| # | Pain Point | Impact | OrderMitra Answer |
+|---|---|---|---|
+| P1 | Printed menus stale/costly; availability invisible | Wasted cost, frustration | Live digital menu + availability sync |
+| P2 | Language barriers for locals & travelers | Lost orders | Language-first UX across the whole journey |
+| P3 | Digitizing menus manually is tedious | Setup abandonment | AI photo → structured menu (human-approved) |
+| P4 | Long menus overwhelm guests | Slow decisions, lower spend | AI conversational discovery + meal planner |
+| P5 | Manual order-taking errors & delays | Wrong orders, slow turns | Direct digital ordering + realtime KDS |
+| P6 | Kitchen learns orders late (paper chits) | Bottlenecks | Real-time KDS with station routing |
+| P7 | Guests wave down staff for water/tissue/bill | Missed requests, annoyed guests | Digital service requests routed to the right waiter |
+| P8 | No easy daily insight for owners | Revenue leakage | Daily reports + AI conversational analytics |
+| P9 | Existing POS/billing would need replacement | Adoption blocker | POS integration mode (coexistence) |
+| P10 | Unreliable connectivity breaks digital tools | Staff revert to paper | Offline-first design with idempotency |
+
+---
+
+## 4. Market Opportunity & Positioning
+
+### 4.1 Positioning Statement
+> For **Indian dine-in restaurants** that struggle with language barriers, slow floors, and disconnected tools, **OrderMitra** is an **AI-powered dine-in operating and customer-experience platform** that turns a table QR scan into a complete, multilingual, AI-assisted dining session — and turns a photo of a menu into a live digital operation in minutes. Unlike QR-menu tools or heavy restaurant ERP suites, OrderMitra **coexists with existing POS systems**, works on cheap phones and weak networks, and gives owners answers, not just charts.
+
+### 4.2 Segments
+- **Small cafés, darshinis, QSRs** — Tier 1: AI-built digital menu + AI assistant.
+- **Mid-size family restaurants** — Tier 2: ordering + admin-bill flow + GST billing.
+- **Large restaurants, chains, cloud-kitchen diners, hotels** — Tier 3: full floor automation (sessions, KDS, waiters, help desk, analytics, AI growth tools).
+
+### 4.3 Why Now
+- QR-scan behavior is normalized post-pandemic.
+- Indic-language AI (speech + text) has become viable and affordable.
+- Indian restaurants remain underserved: global tools ignore Indian languages/GST/POS reality; local POS tools ignore customer experience.
+
+### 4.4 Monetization
+- Per-outlet monthly/annual SaaS subscriptions across three tiers.
+- Future: payment transaction fees (Phase 2), premium AI quotas/add-ons, SMS/WhatsApp notification packs.
+
+---
+
+## 5. Competitive Moat
+
+> Honesty rule: we do **not** claim any single feature below is unique in the market. Differentiation comes from the **integrated experience** and from data that compounds.
+
+### 5.1 Commodity Features (table stakes — must work flawlessly, not sell on)
+QR menu · basic ordering · KDS · GST bills · availability toggles · menu photos.
+
+### 5.2 Differentiating Features (the integrated wedge)
+1. **Indian-language-first customer experience** — the *entire* journey (menu, search, AI, cart, status, requests, bills) in ಕನ್ನಡ/हिंदी/தமிழ்/తెలుగు/English, including code-mixed questions.
+2. **AI conversational menu discovery** — grounded strictly in the live catalog; product-card answers with add-to-cart.
+3. **AI meal planning** — group size + veg/non-veg mix + budget → real, orderable combinations.
+4. **AI upselling / smart recommendations** — restaurant-controlled, frequency-capped, attribution-tracked.
+5. **Persistent intelligent table sessions** — scan again → your tab, your orders, your context.
+6. **Smart waiter assignment & zones** — right request to right waiter, with escalation ladders.
+7. **Digital service requests** — bottle/tissue/bill/call-waiter with response-time SLAs.
+8. **Existing POS integration** — adopt without replacing billing software.
+9. **≤10-minute AI menu onboarding** — photo → translated, reviewed, live menu.
+10. **AI conversational analytics for owners** — "How was business yesterday?" answered from real data.
+
+### 5.3 Future Moat / Data Advantages
+- **Order-pairing graph** per cuisine/region → better recommendations than any cold-start competitor.
+- **Indic food-language corpus** (code-mixed queries → items) improving with volume.
+- **Service-response benchmarks** by restaurant type → sellable operational insights.
+- **Multi-year sales histories** → demand forecasting, inventory hints (Phase 3).
+- Switching costs: a restaurant's menu translations, mappings, waiter zones, and historical analytics all live here.
+
+---
+
+## 6. Target Users & Personas
+
+### Persona 1 — Restaurant Owner (Ravi, 45, owns 2 outlets)
+Wants faster tables, higher bills, daily clarity. Not tech-savvy. Asks: "How was business yesterday?" — wants answers, not dashboards. Pays; cares about ROI.
+
+### Persona 2 — Restaurant Admin / Manager (Meena, 32)
+Runs daily ops: menu edits, waiter zones, bills, escalations. Lives in the Admin Dashboard. In Tier 2 she receives orders and generates bills; in Tier 3 she oversees automation.
+
+### Persona 3 — Kitchen Staff / Chef (Suresh, 38)
+Needs a glanceable live ticket list; big buttons; minimal reading. Marks Preparing/Ready. Hates complexity and lag.
+
+### Persona 4 — Server / Waiter (Anil, 24)
+Owns Tables 11–20. Wants clear, prioritized requests ("Tissue @ Table 14 — 00:23 ago") and ready-food alerts on his phone. Mobile-only user.
+
+### Persona 5 — Customer / Diner (Guest)
+Scans, picks ಕನ್ನಡ, asks "₹250 ಒಳಗೆ chicken items ತೋರಿಸಿ", orders, tracks status, requests tissue, adds a lime soda later, asks for the bill. Zero patience for installs/sign-ups/logins.
+
+### Persona 6 — Platform Super Admin (SaaS operator — us)
+Manages tenants, subscriptions, AI quotas/integrity, POS adapter health, support.
+
+---
+
+## 7. Subscription Tiers & Feature Matrix
+
+### 7.1 Tier Definitions
+
+#### 🥉 Tier 1 — BASIC ("AI-Powered Digital Menu")
+*Small cafés, stalls, bakeries.*
+- Unique outlet QR codes; language selection screen; full digital menu.
+- **AI Menu Generation** (photo → reviewed menu) and **AI translation**.
+- **AI Chat Menu Assistant** grounded in live catalog (all tiers).
+- Menu CRUD, availability toggles, badges, branding, search.
+- Fair-use AI quotas per plan.
+
+#### 🥈 Tier 2 — STANDARD ("Smart Ordering & Billing")
+*Everything in Basic, plus the admin-managed order-to-bill cycle.*
+- Cart & checkout; unique **Order ID** on everything.
+- **Admin-Bill Flow:** order → Admin Dashboard (real-time) → accept → prepare → served → **generate bill** → server delivers → mark paid.
+- Billing engine: GST, service charge, discounts; **thermal + PDF bills**; daily sales summary.
+- Live order-status timeline for customers; staff notifications.
+- **POS Integration Mode (Mode B)** entitlement — adapters ship Phase 2.
+
+#### 🥇 Tier 3 — PREMIUM ("Full Floor Automation")
+*Everything in Standard, plus large-restaurant automation & intelligence.*
+- **Intelligent Table Sessions** (restore-on-rescan, running tab, add-more, reorder, combined bill).
+- **Table-based ordering with real-time KDS** (station routing, elapsed-time alerts).
+- **Smart Waiter Assignment & Zones** with escalation ladder + performance analytics.
+- **Advanced Service Requests** (water/tissue/plate/spoon/condiments/call-waiter/bill/custom) with SLAs.
+- **AI Meal Planner** & **AI Upselling/Recommendations** (Phase 2 features, Tier 3 entitlement).
+- **Analytics Dashboard** + **AI Owner Assistant** (conversational analytics; advanced in Phase 2).
+- Multi-outlet views for owners.
+
+### 7.2 Feature Matrix
+
+Legend: ✅ included · ❌ not included · **(P2)/(P3)** ships in Phase 2/3 · 🛣️ post-v2 roadmap
+
+| Feature | Tier 1 | Tier 2 | Tier 3 |
+|---|:---:|:---:|:---:|
+| Outlet QR codes + language selection | ✅ | ✅ | ✅ |
+| Multi-language menu & journey (i18n) | ✅ | ✅ | ✅ |
+| Digital menu browsing, search, availability | ✅ | ✅ | ✅ |
+| **AI menu generation from photo** | ✅ | ✅ | ✅ |
+| **AI chat menu assistant (grounded)** | ✅ | ✅ | ✅ |
+| Branding customization | Basic | Advanced | Advanced |
+| Cart, checkout, Order ID | ❌ | ✅ | ✅ |
+| Admin-Bill Flow (order → admin → bill → serve) | ❌ | ✅ | ✅ |
+| Billing engine (GST, discounts) + thermal/PDF bills | ❌ | ✅ | ✅ |
+| Live order status timeline | ❌ | ✅ | ✅ |
+| POS Integration Mode B entitlement | ❌ | ✅ (P2) | ✅ (P2) |
+| Table-specific QR codes | ❌ | ❌ | ✅ |
+| **Intelligent Table Sessions** (tab, add-more, reorder, combined bill) | ❌ | ❌ | ✅ |
+| Table-based ordering + real-time KDS | ❌ | ❌ | ✅ |
+| **Smart waiter assignment, zones, escalation** | ❌ | ❌ | ✅ |
+| **Advanced service requests + SLAs** | ❌ | ❌ | ✅ |
+| **AI Meal Planner** | ❌ | ❌ | ✅ (P2) |
+| **AI Upselling / Smart Recommendations** | ❌ | ❌ | ✅ (P2) |
+| Analytics dashboard + daily reports | ❌ | ❌ | ✅ |
+| **AI Owner Assistant (conversational analytics)** | ❌ | ❌ | ✅ (basic digest at MVP; advanced P2) |
+| **Multilingual Voice AI ordering** | ❌ | ❌ | 🔮 (P3 add-on) |
+| Native payment collection | 🛣️ | 🛣️ (P2) | 🛣️ (P2) |
+
+### 7.3 Upgrade Triggers (Sales Hooks)
+- **1 → 2:** "You have X scans/week and Y AI questions about items you could be selling. Stop losing orders — take them digitally."
+- **2 → 3:** "Your admins hand-carry every order. Automate the floor: table sessions, direct-to-kitchen tickets, waiter routing, and daily AI insights."
+
+---
+
+## 8. Build Philosophy & Scope Principles
+
+1. **Modular monolith first.** No microservices until scale demands extraction (see §12). Modules communicate in-process; boundaries are clean for later splits.
+2. **Buy over build** for commodity pieces (push notifications, OCR/vision models, hosting) so the team builds the differentiating layer.
+3. **Human-in-the-loop AI.** AI drafts; humans approve anything customer-visible or money-affecting (menus, prices, bills).
+4. **Grounded or silent.** Every AI surface answers only from real data; otherwise it explicitly says it doesn't know.
+5. **Offline-tolerant by default.** Indian network reality is a design constraint, not an edge case.
+6. **Restaurant controls the AI** — configuration beats cleverness (see §9.5.4).
+7. **Validate with 10–50 restaurants before building Phase 2** (see §15). Willingness-to-pay and staff adoption are **product requirements**, not sales problems.
+
+---
+
+## 9. Functional Requirements
+
+> Priority legend: **M** = Must-have (MVP) · **S** = Should-have · **C** = Could-have (fast-follow)
+> Phase tags: **[MVP]**, **[P2]**, **[P3]** refer to §14 roadmap.
+
+### 9.1 Platform-Level (All Tiers)
+
+| ID | Requirement | Priority | Phase |
+|---|---|---|---|
+| FR-001 | **Multi-tenant architecture**: isolated tenants (restaurants) with scoped menus, orders, staff, settings, and AI contexts. | M | MVP |
+| FR-002 | **Restaurant onboarding wizard**: signup → outlet details → menu creation (**AI photo scan or manual**) → QR → live. Target ≤ 10 minutes (detailed in FR-901–908). | M | MVP |
+| FR-003 | **QR generation**: PNG/SVG/PDF downloads; printable poster/table-tent templates with logo. Two scopes: *outlet QR* (Tier 1/2) and *table QR* (Tier 3; encodes `tenant_id` + `table_id`, signed — see FR-991). | M | MVP |
+| FR-004 | **Language selection screen** immediately after scan (language chips). Default = outlet-configured primary; remembered per device; persistent switch button everywhere. | M | MVP |
+| FR-005 | **Launch languages**: English, ಕನ್ನಡ (Kannada), हिंदी (Hindi), தமிழ் (Tamil), తెలుగు (Telugu). Architecture supports adding languages without code changes. | M | MVP |
+| FR-006 | **RBAC**: Owner, Manager/Admin, Kitchen, Server/Waiter, Super Admin — server-enforced scopes. | M | MVP |
+| FR-007 | **No customer login**: anonymous web sessions bound to device + scanned context; optional name/phone capture at checkout (configurable). | M | MVP |
+| FR-008 | **Subscriptions & enforcement**: tier gating, outlet/item/table limits, AI fair-use quotas, trials, upgrade prompts. | M | MVP |
+| FR-009 | **AI Gateway (internal)**: single choke-point for all LLM/vision calls — model routing, per-tenant quotas, prompt versioning, logging, cost dashboards, PII scrubbing. | M | MVP |
+
+### 9.2 Tier 1 — Basic: Digital Menu + AI *(base layer for all tiers)*
+
+#### 9.2.1 Digital Menu Display
+
+| ID | Requirement | Priority | Phase |
+|---|---|---|---|
+| FR-101 | Post-scan + language selection: menu grouped by categories with smooth navigation. | M | MVP |
+| FR-102 | Item card: photo, localized name, price, localized description, veg/non-veg/egg badge, spice level, bestseller/chef-special tags, availability state. | M | MVP |
+| FR-103 | Category quick-nav; sticky search across localized names (incl. transliteration/fuzzy — FR-854). | M | MVP |
+| FR-104 | Availability toggles reflect on customer menu quickly (realtime or fast refresh). | M | MVP |
+| FR-105 | Sold-out visual state + optional "back soon" note. | S | MVP |
+| FR-106 | Branding: logo, banner, theme color, hours/location/about, social links. | M | MVP |
+| FR-107 | Scan analytics-lite (scans, unique visitors) feeding later analytics. | S | MVP |
+
+#### 9.2.2 AI Menu Generation (Photo → Digital Menu) — *All Tiers*
+
+| ID | Requirement | Priority | Phase |
+|---|---|---|---|
+| FR-111 | Multi-page photo upload (mobile camera capture supported). | M | MVP |
+| FR-112 | Pipeline: vision/OCR → LLM structuring to `{category, item_name, price, description, veg_status}` JSON with **per-field confidence scores**. | M | MVP |
+| FR-113 | Review screen: original image ↔ extracted data side-by-side; uncertain values highlighted; **never auto-publish** — explicit owner approval required. | M | MVP |
+| FR-114 | One-click **AI translation** into all supported languages with review-before-publish. | M | MVP |
+| FR-115 | Robustness: handwritten menus, multi-column layouts, ₹/$ symbols, combos flagged for review. | S | MVP |
+| FR-116 | Incremental re-scan: add pages later; merge without duplicates (duplicate detection — FR-904). | S | MVP |
+
+#### 9.2.3 AI Chat Agent (Menu Assistant) — *All Tiers*
+
+| ID | Requirement | Priority | Phase |
+|---|---|---|---|
+| FR-121 | Floating chat widget answering strictly from the restaurant's live menu data (RAG over catalog + configured info). | M | MVP |
+| FR-122 | Core intents: "chicken items?", "price of X?", "is X available?", "bestseller?", category/price filters. | M | MVP |
+| FR-123 | Responds in the selected language; detects question language (incl. code-mixed — FR-603). | M | MVP |
+| FR-124 | **Never invents** dishes/prices/discounts/availability/ingredients/policies; explicit "I don't have that information" fallback; availability respects live stock. | M | MVP |
+| FR-125 | Product-card replies with [Add] action (cart action enabled on Tier 2+). | S | MVP |
+| FR-126 | Escalation: "Call my waiter" → service request (Tier 3) or counter/contact info (lower tiers). | S | MVP |
+| FR-127 | Admin transcript logs (privacy-masked) + "unanswered questions" report exposing menu gaps. | C | P2 |
+| — | Deep conversational-discovery capabilities continue in **§9.5.1 (FR-601–610)**. | — | — |
+
+### 9.3 Tier 2 — Standard: Ordering (Admin-Bill Flow) + Billing
+
+#### 9.3.1 Ordering (Common)
+
+| ID | Requirement | Priority | Phase |
+|---|---|---|---|
+| FR-201 | Cart: quantity steppers, item notes ("less spicy", "no onion"), cart sheet. | M | MVP |
+| FR-202 | Checkout: optional name/phone, special instructions. | M | MVP |
+| FR-203 | Unique human-readable **Order ID** (`ORD-YYYYMMDD-NNNN`) surfaced everywhere. | M | MVP |
+| FR-204 | Ordering paused (kitchen closed) → friendly blocking message. | M | MVP |
+| FR-205 | Customer **live status timeline**: Placed → Accepted → Preparing → Ready → Served → Billed. | M | MVP |
+
+#### 9.3.2 Admin-Bill Flow
+
+| ID | Requirement | Priority | Phase |
+|---|---|---|---|
+| FR-211 | Orders appear on **Admin Dashboard** real-time with Order ID, items, notes; audible/visual alert. | M | MVP |
+| FR-212 | Admin: Accept / Reject (reason shown to customer), details, mark "Food Served". | M | MVP |
+| FR-213 | Generate **bill** from accepted order: line items, taxes (GST %), service charge, discounts, round-off, grand total. | M | MVP |
+| FR-214 | Bill delivery: thermal print, PDF download, WhatsApp/SMS share link (Order ID embedded). | M | MVP |
+| FR-215 | Server view: billed/served-pending orders to deliver against Order ID. | S | MVP |
+
+#### 9.3.3 Billing Engine
+
+| ID | Requirement | Priority | Phase |
+|---|---|---|---|
+| FR-231 | Configurable taxes (GST %, inclusive/exclusive), service charge, packaging charges, manual discount codes. | M | MVP |
+| FR-232 | Per-outlet daily bill numbering; immutable bill records (audit-safe). | M | MVP |
+| FR-233 | Offline payment recording (Cash/UPI/Card) marked by staff; unpaid-vs-paid ledger. | M | MVP |
+| FR-234 | Daily sales summary for owner/admin (foundation for analytics). | M | MVP |
+| FR-235 | **Combined tab bill** from a table session: itemized by order, single totals (Tier 3). | M | MVP |
+| FR-236 | Split helpers: equal-split calculation display (true split payments arrive with Phase 2 payments). | S | P2 |
+| FR-237 | Bill types: **Customer Bill, GST Bill** (tax breakup + GSTIN fields), **Token** (kitchen token #), **Table Bill** (session-consolidated), **KOT**. | M | MVP |
+
+### 9.4 Tier 3 — Premium: Floor Automation & Intelligence
+
+#### 9.4.1 Table-Based Ordering with Real-Time KDS
+
+| ID | Requirement | Priority | Phase |
+|---|---|---|---|
+| FR-301 | Table QR encodes table identity; orders auto-tagged with table name/number. | M | MVP |
+| FR-302 | Orders stream to **KDS** in real time (< 2s), oldest-first, elapsed-time color coding (green → amber → red). | M | MVP |
+| FR-303 | Station filters (Grill/Curry/Desserts…) via item→station mapping. | S | MVP |
+| FR-304 | Kitchen status updates per item/order: Received → Preparing → Ready; pushed instantly to customer + server views. | M | MVP |
+| FR-305 | "Ready" triggers **assigned-waiter notification** (see FR-511): "Table 7 — ORD-…-0042 ready." | M | MVP |
+| FR-306 | Server marks "Served"; customer timeline updates. | M | MVP |
+| FR-307 | Add-on orders from the same table join the running tab (combined vs separate bill configurable). | M | MVP |
+| FR-308 | End-of-meal bill from the table tab via the shared billing engine; triggerable by customer (📄 Request Bill). | M | MVP |
+| FR-309 | Per-outlet mode switch: **Admin-Bill mode** (Tier 2 behavior) ↔ **Table-Based mode**. | M | MVP |
+
+#### 9.4.2 ⭐ Intelligent Table Session `[Tier 3 · MVP]`
+
+**Purpose:** Make the table QR a *persistent dining context*, not a one-shot menu link. Re-scanning restores the guest's live experience; multiple orders accumulate into a running tab; checkout produces one combined bill.
+
+**User Story:** *As a customer at Table 12, when I re-scan the QR I want to see my current orders, their statuses, and my running total, so I can add more items or request the bill without starting over.*
+
+**Lifecycle:**
+```text
+CREATED → ACTIVE → BILL_REQUESTED → BILLED → PAID → CLOSED
+                    ↘ EXPIRED (TTL lapse; staff can revive/close)
+```
+
+**Example customer view:**
+```text
+Table 12
+
+Current Order
+Chicken 65        Preparing
+Butter Naan ×4    Ready
+Chicken Biryani   Preparing
+
+Current Tab: ₹920
+
+[Add More Items]  [Need Something?]  [Request Bill]
+```
+
+**Multiple orders in one session:**
+```text
+Order #1 → ₹620
+Order #2 → ₹300
+Table 12 Running Tab → ₹920
+```
+
+| ID | Requirement | Priority |
+|---|---|---|
+| FR-401 | Scanning a table QR with **no active session** creates a `TableSession` (tenant, outlet, table, device anon-id, started_at, expires_at = configurable TTL, default 3h, range 2–4h). | M |
+| FR-402 | Scanning the same table QR during an **ACTIVE** session restores the session view. Session is **device-bound**: the originating device auto-restores; a *different* device must verify via a 4-digit code displayed on the primary device **or** staff PIN (prevents stranger hijack; enables "one friend orders for the table"). | M |
+| FR-403 | Session home shows: current orders with live statuses, previous orders of this session, **running total**, and actions **[Add More Items] [Need Something?] [Request Bill]**. | M |
+| FR-404 | Supports **multiple sequential orders** per session; each order keeps its own lifecycle; running tab = Σ non-cancelled orders (live-updated). | M |
+| FR-405 | **Request Bill** moves session → `BILL_REQUESTED`; notifies assigned waiter + admin; billing screen opens pre-filtered to the tab. | M |
+| FR-406 | Checkout generates **one combined bill** for the session (split display helper per FR-236); recording payment → `PAID`. | M |
+| FR-407 | Staff **Close Table** → `CLOSED`: customer access ends instantly; session archived with full event history. Auto-expiry at TTL marks `EXPIRED` (read-only) and pings staff; staff may extend once or close. | M |
+| FR-408 | **Reorder:** "Previous Order … [Order Again]" re-adds a past order or individual items — **re-validating current price, availability, and ordering-open state** before adding; differences surfaced ("Biryani now ₹299"). | M |
+| FR-409 | **Add More Items** returns to the menu with session context intact; new orders join the tab automatically. | M |
+| FR-410 | **Safeguard against next-party leakage:** closed/expired sessions are inaccessible to new devices; new scan after closure starts a fresh session; no customer-facing history persists on the device beyond the session token (cleared on close). | M |
+| FR-411 | Staff **Table Map**: live tiles per table — session state, tab amount, duration, open requests, assigned waiter. | M |
+| FR-412 | Session event log (created, restored, order added, bill requested, billed, paid, closed) for audit + analytics. | S |
+| FR-413 | Session continuity token: signed, stored in localStorage; lost token (cleared browser) → treated as new device → verification path (FR-402). | M |
+| FR-414 | **Idempotent mutations:** every order/request submission carries a client-generated idempotency key; server dedupes (see FR-972). | M |
+| FR-415 | Item cancellation/void post-placement only via staff action; tab recalculates; customer sees updated total. | S |
+| FR-416 | Table transfer: staff can move a session to another table (table broken/merged) with full context. | S |
+
+**Edge cases:** TTL lapses mid-meal (grace window + staff extend); bill generated then guest adds items (blocked — staff creates supplementary order + new bill); payment recorded twice (idempotency); guest leaves without closing (auto-expire + staff sweep on table map); device battery death (token lost → verification path).
+
+**Permissions:** Customer — own session only. Waiter — assigned tables' sessions (view tab, mark served, fulfill requests). Admin — all sessions, close/transfer/void. Kitchen — orders only, no tab visibility.
+
+**Failure states:** Expired → friendly screen "Session ended — please call your server"; BILL_REQUESTED → ordering disabled with "Bill requested" state; offline → queued actions (FR-973).
+
+**Realtime behavior:** Tab totals, statuses, and request states push over WebSocket to customer, assigned waiter, admin, and table-map tiles (< 2s).
+
+**Data-model impact:** New `TableSession`; `Order.table_session_id`; `Bill.session_id`; `ServiceRequest.session_id`.
+
+**Analytics/events:** `session_created`, `session_restored`, `addon_order_added`, `bill_requested`, `session_closed`, `reorder_used`; KPIs: orders/session, session duration, add-on rate.
+
+**Security considerations:** Signed session tokens (FR-993), tenant-scoped authorization, anti-enumeration (FR-992), post-close lockout (FR-995).
+
+**Subscription placement:** Tier 3. **Phase:** MVP.
+
+#### 9.4.3 ⭐ Smart Waiter Assignment & Table Zones `[Tier 3 · MVP core, P2 analytics depth]`
+
+**Purpose:** Route every ready-order and service request to the **right waiter first**, with automatic escalation so nothing is dropped.
+
+**User Story:** *As a waiter responsible for Tables 11–20, I want requests from my tables to come to me first, so I can respond fast; and if I miss one, the system should quietly hand it to a colleague.*
+
+**Example routing card:**
+```text
+Table 14
+💧 Water requested
+00:23 ago
+[Accept]
+```
+
+**Escalation ladder:**
+```text
+Requested → Assigned → Acknowledged → On The Way → Fulfilled
+   (no ack in T1) → reminder
+   (no ack in T2) → reassign to backup/zone waiter
+   (still none)   → escalate to manager/admin broadcast
+```
+
+| ID | Requirement | Priority | Phase |
+|---|---|---|---|
+| FR-501 | Waiter profiles: name, login/PIN, device binding, **on-duty toggle**, language preference for staff UI. | M | MVP |
+| FR-502 | **Zones** (e.g., Zone A = Tables 1–10) and direct table assignments; each table has a **primary** and optional **backup** waiter; example: `Ravi → 1–10, Manoj → 11–20, Kiran → 21–30`. | M | MVP |
+| FR-503 | Routing: service requests and ready-food alerts go **first** to the table's primary waiter. | M | MVP |
+| FR-504 | Request card with type, table, elapsed time, **[Accept]**; accepting moves state → Acknowledged. | M | MVP |
+| FR-505 | **Server-side escalation timers** (critical: runs on server, not client): T1 reminder (default 60s), T2 reassign to backup/other on-duty zone waiter (default 90s), T3 manager/admin broadcast. All thresholds configurable. | M | MVP |
+| FR-506 | Off-duty waiters excluded from routing instantly; going off-duty with open requests triggers auto-reassign. | M | MVP |
+| FR-507 | Temporary reassignment/swap by admin (drag-and-drop on table map). | S | MVP |
+| FR-508 | Waiter **request queue** view: my open requests sorted by age; swipe to Acknowledge / On-The-Way / Fulfilled. | M | MVP |
+| FR-509 | Response-time tracking per request and per waiter (request→ack, ack→fulfilled). | M | MVP |
+| FR-510 | **Waiter performance analytics**: avg response, fulfillment rate, escalation count — manager-visible. | S | P2 |
+| FR-511 | Ready-food routing uses the same assignment logic (FR-305). | M | MVP |
+| FR-512 | Shift handover: end-of-shift summary + open-item transfer to incoming waiter. | S | P2 |
+
+**Edge cases:** No on-duty waiter in zone (straight to admin); multiple waiters per zone (primary-first, then least-loaded); waiter device offline (server timers still fire; push falls back to SMS/WhatsApp later); simultaneous accepts on reassigned request (first-accept-wins arbitration; loser sees "Already handled").
+
+**Permissions:** Admin manages zones/assignments; waiters see own queue + own tables; managers see team analytics.
+
+**Realtime behavior:** WebSocket push + Web Push; escalation driven by delayed jobs.
+
+**Data-model impact:** `Staff` extensions; `WaiterZone`; `WaiterAssignment`; `ServiceRequest.assigned_waiter_id`, `escalation_level`.
+
+**Analytics/events:** `request_routed`, `request_acknowledged`, `request_escalated`, `request_fulfilled`; KPI: avg waiter response time.
+
+**Security considerations:** Waiter auth via PIN/OTP-lite; actions authorized server-side against assignments.
+
+**Subscription placement:** Tier 3. **Phase:** MVP (core), P2 (analytics depth).
+
+#### 9.4.4 Advanced Service Requests ("Need Something?") `[Tier 3 · MVP]`
+
+Extends v1 help desk (FR-311–316 preserved):
+
+| ID | Requirement | Priority | Phase |
+|---|---|---|---|
+| FR-311 | Floating **"Need Something?"** button → preset sheet: 💧 Water · 🧻 Tissue · 🍴 Extra Plate · 🥄 Spoon · 🧂 Condiments · 👨🍳 Call Waiter · 📄 Request Bill · ✏️ Custom text. | M | MVP |
+| FR-312 | Every request auto-attaches: restaurant, outlet, **table**, **table session**, **assigned waiter**, timestamp, status, language. | M | MVP |
+| FR-313 | Instant routing/notification to assigned waiter (then escalation ladder FR-505); escalating reminder if unacknowledged. | M | MVP |
+| FR-314 | Lifecycle mirrored to customer: Sent → Assigned → Acknowledged → On The Way → Fulfilled. | M | MVP |
+| FR-315 | 📄 Request Bill deep-links admin billing to the session tab (ties to FR-405). | M | MVP |
+| FR-316 | Help-desk log with response-time stats feeding analytics. | S | MVP |
+| FR-317 | Custom requests render in the requester's language to staff + auto-translate hint for staff. | S | MVP |
+| FR-318 | Repeat-request damping: identical open request from same table within 2 min merges instead of spamming. | S | MVP |
+| FR-319 | **Manager service analytics:** avg response time, unfulfilled count, busiest service periods, request-type distribution, per-waiter performance. | S | P2 |
+
+#### 9.4.5 Analytics Dashboard `[Tier 3 · MVP basic, P2 advanced]`
+
+| ID | Requirement | Priority | Phase |
+|---|---|---|---|
+| FR-321 | **Daily Sales Report**: revenue, orders, AOV, paid vs pending, tax collected; auto-generated; email/WhatsApp digest (opt-in). | M | MVP |
+| FR-322 | Top/slow items; category revenue split; veg vs non-veg mix. | M | MVP |
+| FR-323 | Hourly heatmap of orders/scans; peak windows. | S | P2 |
+| FR-324 | Table performance: turnover time, revenue per table, session stats, help-request frequency. | S | P2 |
+| FR-325 | Customer language-preference distribution. | C | P2 |
+| FR-326 | Date-range filters, period comparison, CSV/PDF export. | M | MVP |
+| FR-327 | Multi-outlet comparison for owners. | S | P2 |
+
+#### 9.4.6 ⭐ AI Owner Assistant (Conversational Analytics) `[Tier 3 · basic digest MVP, assistant P2]`
+
+**Purpose:** Owners ask questions in plain language; answers come **only** from real analytics data. No dashboard literacy required.
+
+**User Story:** *As an owner, I want to ask "How was business yesterday?" and get a trustworthy answer with numbers, so I can act without learning BI tools.*
+
+**Example response:**
+```text
+Yesterday
+Revenue: ₹42,600        Orders: 126        AOV: ₹338
+Top Item: Chicken Biryani — 38 orders
+Peak: 7:00 PM – 9:00 PM
+Observation: Paneer Tikka sales were 18% lower than the previous Sunday.
+```
+
+| ID | Requirement | Priority | Phase |
+|---|---|---|---|
+| FR-331 | NL Q&A over **precomputed metrics only** (metrics mart). Architecture: deterministic query/metric resolution → LLM phrasing. The LLM never computes numbers. | M | P2 |
+| FR-332 | Supported intents: yesterday/week/month summaries; top/bottom items; busiest hours; day-vs-day comparisons (this Sunday vs last Sunday); table revenue; recommendation-influenced revenue; service performance. | M | P2 |
+| FR-333 | **Anti-fabrication guardrail:** if a metric doesn't exist, the assistant says so; no estimates presented as fact; every figure traceable to a stored metric. | M | P2 |
+| FR-334 | Multi-outlet rollup questions ("across both outlets…"). | S | P2 |
+| FR-335 | Proactive **daily digest** (WhatsApp/email): revenue, orders, AOV, top item, peak window, one anomaly note. | M | MVP (digest) |
+| FR-336 | Basic anomaly detection vs trailing averages (sales dips/spikes) surfaced proactively. | S | P2 |
+| FR-337 | Follow-up questions in-context ("and last Friday?"). | S | P2 |
+| FR-338 | Per-owner conversation history; admin-visible logs for quality tuning. | C | P2 |
+
+**Security/permissions:** Owner/manager roles only; tenant-scoped metrics; no cross-tenant leakage; prompts logged without PII.
+
+### 9.5 Cross-Cutting AI Capabilities
+
+#### 9.5.1 ⭐ AI Conversational Menu Discovery (deep) `[All tiers for Q&A · MVP base, P2 depth]`
+
+**Purpose:** Not a generic chatbot — a **menu discovery engine** operating exclusively on the restaurant's live catalog and configured information.
+
+**User Story:** *As a guest staring at a 200-item menu, I want to ask "show vegetarian dishes below ₹200" and get real, tappable dishes — in my language.*
+
+**Supported query styles:**
+```text
+"Chicken starters below ₹300"
+"Show vegetarian dishes below ₹200."
+"What is your best biryani?"
+"What's less spicy?"
+"We are four people and have ₹1,500. Suggest a meal."   → hands off to Meal Planner (P2)
+"₹250 ಒಳಗೆ chicken items ತೋರಿಸಿ."
+"4 ಜನರಿಗೆ ₹1000 ಒಳಗೆ veg food suggest ಮಾಡಿ."
+```
+
+**Response style — real product cards:**
+```text
+Chicken 65
+₹260
+⭐ Bestseller · Available
+[Add]
+```
+
+| ID | Requirement | Priority | Phase |
+|---|---|---|---|
+| FR-601 | **Grounding corpus (exhaustive):** live menu items, prices, availability, categories, dietary metadata, spice levels, bestseller flags + restaurant-configured info (hours, FAQs, policies). Nothing outside this corpus may be asserted. | M | MVP |
+| FR-602 | Filter reasoning: price ceilings, veg/non-veg/egg, spice level, category, availability; superlatives resolved via bestseller/chef-special tags (never invented ratings). | M | MVP |
+| FR-603 | **Code-mixed understanding** (Kannada/Hindi/Tamil/Telugu + English mixes) via multilingual LLM; replies in the guest's selected language. | M | MVP |
+| FR-604 | Responses embed **real product cards** (name, price, badges, availability) with [Add] (cart on Tier 2+). | M | MVP |
+| FR-605 | **Hard guardrails:** grounded generation constrained to catalog item IDs; post-generation **validator** rejects any response containing entities/prices not in the catalog; fallback message when unsure. Never invents dishes, prices, discounts, availability, ingredients, or policies. | M | MVP |
+| FR-606 | Allergen/ingredient questions answered **only** when the restaurant supplied reliable allergen data; otherwise explicit disclaimer + suggest asking staff. | M | MVP |
+| FR-607 | In-session memory (party size, veg preference, budget mentioned) refines follow-ups; memory clears with session. | S | P2 |
+| FR-608 | Performance: first token < 3s; streamed responses; graceful degradation to keyword search if AI is degraded. | M | MVP |
+| FR-609 | Abuse controls: per-session rate limits; prompt-injection hardening (catalog data treated as data, never instructions). | M | MVP |
+| FR-610 | "Questions we couldn't answer" report for admins → menu/content gap insights. | C | P2 |
+
+#### 9.5.2 ⭐ AI Meal Planner `[Tier 3 · P2]`
+
+**Purpose:** Group ordering solved by AI using **only real menu items**.
+
+**User Story:** *As a host ordering for a mixed group, I want "4 people, 2 veg + 2 non-veg, ₹1,500 dinner" turned into an orderable combination, so deciding takes seconds.*
+
+**Example output:**
+```text
+Suggested Meal
+Paneer Tikka       ₹240
+Chicken 65         ₹280
+Butter Naan ×4     ₹200
+Veg Fried Rice     ₹280
+Chicken Biryani    ₹350
+Lime Soda ×2       ₹120
+Total              ₹1,470
+[Add All to Cart]  [Regenerate]  [Remove item]
+```
+
+| ID | Requirement | Priority | Phase |
+|---|---|---|---|
+| FR-651 | Inputs: party size, veg/non-veg mix, budget, spice preference, meal occasion; allergies honored **only** with reliable ingredient data. | M | P2 |
+| FR-652 | Generates a combination from **actual catalog items** within budget (±5% tolerance disclosed); balanced across categories (starter/main/bread/rice/beverage) using configurable category weights. | M | P2 |
+| FR-653 | Output: itemized plan with prices and total; actions [Add All to Cart] / [Regenerate] / per-item remove; re-validates price/availability at add time. | M | P2 |
+| FR-654 | Constraints respected: availability, restaurant-configured recommendation pools/promotions, bestseller biasing, spice prefs. | M | P2 |
+| FR-655 | Brief rationale per pick ("popular pairing", "fits budget"); no fabricated claims. | S | P2 |
+| FR-656 | Impossible budgets → nearest honest options or explicit "can't meet ₹X for N people" with closest alternatives. | M | P2 |
+| FR-657 | Usage → cart-conversion tracking (`planner_used`, `planner_added`). | M | P2 |
+| FR-658 | Admin toggle to enable/disable planner per outlet. | M | P2 |
+
+#### 9.5.3 ⭐ AI Upselling / Smart Recommendations `[Tier 3 · P2]`
+
+**Purpose:** Restaurant-controlled engine to lift AOV — helpful, never spammy.
+
+**Example trigger:**
+```text
+Customer adds: Chicken Biryani ₹280
+
+Frequently paired with
+Chicken Kabab ₹180   Lime Soda ₹60
+[Add]
+```
+
+| ID | Requirement | Priority | Phase |
+|---|---|---|---|
+| FR-701 | Pairing sources: historical co-order data (once available), curated rules, category heuristics for cold-start (biryani → raita/soda), bestseller fallback. | M | P2 |
+| FR-702 | Trigger points: after item-add (max 1 suggestion), cart review (combo nudge), pre-checkout (dessert/drinks) — each **frequency-capped**. | M | P2 |
+| FR-703 | **Anti-spam:** global cap (e.g., ≤ 2 impressions/session), dismissed-item memory, no immediate repeats. | M | P2 |
+| FR-704 | **Admin controls:** promoted items, chef specials, high-margin boosts, combos, exclusion lists, master on/off. | M | P2 |
+| FR-705 | Time-of-day awareness (breakfast/lunch/dinner tags). | S | P2 |
+| FR-706 | Availability-aware; never suggests sold-out items. | M | P2 |
+| FR-707 | Full attribution: impressions, clicks, cart-adds, attributed revenue (`RecommendationEvent`). | M | P2 |
+| FR-708 | AOV-impact reporting in the analytics dashboard ("Revenue influenced by recommendations"). | M | P2 |
+| FR-709 | UI: "Frequently paired with" horizontal cards with [Add]. | M | P2 |
+| FR-710 | Configured combos render as bundles with combo pricing. | S | P2 |
+
+#### 9.5.4 ⭐ Restaurant-Controlled AI `[Platform principle · config MVP, depth P2]`
+
+> **Principle: The restaurant controls the AI — not the other way around.**
+
+| ID | Requirement | Priority | Phase |
+|---|---|---|---|
+| FR-751 | Central **AI Controls** panel per outlet. | M | MVP |
+| FR-752 | Configurable: chef recommendations, promoted dishes, bestseller labels, sold-out overrides, high-margin flags, recommendation exclusions, combos, restaurant FAQs, info (hours, policies). | M | MVP |
+| FR-753 | Item metadata (optional): allergens/ingredients, spice level, dietary class, prep-time hints. | S | P2 |
+| FR-754 | All AI surfaces (chat, planner, upsell, owner assistant) consume these settings at runtime — no retraining, effect immediate. | M | MVP |
+| FR-755 | Precedence: **restaurant config > AI defaults**; changes audit-logged. | M | MVP |
+| FR-756 | Master AI switches per surface (assistant/planner/upsell) for conservative venues. | M | MVP |
+
+#### 9.5.5 Multilingual Voice AI `[Tier 3 add-on · P3]`
+
+**Purpose:** Speak naturally, in your language; the system understands **only valid menu items** and **never orders without confirmation**.
+
+**User flow:**
+```text
+🎙️ Speak → "ಒಂದು chicken biryani ಮತ್ತು ಎರಡು lime soda add ಮಾಡಿ."
+→ interpretation against catalog
+→ CONFIRMATION CARD (mandatory):
+   Chicken Biryani ×1   ₹280
+   Lime Soda ×2         ₹120
+   Total                ₹400
+   [Confirm]  [Cancel]
+```
+
+| ID | Requirement | Priority | Phase |
+|---|---|---|---|
+| FR-801 | Tap 🎙️ → speech-to-text in supported Indic languages incl. code-mixed speech. | M | P3 |
+| FR-802 | Interpretation links utterances to catalog items only (fuzzy entity-linking with confidence thresholds); quantity words parsed in native language ("ಎರಡು" = 2). | M | P3 |
+| FR-803 | **Mandatory confirmation card** before any cart mutation; **never silently places uncertain orders**. | M | P3 |
+| FR-804 | Low-confidence recognition → clarification question ("Did you mean Chicken Biryani ₹280?"). | M | P3 |
+| FR-805 | `VoiceOrderSession` records transcript, parsed intent, confidence, outcome (audio not stored by default). | M | P3 |
+| FR-806 | Graceful fallback to text chat on repeated low confidence or noisy environments. | M | P3 |
+| FR-807 | Per-outlet admin enable/disable; works only in supported browsers/devices. | M | P3 |
+| FR-808 | Rate-limited; abuse-resistant; accessibility win for low-literacy users. | S | P3 |
+
+### 9.6 Platform Capabilities
+
+#### 9.6.1 ⭐ Indian-Language-First Experience `[All tiers · MVP]`
+
+Extends FR-004/FR-005:
+
+| ID | Requirement | Priority | Phase |
+|---|---|---|---|
+| FR-851 | **Complete-journey localization**: menu, search, AI chat, recommendations, cart, checkout, order-status timeline, service requests, bill-request experience, customer notifications. | M | MVP |
+| FR-852 | Launch set: English, ಕನ್ನಡ, हिंदी, தமிழ், తెలుగు; adding a language = resource bundle + translations, zero code changes. | M | MVP |
+| FR-853 | Language persisted per device; one-tap switch anywhere via persistent button. | M | MVP |
+| FR-854 | Localized search incl. transliteration/fuzzy ("biryani" ↔ "ಬಿರಿಯಾನಿ"). | M | MVP |
+| FR-855 | Natural code-mixed questions understood and answered in-kind (FR-603). | M | MVP |
+| FR-856 | Proper Indic font stacks/rendering; localized numerals & currency formatting; staff UI language setting (KDS stays deliberately low-text). | M | MVP |
+
+#### 9.6.2 ⭐ AI Menu Onboarding in ≤ 10 Minutes `[All tiers · MVP]`
+
+**Target workflow:**
+```text
+Signup → Photograph menu → AI extracts {items, prices, categories, desc, veg}
+      → Owner reviews → AI translates → Owner approves
+      → QR generated → LIVE
+```
+
+| ID | Requirement | Priority | Phase |
+|---|---|---|---|
+| FR-901 | Guided wizard with step progress + elapsed-time indicator; every step instrumented for the activation funnel. | M | MVP |
+| FR-902 | Multi-page capture (camera/gallery); auto page-boundary detection. | M | MVP |
+| FR-903 | Per-field confidence scoring; **uncertain values highlighted** and require explicit confirmation. | M | MVP |
+| FR-904 | **Duplicate detection** (same name+category / near-match) with merge prompts. | M | MVP |
+| FR-905 | Bulk editing grid: inline edits, bulk % price adjust, bulk availability, bulk veg-marking. | M | MVP |
+| FR-906 | One-click translate-all → side-by-side translation review (sampling guidance shown). | M | MVP |
+| FR-907 | Automatic image optimization (resize/compress/WebP). | M | MVP |
+| FR-908 | Instant QR generation + printable templates (A4 poster, table tent) + live preview link at the final step. | M | MVP |
+| FR-909 | **Guardrail:** AI never publishes extracted prices automatically — owner approval is structurally required. | M | MVP |
+
+#### 9.6.3 ⭐ POS / Billing Integration Modes `[Entitlement Tier 2+ · adapters P2]`
+
+**Business rule:** Restaurants must **not** have to replace their existing POS/billing software to adopt OrderMitra.
+
+**Mode A — OrderMitra Standalone** *(restaurants without digital restaurant-management systems)*
+```text
+Customer → OrderMitra → OrderMitra KDS → OrderMitra Billing
+```
+
+**Mode B — Existing POS Integration**
+```text
+Customer → OrderMitra → Existing POS → Existing KOT/KDS → Existing Billing
+```
+
+| ID | Requirement | Priority | Phase |
+|---|---|---|---|
+| FR-951 | Per-outlet operating mode: `STANDALONE` or `POS_INTEGRATED`; switchable by admin. | M | MVP (mode flag) / P2 (adapters) |
+| FR-952 | **Vendor-neutral adapter architecture:** internal canonical contract (MenuSync, OrderForward, StatusSync, BillSync events) + pluggable per-POS adapters in a registry. **No vendor hard-coding.** | M | P2 |
+| FR-953 | Menu synchronization: import items/prices/categories from POS; **item mapping table** (OrderMitra item ↔ POS code); conflict rules (e.g., POS is price source-of-truth, configurable). | M | P2 |
+| FR-954 | Availability sync (both directions where supported). | M | P2 |
+| FR-955 | Order forwarding with **idempotency keys**, retry-with-backoff, dead-letter queue + alerting. | M | P2 |
+| FR-956 | Order-status sync from POS/KDS back into OrderMitra customer timelines. | M | P2 |
+| FR-957 | Bill synchronization where supported (bill no., totals); otherwise OrderMitra marks orders "billed externally". | S | P2 |
+| FR-958 | Signed inbound webhook/event endpoint with replay protection. | M | P2 |
+| FR-959 | **Integration health dashboard:** last-sync times, failure counts, latency, pause/resume, send-test-order tool. | M | P2 |
+| FR-960 | Mapping UI for unmatched items with bulk mapping. | M | P2 |
+| FR-961 | Per-adapter sandbox/test mode. | S | P2 |
+| FR-962 | **Fallback:** POS unreachable > X minutes → admin-confirmed temporary switch to standalone mode; auto-restore on recovery. | M | P2 |
+
+#### 9.6.4 ⭐ Offline / Weak-Network Resilience & Idempotency `[Platform · MVP]`
+
+| ID | Requirement | Priority | Phase |
+|---|---|---|---|
+| FR-971 | Customer PWA caches menu + session shell; core browse works offline; actions queue while offline. | M | MVP |
+| FR-972 | **Idempotency everywhere:** client-generated UUID key on every mutating request (order submit, service request, accept, bill action); server dedupes; retries safe. | M | MVP |
+| FR-973 | Queued order submission with visible "will send when online" state; auto-flush on reconnect; duplicates suppressed. | M | MVP |
+| FR-974 | KDS reconnect: delta resync since last acknowledged ticket; connection-lost banner; server retains orders until acked (no lost tickets). | M | MVP |
+| FR-975 | Waiter actions offline-tolerant with **server arbitration** (first accept wins; losers receive corrected state). | M | MVP |
+| FR-976 | Billing recovery: unsent/unprinted bills cached locally; reconciled on reconnect. | M | MVP |
+| FR-977 | Local print queue survives app/device restarts. | S | MVP |
+| FR-978 | Conflict rule: **server is source of truth**; optimistic UI rolls back on rejection with clear messaging. | M | MVP |
+
+#### 9.6.5 Thermal Printer Support `[Tier 2 bills · Tier 3 KOT/token · MVP]`
+
+| ID | Requirement | Priority | Phase |
+|---|---|---|---|
+| FR-241 | ESC/POS thermal output (58mm & 80mm) for: **KOT, Customer Bill, GST Bill, Token, Table Bill**. | M | MVP |
+| FR-242 | Connectivity paths: network printers (IP:port), Bluetooth (Android bridge), USB via lightweight local bridge agent, **browser printing as universal fallback**. | M | MVP |
+| FR-243 | Local print queue with retry; reprint-last-bill/KOT action. | M | MVP |
+| FR-244 | **No proprietary-hardware lock-in:** publish a tested-printers compatibility list; standard ESC/POS only. | M | MVP |
+| FR-245 | Print failure → graceful fallback to PDF/share; never blocks billing. | M | MVP |
+
+#### 9.6.6 QR & Session Protection `[Platform · MVP]`
+
+| ID | Requirement | Priority | Phase |
+|---|---|---|---|
+| FR-991 | **Signed QR payloads** (HMAC): tenant/table/scope encoded; server verifies signature on every scan. | M | MVP |
+| FR-992 | Opaque table/session identifiers; enumeration-resistant; invalid → generic error (no oracle). | M | MVP |
+| FR-993 | Short-lived, rotating session tokens; expired-session reuse blocked. | M | MVP |
+| FR-994 | Rate limiting per device/IP on ordering & request endpoints; anomaly detection (velocity spikes, orders after close, cross-table jumps). | M | MVP |
+| FR-995 | **Post-close lockout:** closed/paid sessions reject new orders instantly (supports FR-410). | M | MVP |
+| FR-996 | Optional **staff-activated tables** for high-security venues: QR inert until staff opens the table. | S | P2 |
+| — | Constraint: none of the above may complicate the normal scan experience for genuine customers. | — | — |
+
+---
+
+## 10. User Journeys & Flows
+
+### 10.1 Customer — First Scan (All Tiers)
+```text
+Scan QR → tenant resolved → LANGUAGE SELECTION (English | ಕನ್ನಡ | हिंदी | தமிழ் | తెలుగు)
+        → Digital Menu (localized)
+          ├─ Tier 1: browse + ask AI assistant
+          ├─ Tier 2: browse → cart → checkout → live status → admin bills
+          └─ Tier 3: Table Session created/restored → full floor experience
+```
+
+### 10.2 Tier 1 — AI Menu Setup (Owner)
+```text
+Upload menu photos → AI extracts {items, prices, categories} (confidence-flagged)
+→ review (image ↔ data) → correct → AI translates → review → Publish → LIVE
+(duplicate detection + bulk edits throughout; never auto-publishes)
+```
+
+### 10.3 Tier 1/2/3 — AI Discovery Chat
+```text
+Guest: "₹250 ಒಳಗೆ chicken items ತೋರಿಸಿ."
+→ retrieval over live catalog → validator → product cards in Kannada
+→ [Add] (Tier 2+) or note-it (Tier 1)
+```
+
+### 10.4 Tier 2 — Admin-Bill Flow
+```text
+Customer orders → Order ID issued → Admin Dashboard alert → Accept
+→ kitchen prepares → Admin marks Served → Admin generates BILL (Order ID on bill)
+→ server delivers → collects cash/UPI/card → Admin marks Paid
+```
+
+### 10.5 Tier 3 — Table-Based Live Flow with Session
+```text
+Table 12 scan → session CREATED/ACTIVE → order #1 (₹620) → KDS real-time
+→ Preparing → Ready → waiter notified (primary first) → Served
+→ guest re-scans later → session RESTORED (tab ₹620) → order #2 (₹300) → tab ₹920
+→ [Request Bill] → BILL_REQUESTED → combined bill → payment → PAID → CLOSED
+(next party scans → brand-new session; zero leakage)
+```
+
+### 10.6 Tier 3 — Service Request with Waiter Routing
+```text
+Guest taps Need Something? → 💧 Water @ Table 14
+→ routed to Manoj (Tables 11–20) ✅
+→ card: "Table 14 · Water · 00:23 ago [Accept]"
+→ no ack in 60s → reminder → 90s → backup waiter → manager broadcast
+→ Acknowledged → On The Way → Fulfilled (guest sees progress)
+```
+
+### 10.7 Tier 3 — AI Meal Plan (P2)
+```text
+"We are 4 people. 2 veg, 2 non-veg. Budget ₹1,500. Dinner."
+→ plan from real items (total ₹1,470) → [Add All to Cart] → re-validated → ordered
+```
+
+### 10.8 Owner — Daily Loop
+```text
+Morning: WhatsApp/email digest (yesterday's numbers + anomaly note)
+Anytime: ask Owner AI "Compare this Sunday with last Sunday" → cited metrics
+Weekly: analytics dashboard deep-dive; tune AI Controls (promotions, exclusions)
+```
+
+---
+
+## 11. Non-Functional Requirements
+
+| Category | Requirement |
 |---|---|
-| Feature creep into "enterprise platform" before revenue | Non-negotiable principle #5, enforced via roadmap gating in `04_ROADMAP_AND_FEATURES.md` |
-| Owner churn due to complexity | Every new feature must pass the "can an owner use this with zero training?" test before merge |
-| Payment/regulatory misstep | Principle #4; all payment flows route through licensed PA; legal review before any money-movement feature ships |
-| AI cost overrun at low price point | Model selection + caching strategy defined in `03_TECH_STACK.md`; monitor cost-per-restaurant monthly |
-| Architecture requiring a rewrite at Phase 3+ | Modular monolith design in `02_ARCHITECTURE.md` specifically chosen to avoid this |
+| **Performance** | Menu FCP < 2s on 3G/low-end Android; API p95 < 300ms; realtime propagation < 2s; AI chat first token < 3s. |
+| **Scalability** | 10,000+ tenants; 100k concurrent scan sessions at peak; realtime layer horizontally scalable. |
+| **Availability** | 99.9% for menu/browse; ordering degrades gracefully (queue-and-retry) rather than failing hard. |
+| **Offline resilience** | Per FR-971–978: cached menus, queued submissions, idempotency keys, KDS delta-resync, server arbitration, print queues. |
+| **Security** | TLS everywhere; tenant isolation; signed QR payloads; rotating session tokens; RBAC server-enforced; encrypted PII at rest; rate limiting + anomaly detection; webhook signature verification. |
+| **Privacy** | Anonymous guest sessions; masked AI transcripts; DPDP Act (India)/GDPR-aligned consent for optional phone capture; no audio storage by default (voice). |
+| **Accessibility** | WCAG AA contrast; scalable fonts; large tap targets (kitchen/server); voice assists low-literacy users. |
+| **Localization** | Full i18n architecture (bundles + DB translations); Indic font rendering; RTL-ready for future; locale-aware dates/currency. |
+| **Device support** | Responsive mobile-first web (customers/waiters); tablet/desktop KDS; no native apps required in MVP. |
+| **Auditability** | Immutable orders/bills; session event logs; admin action logs; AI decision logs (prompts versioned). |
+| **AI cost control** | Per-tenant quotas; model routing (small models for simple intents); embedding/response caching; cost dashboards. |
+| **Data integrity** | Idempotency on all mutations; server-as-source-of-truth; reconciliation jobs for offline queues. |
 
-## 11. Versioning note
+---
 
-This PRD is a living foundation document. **Do not silently rewrite sections** — when scope changes, add a dated entry to `06_DECISION_LOG.md` explaining what changed and why, then update this file to reflect the new agreed state. The decision log is the audit trail; this PRD is always the current source of truth.
+## 12. Suggested Technical Architecture
+
+> Recommendation only. **Modular monolith first** — extract services only when scale demands it.
+
+### 12.1 High-Level Components
+
+```text
+┌──────────────────┐    ┌───────────────────────────────┐
+│ Customer Web PWA │───▶│ API Gateway / BFF             │
+│ Staff Web (KDS,  │    │ (auth, rate-limit, routing)   │
+│ waiter, admin)   │    └──────────────┬────────────────┘
+└──────────────────┘                   │
+        ┌──────────────┬───────────────┼────────────────┬──────────────┐
+        ▼              ▼               ▼                ▼              ▼
+  ┌───────────┐ ┌────────────┐ ┌─────────────┐ ┌────────────┐ ┌───────────┐
+  │ Menu      │ │ Ordering & │ │ Billing &   │ │ Staffing & │ │ Analytics │
+  │ Module    │ │ Table      │ │ Print       │ │ Service    │ │ Module    │
+  │ (i18n)    │ │ Session    │ │ Module      │ │ Module     │ │ (+metrics │
+  └───────────┘ └────────────┘ └─────────────┘ └────────────┘ │  mart)    │
+        ▼              ▼               ▼                ▼       └───────────┘
+  ┌───────────────────────────────────────────────────────────────────────┐
+  │ AI Gateway Module (vision/OCR, RAG chat, planner, upsell, owner-AI,   │
+  │ voice later) — quotas, model routing, validators, prompt registry     │
+  └───────────────────────────────────────────────────────────────────────┘
+        ▼                                    ▼
+  ┌──────────────────┐              ┌──────────────────────┐
+  │ Integrations     │              │ Notifications        │
+  │ Module (POS      │              │ (Web Push, FCM;      │
+  │ adapters, DLQ)   │              │ WhatsApp/SMS later)  │
+  └──────────────────┘              └──────────────────────┘
+```
+
+### 12.2 Realtime Architecture
+- **Transport:** WebSockets (Socket.IO) or SSE over **Redis Pub/Sub**.
+- **Rooms:** `tenant:{id}:admin`, `tenant:{id}:kds`, `tenant:{id}:waiter:{staffId}`, `table:{id}:customer`.
+- **Server-side timers** (delayed jobs) drive waiter-escalation ladders and session TTL expiries — never client clocks.
+- **Delivery guarantees:** server retains undelivered staff events until acked; clients delta-resync on reconnect (FR-974).
+
+### 12.3 AI Architecture
+- **Single AI Gateway module** (in-monolith): all model calls flow through it.
+  - Model routing: small/fast model for simple intents; stronger model for planner/complex reasoning; vision model for menu OCR.
+  - **RAG:** per-tenant menu embeddings (pgvector) + runtime availability filter; strict system prompts; **post-generation validator** rejects non-catalog entities (FR-605).
+  - Owner-AI: deterministic metric resolution (SQL over metrics mart) → LLM phrasing only (FR-331–333).
+  - Quotas, caching, prompt versioning, cost telemetry, PII scrubbing.
+- **Human-in-the-loop:** menu extraction and translations always pass through review screens.
+
+### 12.4 POS Integration Architecture
+- Canonical internal event contract; **adapter plugins** per vendor registered in a registry (FR-952).
+- Outbound: order-forward queue with idempotency keys, exponential backoff, DLQ + alerts.
+- Inbound: signed webhook receiver with replay protection; status/bill sync handlers.
+- Mapping service + health dashboard + sandbox mode + fallback-to-standalone (FR-959–962).
+
+### 12.5 Offline Strategy
+- PWA service worker + IndexedDB **outbox**; Background Sync where available.
+- UUID idempotency keys minted client-side at action time (FR-972).
+- Optimistic UI with server-authoritative rollback (FR-978).
+- Print spooling locally; KDS delta-resync; waiter arbitration server-side.
+
+### 12.6 Suggested Stack Options
+
+| Layer | Option A (recommended) | Option B |
+|---|---|---|
+| Frontend | React + Tailwind | Next.js / Vite |
+| Realtime | Socket.IO/SSE + Redis Pub/Sub | Firebase listeners |
+| Backend | Node.js / Express Modular Monolith | Python FastAPI monolith |
+| Database | PostgreSQL (+pgvector) | Supabase Postgres |
+| Queue/Jobs | BullMQ on Redis (escalations, AI jobs, POS retries) | RabbitMQ |
+| Storage | S3-compatible (images, menu photos) | Cloudinary |
+| AI | GPT-4o-class vision + multilingual LLM; Indic ASR (P3) | Open-source (PaddleOCR + LLM; AI4Bharat ASR) |
+| Notifications | Web Push + FCM; WhatsApp Business API (P2) | Twilio / Gupshup |
+| Auth | JWT + refresh; staff PIN/OTP-lite | Clerk/Auth0 |
+| Hosting | AWS/GCP containers (ECS/Cloud Run) | Vercel + managed DB |
+
+---
+
+## 13. High-Level Data Model
+
+```text
+Tenant (restaurant group)
+ ├── Outlet
+ │    ├── Settings (languages, ordering_mode: admin_bill|table_based,
+ │    │             pos_mode: standalone|integrated, taxes, branding, ai_controls)
+ │    ├── Table (name/number, zone_id, seats, qr_signature, activation_state)
+ │    ├── Staff users (role, pin, on_duty, device_binding, lang_pref)
+ │    │     ├── WaiterZone (name, outlet_id)
+ │    │     └── WaiterAssignment (staff_id, table_id|zone_id, role: primary|backup, shift)
+ │    ├── MenuCategory
+ │    │     └── MenuItem
+ │    │           ├── translations {lang: {name, description}}
+ │    │           ├── price, images, badges, station, dietary, spice, allergens?
+ │    │           ├── ai_flags (promoted, chef_special, high_margin, exclude_from_recs)
+ │    │           └── availability_state
+ │    ├── QRCode (scope: outlet|table, signature)
+ │    ├── CustomerSession (anon device id, lang_pref, current_table_session_id)
+ │    ├── TableSession ★
+ │    │     ├── state: CREATED→ACTIVE→BILL_REQUESTED→BILLED→PAID→CLOSED|EXPIRED
+ │    │     ├── table_id, device_token, started_at, expires_at, closed_at
+ │    │     ├── assigned_waiter_id (denormalized for routing)
+ │    │     ├── Orders[]            (each: id=OrderID, items[], status_history[])
+ │    │     ├── ServiceRequests[]   (type, status, escalation_level, timestamps)
+ │    │     ├── RunningTab          (computed: Σ non-cancelled orders)
+ │    │     └── Bill[]              (session-consolidated; lines, taxes, totals)
+ │    ├── Order
+ │    │     ├── id (public Order ID), table_session_id?, mode
+ │    │     ├── items[] {item_id, qty, notes, price_snapshot}
+ │    │     └── status_history[]
+ │    ├── Bill (number, lines[], taxes, total, payment_status, print_jobs[])
+ │    ├── RecommendationEvent (session_id, trigger_point, item_ids[],
+ │    │                        impression|click|add, revenue_attributed)
+ │    ├── AIChatLog (session, messages[], lang, grounded_item_ids)
+ │    ├── VoiceOrderSession (P3: lang, transcript, parsed_items, confidence, outcome)
+ │    ├── AIJob (menu_scan: images, extracted_json, confidence, review_state)
+ │    ├── POSIntegration (vendor, mode, credentials_ref, health_state)
+ │    │     ├── POSItemMapping (scanserve_item_id ↔ pos_item_code, sync_state)
+ │    │     └── IntegrationEvent (direction, type, payload_ref, status,
+ │    │                           retries, idempotency_key)
+ │    └── DailyReport (revenue, orders, aov, exports, digest_sent)
+ └── Subscription (tier, limits, ai_quota_usage, renewal, trial)
+```
+
+**Key relationships:** `Table 1─n TableSession 1─n Order / ServiceRequest / Bill`; `WaiterZone 1─n Table`; `WaiterAssignment n─m Staff↔Table/Zone`; `MenuItem 1─n POSItemMapping`; every AI interaction ties back to `TableSession`/`CustomerSession` for attribution.
+
+---
+
+## 14. MVP & Phased Roadmap
+
+> Discipline: **not everything lands at once.** MVP proves value + willingness-to-pay with 10–50 restaurants; Phase 2/3 investments are gated on §15 validation results.
+
+### 14.1 MVP — First 10–50 Restaurants
+*Goal: prove the full loop — AI onboarding, multilingual discovery, ordering, kitchen, waiters, billing.*
+
+- Restaurant onboarding wizard + **AI photo → menu** (review-gated) + AI translation
+- Multilingual menu & journey (5 languages), language selection screen
+- QR generation (outlet + **table QR**, signed) + printable templates
+- **Intelligent Table Sessions** (create/restore, running tab, add-more, reorder, request bill, combined bill, safeguards)
+- Menu search (localized/transliterated)
+- **Basic AI menu assistant** (grounded Q&A, product cards, guardrails)
+- Cart/order + Order ID + **realtime KDS** + live status timeline
+- **Service requests** (presets) + **waiter assignment & zones** + escalation ladder
+- Bill request → **basic billing** (GST, discounts, combined tab bill)
+- **Thermal printing** (ESC/POS: KOT, bills, token, table bill) + browser fallback
+- **Basic sales analytics** + daily digest
+- Offline/idempotency foundations (FR-971–978), QR/session security (FR-991–995)
+- POS mode flag (standalone/integrated) — adapter architecture designed, not built
+
+### 14.2 Phase 2 — Scale & Intelligence *(gated on pilot success)*
+- **AI Meal Planner** (FR-651–658)
+- **AI Upselling / Smart Recommendations** + attribution (FR-701–710)
+- **POS integrations** — first 2–3 vendor adapters + health dashboard (FR-951–962)
+- **Online payments** (UPI intent/collect + cards via PSP; pay-at-table; auto-settlement)
+- **Advanced Owner AI Assistant** (conversational analytics, FR-331–338) + anomaly detection
+- Advanced waiter/service analytics (FR-510, FR-319), shift handover
+- Customer push notifications (re-engagement), WhatsApp notifications for staff
+- Multi-outlet analytics rollups; hourly heatmaps; table-performance deep dives
+- Staff-activated tables (FR-996); voice groundwork
+
+### 14.3 Phase 3 — Frontier
+- **Multilingual voice ordering** (FR-801–808)
+- Demand forecasting & prep suggestions; intelligent staffing recommendations
+- Inventory/depletion integration (auto sold-out)
+- Loyalty & offers; personalized returning-customer recommendations
+- Deeper POS ecosystem (more vendors, two-way menu master)
+- Franchise/chain functionality (master menus, outlet groups, role hierarchies)
+
+---
+
+## 15. First-Customer Validation Strategy
+
+> **Rule: validate with ~10–50 restaurants before building Phase 2.** Restaurant **willingness to pay** and **staff adoption** are **product requirements**, not merely sales problems. If either fails, fix the product before scaling.
+
+### 15.1 Pilot Design
+- Recruit 10–50 restaurants across segments (darshini/café, mid-size family, 1–2 large Tier-3 venues); prefer one metro cluster (e.g., Bengaluru) for support density and Kannada-heavy validation.
+- Include a mix of POS users and non-POS users to test both operating modes early.
+- 4–8 week pilot per cohort with weekly check-ins; instrument everything (activation funnel, event analytics).
+- Success gate to proceed to Phase 2 build-out: see thresholds below.
+
+### 15.2 Validation Questions & Measures
+
+| Question | Measure / Signal | Healthy Threshold (indicative) |
+|---|---|---|
+| Do customers scan? | Scans per table per day | ≥ 60% of occupied tables/day |
+| Do customers order? | Scan → order conversion | ≥ 25% of sessions place ≥ 1 order |
+| Do staff actually use KDS? | % orders status-updated in KDS (vs paper workaround) | ≥ 90% tickets touched digitally |
+| Do waiters respond to digital requests? | Ack rate within SLA; escalation rate | ≥ 80% acked < 90s; escalations < 10% |
+| Does AI help customers discover items? | AI assistant usage; unanswered-question rate | ≥ 30% of sessions open chat; < 15% unanswered |
+| Does AI increase cart additions? | AI → cart conversion; attributed add-ons | Measurable lift vs non-AI sessions |
+| Does onboarding actually take ≤ 10 minutes? | Activation funnel timing | Median ≤ 10 min; ≥ 70% unassisted completion |
+| Does the owner use analytics? | Weekly active owner logins; digest opens | ≥ 60% weekly; digest opens ≥ 40% |
+| Will the restaurant pay after the pilot? | Pilot → paid conversion | ≥ 50% convert at list price |
+
+### 15.3 Kill/Pivot Criteria
+- If staff adoption fails twice despite UX iteration → simplify scope (fewer surfaces, bigger buttons) before adding features.
+- If willingness-to-pay fails → revisit pricing/packaging and which tier carries value, not just more features.
+- If AI trust issues emerge (wrong extractions/hallucinations) → tighten human-review gates before scaling AI surface area.
+
+---
+
+## 16. Success Metrics / KPIs
+
+### Activation & Onboarding
+| KPI | Definition | Target |
+|---|---|---|
+| Restaurant activation time | Signup → live menu (median) | ≤ 10 min |
+| % restaurants live within 10 minutes | Unassisted completions | ≥ 70% |
+| Menu extraction accuracy | Fields correct after AI (pre-review) | ≥ 90% items, ≥ 98% prices post-review |
+
+### Acquisition & Engagement
+| KPI | Definition | Target |
+|---|---|---|
+| QR scans | Total + unique scans/outlet/day | Growth trend |
+| Scan → order conversion | Sessions placing ≥ 1 order | ≥ 25% |
+| AI assistant usage | Sessions opening chat | ≥ 30% |
+| AI → cart conversion | Chat interactions leading to add-to-cart | Tracked baseline → improve |
+
+### Revenue Quality
+| KPI | Definition | Target |
+|---|---|---|
+| Average Order Value (AOV) | Revenue ÷ orders | Upward trend |
+| AI recommendation conversion | Impressions → clicks → adds | Benchmarked per trigger point |
+| Revenue influenced by AI recommendations | Attributed revenue (`RecommendationEvent`) | Reported monthly; positive ROI story |
+
+### Operations Excellence
+| KPI | Definition | Target |
+|---|---|---|
+| Average waiter response time | Request → acknowledge | < 90s p50 |
+| Order preparation time | Accepted → Ready (per station) | Baseline → reduce |
+| Table session duration | Created → Closed | Context metric |
+| Orders per table session | Σ orders ÷ sessions | ≥ 1.3 (add-on behavior) |
+| Repeat/add-on order rate | Sessions with > 1 order | ≥ 30% |
+| POS integration success rate | Forwarded orders accepted first-try | ≥ 99.5% |
+
+### Business Health
+| KPI | Definition | Target |
+|---|---|---|
+| Monthly restaurant churn | Cancelled ÷ active tenants | < 3% |
+| Trial → paid conversion | Trials converting | ≥ 50% |
+| MRR | Monthly recurring revenue | Growth target set quarterly |
+| ARPU | MRR ÷ paying outlets | Tier-mix dependent; rising |
+
+---
+
+## 17. Assumptions, Risks & Open Questions
+
+### Assumptions
+- A1: Customers have smartphones with cameras and internet; no app install needed.
+- A2: MVP payments are handled offline by the restaurant; platform does not touch money until Phase 2.
+- A3: Launch languages: English, Kannada, Hindi, Tamil, Telugu (confirm exact set & priority order).
+- A4: Single-brand tenants initially; chains supported as multiple outlets under one tenant login.
+- A5: AI features (menu generation + chat agent) included in all tiers under fair-use quotas.
+- A6: Most Tier 3 venues have at least one shared tablet/laptop usable for KDS.
+- A7: ESC/POS printers are common enough that browser-fallback printing covers the rest.
+
+### Risks & Mitigations
+| Risk | Impact | Mitigation |
+|---|---|---|
+| AI misreads menu photos (wrong prices!) | High — money-affecting | Mandatory human review (FR-113/909); confidence flags; never auto-publish |
+| Hallucination by chat/planner/owner-AI | High — trust killer | RAG grounding + post-generation validator (FR-605); metrics-only owner-AI (FR-331–333) |
+| AI costs unsustainable at low-tier pricing | Medium | Quotas, model routing, caching, cost dashboards (FR-009) |
+| Staff adoption failure (KDS/waiter apps ignored) | High — kills ops value | Ultra-simple UIs, server-driven escalation, pilot gates (§15) |
+| Weak connectivity in venues | High | Offline-first + idempotency (FR-971–978) |
+| QR tampering/spoofing/table hijack | Medium-High | Signed payloads, rotating tokens, verification path, anomaly detection (FR-991–996) |
+| Session leakage between parties | High — privacy/trust | Device binding + PIN verify, post-close lockout (FR-402/410/995) |
+| POS integration complexity sprawl | Medium | Canonical contract + adapter registry; start with 2–3 vendors max (FR-952) |
+| Scope creep beyond startup capacity | High | Strict MVP list (§14.1); Phase 2 gated on §15 results |
+| Low-tier churn (menu-only value) | Medium | AI stickiness, upgrade nudges, annual incentives |
+| Indic speech quality (P3) | Medium | Confirmation-gated voice; text fallback always available |
+
+### Open Questions
+1. Exact pricing per tier (₹/mo)? Annual discount strategy? AI quota sizes per tier?
+2. Which 2–3 POS vendors for first integrations (Phase 2)? Any design partners already committed?
+3. WhatsApp notifications for staff/customers — MVP or Phase 2? Cost per message budget?
+4. Printer strategy: ship tested-printer list + browser fallback first, local bridge agent later?
+5. Voice AI: build on Indic ASR APIs vs open-source models? Latency/cost envelope?
+6. Data residency requirements (India-only hosting)? DPDP compliance sign-off process?
+7. Franchise/multi-brand model timing — Phase 3 confirm?
+8. Payment partner choice for Phase 2 (Razorpay/PayU/Cashfree) and fee pass-through model?
+
+---
+
+## 18. Glossary
+
+| Term | Definition |
+|---|---|
+| **Tenant** | A restaurant business onboarded on the platform |
+| **Outlet** | A physical branch/location of a tenant |
+| **Table Session** | Persistent dining context created on table-QR scan; holds orders, requests, running tab, and bill lifecycle |
+| **Running Tab** | Sum of all non-cancelled orders in an active table session |
+| **KDS** | Kitchen Display System — screen showing live incoming orders |
+| **KOT** | Kitchen Order Ticket (traditional paper equivalent) |
+| **Order ID** | Human-readable unique identifier for an order |
+| **Waiter Zone** | Group of tables assigned to a waiter/server team |
+| **Escalation Ladder** | Server-driven sequence: reminder → reassign → manager broadcast |
+| **RAG** | Retrieval-Augmented Generation — AI answering grounded in retrieved data |
+| **Metrics Mart** | Precomputed analytics tables powering the Owner AI (LLM phrases, never computes) |
+| **Idempotency Key** | Client-generated unique key ensuring a retried mutation executes once |
+| **DLQ** | Dead-letter queue for failed integration events |
+| **i18n** | Internationalization — multi-language support architecture |
+| **PWA** | Progressive Web App — installable web application |
+| **AOV** | Average Order Value |
+| **ARPU** | Average Revenue Per User (outlet) |
+| **MRR** | Monthly Recurring Revenue |
+
+---
+
+*End of Document — PRD v2.0*
