@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Table Session — Annapurna Kitchen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="../css/shared.css">
+  <style>
+    body {
+      background: var(--bg);
+      min-height: 100vh;
+    }
+
+    .session-header {
+      background: linear-gradient(135deg, var(--secondary), #264673);
+      color: white;
+      padding: 1.25rem 1rem;
+      text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .session-header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+    }
+
+    .session-header-back {
+      background: rgba(255, 255, 255, 0.15);
+      border: none;
+      color: white;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    .session-header-title {
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    .session-table-label {
+      font-size: 2rem;
+      font-family: var(--font-display);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .session-table-sub {
+      font-size: 0.8125rem;
+      color: rgba(255, 255, 255, 0.6);
+      margin-top: 0.25rem;
+    }
+
+    .session-body {
+      padding: 1rem;
+      padding-bottom: 120px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* Running Tab */
+    .running-tab {
+      background: white;
+      border-radius: var(--radius);
+      padding: 1rem;
+      border: 1px solid var(--border-light);
+      margin-bottom: 1rem;
+    }
+
+    .running-tab-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+
+    .running-tab-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .running-tab-amount {
+      font-family: var(--font-display);
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    .running-tab-duration {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* Orders list */
+    .orders-group {
+      margin-bottom: 1rem;
+    }
+
+    .orders-group-header {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+      padding: 0 0.25rem;
+    }
+
+    .session-order {
+      background: white;
+      border-radius: var(--radius);
+      border: 1px solid var(--border-light);
+      overflow: hidden;
+      margin-bottom: 0.5rem;
+    }
+
+    .session-order-header {
+      padding: 0.625rem 0.875rem;
+      background: var(--bg);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8125rem;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .session-order-id {
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .session-order-time {
+      color: var(--text-muted);
+      font-size: 0.6875rem;
+    }
+
+    .session-order-status {
+      font-size: 0.625rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: var(--radius-full);
+      font-weight: 600;
+    }
+
+    .session-order-status.preparing {
+      background: var(--warning-light);
+      color: #856404;
+    }
+
+    .session-order-status.ready {
+      background: var(--success-light);
+      color: #064E3B;
+    }
+
+    .session-order-status.served {
+      background: var(--info-light);
+      color: #0C4A6E;
+    }
+
+    .session-order-items {
+      padding: 0.625rem 0.875rem;
+    }
+
+    .session-order-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.25rem 0;
+      font-size: 0.875rem;
+    }
+
+    .session-order-item-name {
+      color: var(--text);
+    }
+
+    .session-order-item-qty {
+      color: var(--text-secondary);
+      font-size: 0.8125rem;
+    }
+
+    .session-order-total {
+      padding: 0.5rem 0.875rem;
+      border-top: 1px solid var(--border-light);
+      display: flex;
+      justify-content: space-between;
+      font-weight: 600;
+      font-size: 0.875rem;
+    }
+
+    /* Session action cards */
+    .session-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .session-action-card {
+      padding: 1.25rem;
+      border-radius: var(--radius);
+      border: 2px solid var(--border-light);
+      background: white;
+      text-align: center;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+
+    .session-action-card:hover {
+      border-color: var(--primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .session-action-card .icon {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .session-action-card .label {
+      font-weight: 700;
+      font-size: 0.875rem;
+    }
+
+    .session-action-card .sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+
+    .session-action-card.bill {
+      grid-column: 1 / -1;
+      background: var(--primary-light);
+      border-color: var(--primary);
+    }
+
+    .session-action-card.bill .label {
+      color: var(--primary);
+    }
+
+    /* Bottom tab bar */
+    .session-tab-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      border-top: 1px solid var(--border-light);
+      display: flex;
+      z-index: 50;
+      box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
+    }
+
+    .session-tab-item {
+      flex: 1;
+      padding: 0.625rem 0.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.625rem;
+      font-weight: 500;
+      transition: color var(--transition);
+    }
+
+    .session-tab-item.active {
+      color: var(--primary);
+    }
+
+    .session-tab-item .icon {
+      font-size: 1.25rem;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Session Header -->
+  <div class="session-header">
+    <div class="session-header-top">
+      <button class="session-header-back" onclick="history.back()">←</button>
+      <span
+        style="font-size: 0.75rem; background: rgba(45,147,108,0.3); padding: 0.2rem 0.625rem; border-radius: var(--radius-full); font-weight: 600;">Active
+        Session</span>
+      <span style="width: 36px;"></span>
+    </div>
+    <div class="session-table-label">Table 12</div>
+    <div class="session-table-sub">Session started 7:30 PM · 1h 15m ago</div>
+  </div>
+
+  <div class="session-body">
+    <!-- Running Tab -->
+    <div class="running-tab">
+      <div class="running-tab-header">
+        <div>
+          <div class="running-tab-label">Running Tab</div>
+          <div class="running-tab-amount">₹920</div>
+        </div>
+        <div style="text-align: right;">
+          <div class="running-tab-label">Duration</div>
+          <div class="running-tab-duration">1h 15m</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Order #1 -->
+    <div class="orders-group">
+      <div class="orders-group-header">Order History</div>
+
+      <div class="session-order">
+        <div class="session-order-header">
+          <span class="session-order-id">ORD-0042</span>
+          <span class="session-order-status served">Served</span>
+          <span class="session-order-time">7:35 PM</span>
+        </div>
+        <div class="session-order-items">
+          <div class="session-order-item">
+            <span class="session-order-item-name">Chicken 65 × 2</span>
+            <span class="session-order-item-qty">₹520</span>
+          </div>
+          <div class="session-order-item">
+            <span class="session-order-item-name">Butter Naan × 4</span>
+            <span class="session-order-item-qty">₹200</span>
+          </div>
+          <div class="session-order-item">
+            <span class="session-order-item-name">Lime Soda × 1</span>
+            <span class="session-order-item-qty">₹60</span>
+          </div>
+        </div>
+        <div class="session-order-total">
+          <span>Subtotal</span>
+          <span>₹620</span>
+        </div>
+      </div>
+
+      <!-- Order #2 -->
+      <div class="session-order">
+        <div class="session-order-header">
+          <span class="session-order-id">ORD-0043</span>
+          <span class="session-order-status preparing">Preparing</span>
+          <span class="session-order-time">8:22 PM</span>
+        </div>
+        <div class="session-order-items">
+          <div class="session-order-item">
+            <span class="session-order-item-name">Chicken Biryani × 1</span>
+            <span class="session-order-item-qty">₹280</span>
+          </div>
+          <div class="session-order-item">
+            <span class="session-order-item-name">Lime Soda × 1</span>
+            <span class="session-order-item-qty">₹60</span>
+          </div>
+        </div>
+        <div class="session-order-total">
+          <span>Subtotal</span>
+          <span>₹300</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="session-actions">
+      <div class="session-action-card" onclick="window.location.href='menu.html?session=active'">
+        <div class="icon">➕</div>
+        <div class="label">Add More</div>
+        <div class="sub">Continue ordering</div>
+      </div>
+      <div class="session-action-card" onclick="window.location.href='service-requests.html'">
+        <div class="icon">🔔</div>
+        <div class="label">Need Something?</div>
+        <div class="sub">Water, tissue, etc.</div>
+      </div>
+      <div class="session-action-card bill" onclick="window.location.href='bill.html'">
+        <div class="icon">📄</div>
+        <div class="label">Request Bill · ₹920</div>
+        <div class="sub">Combined bill for entire session</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Tab Bar -->
+  <div class="session-tab-bar">
+    <button class="session-tab-item active">
+      <span class="icon">🏠</span>
+      Session
+    </button>
+    <button class="session-tab-item" onclick="window.location.href='menu.html?session=active'">
+      <span class="icon">📋</span>
+      Menu
+    </button>
+    <button class="session-tab-item" onclick="window.location.href='order-status.html'">
+      <span class="icon">⏱️</span>
+      Orders
+    </button>
+    <button class="session-tab-item" onclick="window.location.href='service-requests.html'">
+      <span class="icon">🔔</span>
+      Help
+    </button>
+    <button class="session-tab-item" onclick="window.location.href='bill.html'">
+      <span class="icon">💰</span>
+      Bill
+    </button>
+  </div>
+
+</body>
+
+</html>

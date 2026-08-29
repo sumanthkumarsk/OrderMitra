@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Controls — Annapurna Kitchen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/shared.css">
+  <style>
+    .settings-section { margin-bottom: 1.5rem; }
+    .settings-section:last-child { margin-bottom: 0; }
+    .section-title {
+      font-size: 1rem; font-weight: 700; margin-bottom: 0.75rem;
+      font-family: var(--font-display);
+    }
+    .section-desc {
+      font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 1rem;
+    }
+    .switch-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.875rem 0;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .switch-row:last-child { border-bottom: none; }
+    .switch-info { flex: 1; margin-right: 1rem; }
+    .switch-label { font-weight: 600; font-size: 0.9375rem; }
+    .switch-desc { font-size: 0.8125rem; color: var(--text-secondary); margin-top: 0.125rem; }
+    .switch-right { display: flex; align-items: center; gap: 0.75rem; flex-shrink: 0; }
+    .p2-badge {
+      font-size: 0.625rem; padding: 0.15rem 0.5rem;
+      border-radius: var(--radius-full); font-weight: 600;
+      background: #F1F3F5; color: var(--text-muted);
+    }
+    .drag-item {
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 0.75rem 1rem; margin-bottom: 0.5rem;
+      background: var(--bg); border-radius: var(--radius-sm);
+      border: 1px solid var(--border-light);
+      transition: all var(--transition);
+    }
+    .drag-item:hover { border-color: var(--border); box-shadow: var(--shadow-sm); }
+    .drag-handle {
+      cursor: grab; color: var(--text-muted); flex-shrink: 0;
+      display: flex; align-items: center;
+    }
+    .drag-handle:active { cursor: grabbing; }
+    .drag-item-info { flex: 1; }
+    .drag-item-name { font-weight: 600; font-size: 0.875rem; }
+    .drag-item-price { font-size: 0.8125rem; color: var(--text-secondary); }
+    .drag-item-remove {
+      width: 28px; height: 28px; border-radius: 50%; border: none;
+      background: transparent; color: var(--text-muted); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all var(--transition); flex-shrink: 0;
+    }
+    .drag-item-remove:hover { background: var(--danger-light); color: var(--danger); }
+    .promo-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.75rem 1rem; margin-bottom: 0.5rem;
+      background: var(--bg); border-radius: var(--radius-sm);
+      border: 1px solid var(--border-light);
+    }
+    .promo-left { display: flex; align-items: center; gap: 0.75rem; }
+    .promo-priority {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--primary-light); color: var(--primary);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.8125rem; flex-shrink: 0;
+    }
+    .empty-state-card {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; padding: 2rem; text-align: center;
+      color: var(--text-muted); background: var(--bg);
+      border-radius: var(--radius-sm); border: 1px dashed var(--border);
+    }
+    .empty-state-card svg { margin-bottom: 0.75rem; opacity: 0.4; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .usage-bar-wrap { margin-bottom: 1.25rem; }
+    .usage-label-row {
+      display: flex; justify-content: space-between; margin-bottom: 0.375rem;
+    }
+    .usage-label { font-size: 0.8125rem; font-weight: 600; }
+    .usage-value { font-size: 0.8125rem; color: var(--text-secondary); }
+    .usage-bar {
+      height: 10px; background: var(--border-light); border-radius: 5px;
+      overflow: hidden;
+    }
+    .usage-bar-fill {
+      height: 100%; border-radius: 5px;
+      transition: width var(--transition-slow);
+    }
+    .usage-breakdown { margin-top: 1rem; }
+    .usage-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.5rem 0; border-bottom: 1px solid var(--border-light);
+    }
+    .usage-row:last-child { border-bottom: none; }
+    .usage-row-left { display: flex; align-items: center; gap: 0.5rem; }
+    .usage-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .usage-row-label { font-size: 0.875rem; font-weight: 500; }
+    .usage-row-count { font-size: 0.875rem; font-weight: 600; color: var(--text-secondary); }
+    @media (max-width: 768px) {
+      .info-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">SS</div>
+        <div class="sidebar-brand">ScanServe</div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Main</div>
+        </div>
+        <a class="sidebar-link" href="dashboard.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </a>
+        <a class="sidebar-link" href="orders.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Orders
+        </a>
+        <a class="sidebar-link" href="billing.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          Billing
+        </a>
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Management</div>
+        </div>
+        <a class="sidebar-link" href="menu-management.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          Menu
+        </a>
+        <a class="sidebar-link" href="table-map.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+          Table Map
+        </a>
+        <a class="sidebar-link" href="waiters.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Waiters
+        </a>
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Intelligence</div>
+        </div>
+        <a class="sidebar-link" href="analytics.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          Analytics
+        </a>
+        <a class="sidebar-link" href="ai-owner.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          AI Assistant
+        </a>
+        <a class="sidebar-link active" href="ai-controls.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          AI Controls
+        </a>
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Setup</div>
+        </div>
+        <a class="sidebar-link" href="onboarding.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          Onboarding
+        </a>
+        <a class="sidebar-link" href="#">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Settings
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div style="display:flex;align-items:center;gap:0.625rem;">
+          <div class="avatar avatar-sm">R</div>
+          <div>
+            <div style="font-size:0.8125rem;font-weight:600;">Ravi</div>
+            <div style="font-size:0.6875rem;color:rgba(255,255,255,0.5);">Owner · Premium</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="main-content">
+      <div class="topbar">
+        <div class="topbar-title" style="display:flex;align-items:center;gap:0.5rem;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-secondary);"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          AI Controls
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-ghost btn-sm" onclick="showToast('All changes discarded','info')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+            Reset
+          </button>
+          <button class="btn btn-primary btn-sm" onclick="showToast('AI settings saved successfully','success')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Save Changes
+          </button>
+        </div>
+      </div>
+
+      <div class="page-content" style="max-width:960px;">
+        <!-- Global AI Switches -->
+        <div class="card settings-section">
+          <div class="card-header">
+            <h3 style="display:flex;align-items:center;gap:0.5rem;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--primary);"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+              Global AI Switches
+            </h3>
+          </div>
+          <div class="card-body" style="padding:0.5rem 1.25rem;">
+            <div class="switch-row">
+              <div class="switch-info">
+                <div class="switch-label">AI Menu Assistant</div>
+                <div class="switch-desc">Customer-facing chatbot that helps guests navigate the menu, answer food questions, and place orders via QR scan.</div>
+              </div>
+              <div class="switch-right">
+                <button class="toggle active" onclick="this.classList.toggle('active')"></button>
+              </div>
+            </div>
+            <div class="switch-row">
+              <div class="switch-info">
+                <div class="switch-label">AI Meal Planner</div>
+                <div class="switch-desc">Generates personalized meal plans based on dietary preferences, group sizes, and budget constraints.</div>
+              </div>
+              <div class="switch-right">
+                <span class="p2-badge">P2</span>
+                <button class="toggle" onclick="this.classList.toggle('active')"></button>
+              </div>
+            </div>
+            <div class="switch-row">
+              <div class="switch-info">
+                <div class="switch-label">AI Smart Recommendations</div>
+                <div class="switch-desc">Powers the "Today's Picks" section with context-aware suggestions based on time, weather, and popularity.</div>
+              </div>
+              <div class="switch-right">
+                <span class="p2-badge">P2</span>
+                <button class="toggle" onclick="this.classList.toggle('active')"></button>
+              </div>
+            </div>
+            <div class="switch-row">
+              <div class="switch-info">
+                <div class="switch-label">AI Owner Assistant</div>
+                <div class="switch-desc">Internal assistant that analyzes sales data, suggests operational improvements, and drafts communications.</div>
+              </div>
+              <div class="switch-right">
+                <button class="toggle active" onclick="this.classList.toggle('active')"></button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chef Recommendations -->
+        <div class="card settings-section">
+          <div class="card-header">
+            <h3 style="display:flex;align-items:center;gap:0.5rem;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--accent);"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+              Chef Recommendations
+            </h3>
+            <span class="text-sm text-muted">Drag to reorder priority</span>
+          </div>
+          <div class="card-body" id="chefRecs">
+            <div class="drag-item" draggable="true">
+              <div class="drag-handle">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>
+              </div>
+              <div class="drag-item-info">
+                <div class="drag-item-name">Chicken Biryani</div>
+                <div class="drag-item-price">₹280</div>
+              </div>
+              <button class="drag-item-remove" title="Remove">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <div class="drag-item" draggable="true">
+              <div class="drag-handle">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>
+              </div>
+              <div class="drag-item-info">
+                <div class="drag-item-name">Chicken 65</div>
+                <div class="drag-item-price">₹220</div>
+              </div>
+              <button class="drag-item-remove" title="Remove">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <div class="drag-item" draggable="true">
+              <div class="drag-handle">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>
+              </div>
+              <div class="drag-item-info">
+                <div class="drag-item-name">Butter Chicken</div>
+                <div class="drag-item-price">₹300</div>
+              </div>
+              <button class="drag-item-remove" title="Remove">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <div class="drag-item" draggable="true">
+              <div class="drag-handle">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>
+              </div>
+              <div class="drag-item-info">
+                <div class="drag-item-name">Paneer Tikka</div>
+                <div class="drag-item-price">₹250</div>
+              </div>
+              <button class="drag-item-remove" title="Remove">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <div class="drag-item" draggable="true">
+              <div class="drag-handle">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>
+              </div>
+              <div class="drag-item-info">
+                <div class="drag-item-name">Gobi Manchurian</div>
+                <div class="drag-item-price">₹180</div>
+              </div>
+              <button class="drag-item-remove" title="Remove">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="card-footer">
+            <button class="btn btn-primary-ghost btn-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add Item
+            </button>
+          </div>
+        </div>
+
+        <!-- Promoted Items -->
+        <div class="card settings-section">
+          <div class="card-header">
+            <h3 style="display:flex;align-items:center;gap:0.5rem;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--warning);"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              Promoted Items
+            </h3>
+            <span class="badge badge-warning">2 Active</span>
+          </div>
+          <div class="card-body" style="padding:0.5rem 1.25rem;">
+            <div class="promo-item">
+              <div class="promo-left">
+                <div class="promo-priority">1</div>
+                <div>
+                  <div class="drag-item-name">Lime Soda</div>
+                  <div class="drag-item-price">Promoted to top of AI suggestions</div>
+                </div>
+              </div>
+              <button class="toggle active" onclick="this.classList.toggle('active')"></button>
+            </div>
+            <div class="promo-item">
+              <div class="promo-left">
+                <div class="promo-priority">2</div>
+                <div>
+                  <div class="drag-item-name">Gulab Jamun</div>
+                  <div class="drag-item-price">Shown as a recommended dessert</div>
+                </div>
+              </div>
+              <button class="toggle active" onclick="this.classList.toggle('active')"></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Exclusion List -->
+        <div class="card settings-section">
+          <div class="card-header">
+            <h3 style="display:flex;align-items:center;gap:0.5rem;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--danger);"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+              Exclusion List
+            </h3>
+          </div>
+          <div class="card-body">
+            <div class="empty-state-card">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+              <div style="font-weight:600;font-size:0.9375rem;margin-bottom:0.25rem;">No items excluded yet</div>
+              <div class="text-sm text-muted" style="margin-bottom:1rem;">Items added here will never appear in AI recommendations or chat responses.</div>
+              <button class="btn btn-primary-ghost btn-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add Exclusion
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Restaurant Info for AI -->
+        <div class="card settings-section">
+          <div class="card-header">
+            <h3 style="display:flex;align-items:center;gap:0.5rem;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--info);"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+              Restaurant Info for AI
+            </h3>
+            <span class="text-sm text-muted">Context the AI uses when answering guests</span>
+          </div>
+          <div class="card-body">
+            <div class="info-grid">
+              <div class="form-group">
+                <label class="form-label">Operating Hours</label>
+                <input type="text" class="form-input" value="11 AM - 10 PM">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Parking</label>
+                <input type="text" class="form-input" value="Free parking available">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Reservations</label>
+                <input type="text" class="form-input" value="Walk-in only, no reservations">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Wi-Fi</label>
+                <input type="text" class="form-input" value="annapurna_guest / ScanServe123">
+              </div>
+            </div>
+            <div class="form-group" style="margin-top:1rem;">
+              <label class="form-label">Special Notes</label>
+              <textarea class="form-textarea" rows="3" placeholder="Any additional info the AI should know...">We offer complimentary water. Extra naan costs ₹40. We do not serve beef. Weekend specials are posted on our Instagram @annapurnakitchen.</textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI Quota Usage -->
+        <div class="card settings-section">
+          <div class="card-header">
+            <h3 style="display:flex;align-items:center;gap:0.5rem;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--secondary);"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              AI Quota Usage
+            </h3>
+            <span class="text-sm text-muted">Resets on the 1st of each month</span>
+          </div>
+          <div class="card-body">
+            <div class="alert alert-warning" style="margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              Approaching quota limit — 34.2% of monthly queries used.
+            </div>
+            <div class="usage-bar-wrap">
+              <div class="usage-label-row">
+                <span class="usage-label">342 / 1,000 queries</span>
+                <span class="usage-value">34.2%</span>
+              </div>
+              <div class="usage-bar">
+                <div class="usage-bar-fill" style="width:34.2%;background:var(--primary);"></div>
+              </div>
+            </div>
+            <div class="usage-breakdown">
+              <div class="usage-row">
+                <div class="usage-row-left">
+                  <div class="usage-dot" style="background:var(--info);"></div>
+                  <span class="usage-row-label">Chat Assistant</span>
+                </div>
+                <span class="usage-row-count">245</span>
+              </div>
+              <div class="usage-row">
+                <div class="usage-row-left">
+                  <div class="usage-dot" style="background:var(--success);"></div>
+                  <span class="usage-row-label">Meal Planner</span>
+                </div>
+                <span class="usage-row-count">0</span>
+              </div>
+              <div class="usage-row">
+                <div class="usage-row-left">
+                  <div class="usage-dot" style="background:var(--warning);"></div>
+                  <span class="usage-row-label">Recommendations</span>
+                </div>
+                <span class="usage-row-count">97</span>
+              </div>
+              <div class="usage-row">
+                <div class="usage-row-left">
+                  <div class="usage-dot" style="background:var(--secondary);"></div>
+                  <span class="usage-row-label">Owner AI</span>
+                </div>
+                <span class="usage-row-count">0</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function showToast(msg, type) {
+      const toast = document.createElement('div');
+      toast.className = 'toast toast-' + (type || '');
+      toast.textContent = msg;
+      document.body.appendChild(toast);
+      setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.3s'; }, 2500);
+      setTimeout(() => toast.remove(), 2800);
+    }
+
+    document.querySelectorAll('.drag-item-remove').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const item = this.closest('.drag-item');
+        item.style.opacity = '0';
+        item.style.transform = 'translateX(-20px)';
+        item.style.transition = 'all 0.2s ease';
+        setTimeout(() => item.remove(), 200);
+      });
+    });
+
+    document.querySelectorAll('.drag-item').forEach(item => {
+      item.addEventListener('dragstart', function(e) {
+        this.style.opacity = '0.5';
+        this.style.background = 'var(--primary-light)';
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      item.addEventListener('dragend', function() {
+        this.style.opacity = '1';
+        this.style.background = '';
+      });
+      item.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        const container = document.getElementById('chefRecs');
+        const dragging = container.querySelector('[style*="opacity: 0.5"]');
+        if (dragging && dragging !== this) {
+          const rect = this.getBoundingClientRect();
+          const midY = rect.top + rect.height / 2;
+          if (e.clientY < midY) {
+            container.insertBefore(dragging, this);
+          } else {
+            container.insertBefore(dragging, this.nextSibling);
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>

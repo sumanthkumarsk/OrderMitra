@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orders — Annapurna Kitchen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/shared.css">
+  <style>
+    .stats-row {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .order-stat {
+      background: white; border-radius: var(--radius); padding: 1rem 1.25rem;
+      border: 1px solid var(--border-light); display: flex; align-items: center; gap: 1rem;
+      transition: all var(--transition); cursor: pointer;
+    }
+    .order-stat:hover { box-shadow: var(--shadow-sm); }
+    .order-stat.highlight { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
+    .order-stat-icon {
+      width: 42px; height: 42px; border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center; font-size: 1.125rem;
+      flex-shrink: 0;
+    }
+    .order-stat-icon.new { background: #DBEAFE; color: #2563EB; }
+    .order-stat-icon.preparing { background: #FEF3C7; color: #D97706; }
+    .order-stat-icon.ready { background: #DCFCE7; color: #16A34A; }
+    .order-stat-icon.awaiting { background: #F3E8FF; color: #9333EA; }
+    .order-stat-info { display: flex; flex-direction: column; }
+    .order-stat-count { font-size: 1.5rem; font-weight: 800; font-family: var(--font-display); line-height: 1; }
+    .order-stat-label { font-size: 0.75rem; color: var(--text-secondary); font-weight: 500; margin-top: 2px; }
+
+    .filters-bar {
+      display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .filters-bar .form-input, .filters-bar .form-select {
+      padding: 0.5rem 0.75rem; font-size: 0.8125rem; min-width: 0;
+    }
+    .filter-search { flex: 1; min-width: 220px; max-width: 320px; }
+    .filter-select { min-width: 130px; }
+
+    .orders-grid { display: flex; flex-direction: column; gap: 0.75rem; }
+
+    .order-card {
+      background: white; border-radius: var(--radius); border: 1px solid var(--border-light);
+      overflow: hidden; transition: all var(--transition);
+    }
+    .order-card:hover { box-shadow: var(--shadow-sm); }
+    .order-card.status-new { border-left: 4px solid #2563EB; }
+    .order-card.status-preparing { border-left: 4px solid #D97706; }
+    .order-card.status-ready { border-left: 4px solid #16A34A; }
+    .order-card.status-served { border-left: 4px solid #9333EA; }
+    .order-card.status-billed { border-left: 4px solid #6B7280; }
+    .order-card.status-paid { border-left: 4px solid var(--success); opacity: 0.65; }
+
+    .order-card-top {
+      padding: 1rem 1.25rem 0.75rem;
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;
+    }
+    .order-id {
+      font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 0.875rem;
+    }
+    .order-id.status-new { color: #2563EB; }
+    .order-id.status-preparing { color: #D97706; }
+    .order-id.status-ready { color: #16A34A; }
+    .order-id.status-served { color: #9333EA; }
+    .order-id.status-billed { color: #6B7280; }
+    .order-id.status-paid { color: var(--success); }
+
+    .order-meta {
+      display: flex; align-items: center; gap: 1rem; font-size: 0.8125rem;
+      color: var(--text-secondary); margin-top: 0.25rem;
+    }
+    .order-meta span { display: flex; align-items: center; gap: 0.25rem; }
+    .elapsed { font-weight: 600; }
+    .elapsed.urgent { color: var(--danger); }
+
+    .order-badge {
+      font-size: 0.6875rem; padding: 0.2rem 0.625rem; border-radius: var(--radius-full);
+      font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; white-space: nowrap;
+    }
+    .order-badge.new { background: #DBEAFE; color: #1D4ED8; }
+    .order-badge.preparing { background: #FEF3C7; color: #92400E; }
+    .order-badge.ready { background: #DCFCE7; color: #166534; }
+    .order-badge.served { background: #F3E8FF; color: #7C3AED; }
+    .order-badge.billed { background: #F3F4F6; color: #374151; }
+    .order-badge.paid { background: #DCFCE7; color: #166534; }
+
+    .order-card-body { padding: 0 1.25rem; }
+
+    .order-items-list {
+      display: flex; flex-wrap: wrap; gap: 0.375rem 0.75rem;
+    }
+    .order-item {
+      font-size: 0.8125rem; display: flex; align-items: center; gap: 0.25rem;
+    }
+    .order-item-qty {
+      font-weight: 700; color: var(--text); min-width: 1.25rem;
+    }
+    .order-item-name { color: var(--text-secondary); }
+
+    .order-notes {
+      margin-top: 0.5rem; padding: 0.5rem 0.75rem; background: #FFF8E1;
+      border-radius: 6px; font-size: 0.75rem; color: #92400E; font-style: italic;
+    }
+
+    .order-card-footer {
+      padding: 0.75rem 1.25rem; border-top: 1px solid var(--border-light);
+      display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .order-timeline {
+      display: flex; align-items: center; gap: 0.375rem; font-size: 0.6875rem;
+      color: var(--text-muted);
+    }
+    .timeline-step {
+      display: flex; align-items: center; gap: 0.25rem;
+    }
+    .timeline-dot {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--border);
+    }
+    .timeline-dot.done { background: var(--success); }
+    .timeline-dot.current { background: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); width: 8px; height: 8px; }
+    .order-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+    .bill-panel {
+      max-height: 0; overflow: hidden; transition: max-height 0.4s ease, padding 0.3s ease;
+      background: var(--bg); border-top: 1px solid var(--border-light);
+    }
+    .bill-panel.open {
+      max-height: 700px; padding: 1.25rem;
+    }
+    .bill-panel-inner { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+    .bill-line-items { flex: 1; min-width: 260px; }
+    .bill-line-item {
+      display: flex; justify-content: space-between; padding: 0.375rem 0;
+      font-size: 0.8125rem; border-bottom: 1px dashed var(--border-light);
+    }
+    .bill-line-item:last-child { border-bottom: none; }
+    .bill-summary {
+      min-width: 200px; background: white; border-radius: var(--radius-sm);
+      padding: 1rem; border: 1px solid var(--border-light);
+    }
+    .bill-summary-row {
+      display: flex; justify-content: space-between; font-size: 0.8125rem;
+      padding: 0.25rem 0;
+    }
+    .bill-summary-row.total {
+      font-weight: 700; font-size: 1rem; border-top: 2px solid var(--text);
+      margin-top: 0.5rem; padding-top: 0.5rem;
+    }
+    .bill-toggle-row {
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.8125rem; padding: 0.375rem 0;
+    }
+    .bill-actions {
+      display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap;
+    }
+    .payment-methods {
+      display: flex; gap: 0.5rem; margin-top: 0.75rem;
+    }
+    .payment-method {
+      padding: 0.5rem 1rem; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+      background: white; font-size: 0.8125rem; font-weight: 600; cursor: pointer;
+      transition: all var(--transition);
+    }
+    .payment-method.selected { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
+    .payment-method:hover { border-color: var(--primary); }
+
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    @media (max-width: 768px) {
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      .filters-bar { flex-direction: column; align-items: stretch; }
+      .filter-search { max-width: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">SS</div>
+        <div class="sidebar-brand">ScanServe</div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Main</div>
+        </div>
+        <a class="sidebar-link" href="dashboard.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </a>
+        <a class="sidebar-link active" href="orders.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Orders
+        </a>
+        <a class="sidebar-link" href="billing.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          Billing
+        </a>
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Management</div>
+        </div>
+        <a class="sidebar-link" href="menu-management.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          Menu
+        </a>
+        <a class="sidebar-link" href="table-map.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+          Table Map
+        </a>
+        <a class="sidebar-link" href="waiters.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Waiters
+        </a>
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Intelligence</div>
+        </div>
+        <a class="sidebar-link" href="analytics.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          Analytics
+        </a>
+        <a class="sidebar-link" href="ai-owner.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          AI Assistant
+        </a>
+        <a class="sidebar-link" href="ai-controls.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          AI Controls
+        </a>
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Setup</div>
+        </div>
+        <a class="sidebar-link" href="onboarding.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          Onboarding
+        </a>
+        <a class="sidebar-link" href="#">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Settings
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div style="display:flex;align-items:center;gap:0.625rem;">
+          <div class="avatar avatar-sm">R</div>
+          <div>
+            <div style="font-size:0.8125rem;font-weight:600;">Ravi</div>
+            <div style="font-size:0.6875rem;color:rgba(255,255,255,0.5);">Owner · Premium</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <div class="main-content">
+      <div class="topbar">
+        <div class="topbar-title">Orders</div>
+        <div class="topbar-actions">
+          <span style="font-size:0.8125rem;color:var(--text-secondary);">Annapurna Kitchen — Bengaluru</span>
+          <button class="btn btn-sm btn-outline" onclick="location.reload()">Refresh</button>
+        </div>
+      </div>
+
+      <div class="page-content">
+        <!-- Stats Row -->
+        <div class="stats-row">
+          <div class="order-stat highlight" onclick="filterByStatus('new')">
+            <div class="order-stat-icon new">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            </div>
+            <div class="order-stat-info">
+              <div class="order-stat-count" id="count-new">3</div>
+              <div class="order-stat-label">New Orders</div>
+            </div>
+          </div>
+          <div class="order-stat" onclick="filterByStatus('preparing')">
+            <div class="order-stat-icon preparing">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 6v6l4 2"/></svg>
+            </div>
+            <div class="order-stat-info">
+              <div class="order-stat-count" id="count-preparing">4</div>
+              <div class="order-stat-label">Preparing</div>
+            </div>
+          </div>
+          <div class="order-stat" onclick="filterByStatus('ready')">
+            <div class="order-stat-icon ready">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <div class="order-stat-info">
+              <div class="order-stat-count" id="count-ready">2</div>
+              <div class="order-stat-label">Ready to Serve</div>
+            </div>
+          </div>
+          <div class="order-stat" onclick="filterByStatus('billed')">
+            <div class="order-stat-icon awaiting">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            </div>
+            <div class="order-stat-info">
+              <div class="order-stat-count" id="count-billed">1</div>
+              <div class="order-stat-label">Awaiting Bill</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters-bar">
+          <input type="text" class="form-input search-input filter-search" placeholder="Search by Order ID..." id="searchInput" oninput="renderOrders()">
+          <select class="form-select filter-select" id="statusFilter" onchange="renderOrders()">
+            <option value="all">All Status</option>
+            <option value="new">New</option>
+            <option value="preparing">Preparing</option>
+            <option value="ready">Ready</option>
+            <option value="served">Served</option>
+            <option value="billed">Billed</option>
+            <option value="paid">Paid</option>
+          </select>
+          <select class="form-select filter-select" id="tableFilter" onchange="renderOrders()">
+            <option value="all">All Tables</option>
+            <option value="T2">T2</option><option value="T3">T3</option><option value="T4">T4</option>
+            <option value="T5">T5</option><option value="T6">T6</option><option value="T7">T7</option>
+            <option value="T8">T8</option><option value="T9">T9</option><option value="T10">T10</option>
+            <option value="T11">T11</option><option value="T12">T12</option><option value="T13">T13</option>
+            <option value="T14">T14</option><option value="T15">T15</option><option value="T16">T16</option>
+            <option value="T17">T17</option><option value="T18">T18</option><option value="T19">T19</option>
+            <option value="T20">T20</option><option value="T21">T21</option><option value="T22">T22</option>
+          </select>
+        </div>
+
+        <!-- Orders List -->
+        <div class="orders-grid" id="ordersGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast hidden" id="toast"></div>
+
+  <script>
+    const NOW = Date.now();
+    const MINUTE = 60000;
+
+    const orders = [
+      {
+        id: 'ORD-20260826-0038', table: 'T5', status: 'new',
+        time: NOW - 4 * MINUTE,
+        items: [
+          { name: 'Masala Dosa', qty: 2, price: 140 },
+          { name: 'Idli Sambar', qty: 1, price: 90 },
+          { name: 'Filter Coffee', qty: 2, price: 50 }
+        ],
+        notes: 'Extra crispy dosa please'
+      },
+      {
+        id: 'ORD-20260826-0039', table: 'T12', status: 'new',
+        time: NOW - 7 * MINUTE,
+        items: [
+          { name: 'Chicken Biryani', qty: 1, price: 280 },
+          { name: 'Raita', qty: 1, price: 40 },
+          { name: 'Gulab Jamun', qty: 2, price: 60 }
+        ],
+        notes: ''
+      },
+      {
+        id: 'ORD-20260826-0040', table: 'T3', status: 'new',
+        time: NOW - 2 * MINUTE,
+        items: [
+          { name: 'Paneer Butter Masala', qty: 1, price: 220 },
+          { name: 'Naan', qty: 2, price: 60 },
+          { name: 'Jeera Rice', qty: 1, price: 120 }
+        ],
+        notes: 'Less spicy'
+      },
+      {
+        id: 'ORD-20260826-0041', table: 'T8', status: 'preparing',
+        time: NOW - 18 * MINUTE,
+        items: [
+          { name: 'Mutton Rogan Josh', qty: 1, price: 340 },
+          { name: 'Butter Naan', qty: 2, price: 65 },
+          { name: 'Lassi', qty: 2, price: 80 }
+        ],
+        notes: ''
+      },
+      {
+        id: 'ORD-20260826-0042', table: 'T20', status: 'preparing',
+        time: NOW - 22 * MINUTE,
+        items: [
+          { name: 'Veg Thali', qty: 3, price: 250 },
+          { name: 'Mango Lassi', qty: 3, price: 90 }
+        ],
+        notes: 'One thali without onion'
+      },
+      {
+        id: 'ORD-20260826-0043', table: 'T14', status: 'preparing',
+        time: NOW - 14 * MINUTE,
+        items: [
+          { name: 'Chole Bhature', qty: 2, price: 160 },
+          { name: 'Aloo Tikki', qty: 1, price: 80 },
+          { name: 'Sweet Lassi', qty: 1, price: 85 }
+        ],
+        notes: ''
+      },
+      {
+        id: 'ORD-20260826-0044', table: 'T2', status: 'preparing',
+        time: NOW - 28 * MINUTE,
+        items: [
+          { name: 'Fish Curry', qty: 1, price: 320 },
+          { name: 'Steamed Rice', qty: 1, price: 100 },
+          { name: 'Papad', qty: 2, price: 30 }
+        ],
+        notes: 'Extra gravy'
+      },
+      {
+        id: 'ORD-20260826-0045', table: 'T17', status: 'ready',
+        time: NOW - 32 * MINUTE,
+        items: [
+          { name: 'Pav Bhaji', qty: 2, price: 150 },
+          { name: 'Masala Chai', qty: 2, price: 40 }
+        ],
+        notes: ''
+      },
+      {
+        id: 'ORD-20260826-0046', table: 'T22', status: 'ready',
+        time: NOW - 38 * MINUTE,
+        items: [
+          { name: 'Tandoori Chicken', qty: 1, price: 300 },
+          { name: 'Roomali Roti', qty: 3, price: 45 },
+          { name: 'Green Salad', qty: 1, price: 70 }
+        ],
+        notes: ''
+      },
+      {
+        id: 'ORD-20260826-0047', table: 'T10', status: 'served',
+        time: NOW - 55 * MINUTE,
+        items: [
+          { name: 'Dal Makhani', qty: 1, price: 190 },
+          { name: 'Garlic Naan', qty: 2, price: 65 },
+          { name: 'Kadhai Paneer', qty: 1, price: 240 }
+        ],
+        notes: ''
+      },
+      {
+        id: 'ORD-20260826-0036', table: 'T7', status: 'billed',
+        time: NOW - 72 * MINUTE,
+        items: [
+          { name: 'Butter Chicken', qty: 1, price: 300 },
+          { name: 'Naan', qty: 2, price: 60 },
+          { name: 'Mango Lassi', qty: 1, price: 90 }
+        ],
+        notes: ''
+      },
+      {
+        id: 'ORD-20260826-0034', table: 'T15', status: 'paid',
+        time: NOW - 95 * MINUTE,
+        items: [
+          { name: 'South Indian Thali', qty: 2, price: 220 },
+          { name: 'Filter Coffee', qty: 2, price: 50 }
+        ],
+        notes: ''
+      }
+    ];
+
+    function elapsed(time) {
+      const mins = Math.floor((NOW - time) / MINUTE);
+      if (mins < 60) return mins + 'm ago';
+      return Math.floor(mins / 60) + 'h ' + (mins % 60) + 'm ago';
+    }
+
+    function elapsedClass(time) {
+      return ((NOW - time) / MINUTE) > 30 ? 'urgent' : '';
+    }
+
+    function totalAmount(items) {
+      return items.reduce((s, i) => s + i.price * i.qty, 0);
+    }
+
+    function statusLabel(s) {
+      const labels = { new: 'New', preparing: 'Preparing', ready: 'Ready', served: 'Served', billed: 'Billed', paid: 'Paid' };
+      return labels[s] || s;
+    }
+
+    function actionButtons(order) {
+      switch (order.status) {
+        case 'new':
+          return `<button class="btn btn-sm btn-success" onclick="changeStatus('${order.id}','preparing')">Accept</button>
+                  <button class="btn btn-sm btn-danger" onclick="changeStatus('${order.id}','paid')">Reject</button>`;
+        case 'preparing':
+          return `<button class="btn btn-sm btn-success" onclick="changeStatus('${order.id}','ready')">Mark Ready</button>`;
+        case 'ready':
+          return `<button class="btn btn-sm btn-secondary" onclick="changeStatus('${order.id}','served')">Mark Served</button>`;
+        case 'served':
+          return `<button class="btn btn-sm btn-primary" onclick="toggleBill('${order.id}')">Generate Bill</button>`;
+        case 'billed':
+          return `<button class="btn btn-sm btn-success" onclick="changeStatus('${order.id}','paid')">Mark Paid</button>`;
+        case 'paid':
+          return `<span style="font-size:0.75rem;color:var(--text-muted);">Completed</span>`;
+        default: return '';
+      }
+    }
+
+    function timelineHTML(status) {
+      const steps = ['new','preparing','ready','served','billed','paid'];
+      const labels = ['New','Prep','Ready','Served','Bill','Paid'];
+      const idx = steps.indexOf(status);
+      return steps.map((s, i) => {
+        let cls = i < idx ? 'done' : (i === idx ? 'current' : '');
+        return `<div class="timeline-step"><div class="timeline-dot ${cls}"></div><span>${labels[i]}</span></div>`;
+      }).join('');
+    }
+
+    function billPanelHTML(order) {
+      const subtotal = totalAmount(order.items);
+      const cgst = (subtotal * 0.025).toFixed(2);
+      const sgst = (subtotal * 0.025).toFixed(2);
+      const taxTotal = (parseFloat(cgst) + parseFloat(sgst)).toFixed(2);
+
+      const lineItems = order.items.map(it =>
+        `<div class="bill-line-item"><span>${it.qty}× ${it.name}</span><span class="mono">₹${(it.price * it.qty).toFixed(2)}</span></div>`
+      ).join('');
+
+      return `
+        <div class="bill-panel" id="bill-${order.id}">
+          <div class="bill-panel-inner">
+            <div class="bill-line-items">
+              <h4 style="margin-bottom:0.75rem;font-size:0.9375rem;">Bill — ${order.id}</h4>
+              ${lineItems}
+              <div class="bill-line-item" style="border-top:1px solid var(--border);margin-top:0.5rem;padding-top:0.5rem;">
+                <span>Subtotal</span><span class="mono">₹${subtotal.toFixed(2)}</span>
+              </div>
+            </div>
+            <div class="bill-summary">
+              <div class="bill-summary-row"><span>Subtotal</span><span class="mono">₹${subtotal.toFixed(2)}</span></div>
+              <div class="bill-toggle-row">
+                <span>Service Charge (10%)</span>
+                <button class="toggle active" onclick="this.classList.toggle('active');recalcBill('${order.id}')"></button>
+              </div>
+              <div class="bill-summary-row"><span>CGST (2.5%)</span><span class="mono">₹${cgst}</span></div>
+              <div class="bill-summary-row"><span>SGST (2.5%)</span><span class="mono">₹${sgst}</span></div>
+              <div class="bill-toggle-row" style="margin-top:0.25rem;">
+                <span style="font-size:0.75rem;">Discount</span>
+                <input type="number" class="form-input" style="width:72px;padding:0.25rem 0.5rem;font-size:0.75rem;text-align:right;" value="0" id="discount-${order.id}" onchange="recalcBill('${order.id}')">
+              </div>
+              <div class="bill-summary-row total" id="grand-total-${order.id}"><span>Grand Total</span><span class="mono">₹${(subtotal + parseFloat(taxTotal) + subtotal * 0.1).toFixed(2)}</span></div>
+              <div style="margin-top:0.75rem;">
+                <div style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:0.375rem;font-weight:600;">Payment Method</div>
+                <div class="payment-methods">
+                  <button class="payment-method selected" onclick="selectPayment(this)">Cash</button>
+                  <button class="payment-method" onclick="selectPayment(this)">UPI</button>
+                  <button class="payment-method" onclick="selectPayment(this)">Card</button>
+                </div>
+              </div>
+              <div class="bill-actions">
+                <button class="btn btn-sm btn-outline" onclick="showToast('Printing bill...')">🖨 Print</button>
+                <button class="btn btn-sm btn-outline" onclick="showToast('Generating PDF...')">📄 PDF</button>
+                <button class="btn btn-sm btn-success" onclick="showToast('Sending via WhatsApp...')">📲 WhatsApp</button>
+              </div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function renderOrders() {
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      const statusF = document.getElementById('statusFilter').value;
+      const tableF = document.getElementById('tableFilter').value;
+
+      const filtered = orders.filter(o => {
+        if (search && !o.id.toLowerCase().includes(search)) return false;
+        if (statusF !== 'all' && o.status !== statusF) return false;
+        if (tableF !== 'all' && o.table !== tableF) return false;
+        return true;
+      });
+
+      const grid = document.getElementById('ordersGrid');
+      if (filtered.length === 0) {
+        grid.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><h4>No orders found</h4><p class="text-sm text-muted">Try adjusting your filters</p></div>';
+        return;
+      }
+
+      grid.innerHTML = filtered.map(o => `
+        <div class="order-card status-${o.status}" id="card-${o.id}">
+          <div class="order-card-top">
+            <div>
+              <div class="order-id status-${o.status}">${o.id}</div>
+              <div class="order-meta">
+                <span>Table <strong>${o.table}</strong></span>
+                <span>${elapsed(o.time)}</span>
+                <span class="elapsed ${elapsedClass(o.time)}">${Math.floor((NOW - o.time) / MINUTE)}m</span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:0.5rem;">
+              <span class="order-badge ${o.status}">${statusLabel(o.status)}</span>
+            </div>
+          </div>
+          <div class="order-card-body">
+            <div class="order-items-list">
+              ${o.items.map(it => `
+                <div class="order-item">
+                  <span class="order-item-qty">${it.qty}×</span>
+                  <span class="order-item-name">${it.name}</span>
+                  <span class="mono text-xs text-muted">₹${it.price}</span>
+                </div>
+              `).join('')}
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.5rem;">
+              <span class="mono font-bold" style="font-size:0.9375rem;">₹${totalAmount(o.items).toFixed(2)}</span>
+            </div>
+            ${o.notes ? `<div class="order-notes">📝 ${o.notes}</div>` : ''}
+          </div>
+          <div class="order-card-footer">
+            <div class="order-timeline">${timelineHTML(o.status)}</div>
+            <div class="order-actions">${actionButtons(o)}</div>
+          </div>
+          ${billPanelHTML(o)}
+        </div>
+      `).join('');
+
+      updateCounts();
+    }
+
+    function updateCounts() {
+      const c = { new: 0, preparing: 0, ready: 0, billed: 0 };
+      orders.forEach(o => { if (c[o.status] !== undefined) c[o.status]++; });
+      document.getElementById('count-new').textContent = c.new;
+      document.getElementById('count-preparing').textContent = c.preparing;
+      document.getElementById('count-ready').textContent = c.ready;
+      document.getElementById('count-billed').textContent = c.billed;
+    }
+
+    function changeStatus(id, newStatus) {
+      const order = orders.find(o => o.id === id);
+      if (!order) return;
+      order.status = newStatus;
+      if (newStatus === 'preparing') showToast(`Order ${id} accepted — kitchen notified`);
+      else if (newStatus === 'ready') showToast(`Order ${id} marked ready — serve to Table ${order.table}`);
+      else if (newStatus === 'served') showToast(`Order ${id} served to Table ${order.table}`);
+      else if (newStatus === 'paid') showToast(`Order ${id} completed`);
+      renderOrders();
+    }
+
+    function toggleBill(id) {
+      const panel = document.getElementById('bill-' + id);
+      if (panel) panel.classList.toggle('open');
+    }
+
+    function recalcBill(id) {
+      const order = orders.find(o => o.id === id);
+      if (!order) return;
+      const subtotal = totalAmount(order.items);
+      const panel = document.getElementById('bill-' + id);
+      const toggleActive = panel.querySelector('.toggle').classList.contains('active');
+      const serviceCharge = toggleActive ? subtotal * 0.10 : 0;
+      const discount = parseFloat(document.getElementById('discount-' + id).value) || 0;
+      const taxBase = subtotal + serviceCharge - discount;
+      const gst = taxBase * 0.05;
+      const grand = taxBase + gst;
+      document.getElementById('grand-total-' + id).innerHTML = `<span>Grand Total</span><span class="mono">₹${grand.toFixed(2)}</span>`;
+    }
+
+    function selectPayment(btn) {
+      btn.parentElement.querySelectorAll('.payment-method').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+    }
+
+    function filterByStatus(status) {
+      document.getElementById('statusFilter').value = status;
+      renderOrders();
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.remove('hidden');
+      setTimeout(() => t.classList.add('hidden'), 2500);
+    }
+
+    renderOrders();
+  </script>
+</body>
+</html>

@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KDS — Kitchen Display System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/shared.css">
+  <style>
+    body { background: #0F172A; color: white; min-height: 100vh; }
+    .kds-header {
+      background: #1E293B; padding: 0.75rem 1.5rem;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid #334155;
+    }
+    .kds-header-left { display: flex; align-items: center; gap: 1rem; }
+    .kds-logo { font-family: var(--font-display); font-weight: 800; font-size: 1.125rem; color: var(--primary); }
+    .kds-label { font-size: 0.75rem; color: #94A3B8; font-weight: 500; }
+    .kds-station-filter {
+      display: flex; gap: 0.375rem;
+    }
+    .kds-station-chip {
+      padding: 0.375rem 0.75rem; border-radius: var(--radius-full);
+      border: 1px solid #475569; background: transparent;
+      color: #94A3B8; font-size: 0.75rem; font-weight: 600;
+      cursor: pointer; transition: all var(--transition);
+    }
+    .kds-station-chip:hover { border-color: #64748B; color: white; }
+    .kds-station-chip.active { background: var(--primary); border-color: var(--primary); color: white; }
+    .kds-header-right { display: flex; align-items: center; gap: 1rem; }
+    .kds-clock { font-family: 'JetBrains Mono', monospace; font-size: 1.25rem; font-weight: 700; }
+    .kds-order-count {
+      background: var(--primary); padding: 0.25rem 0.625rem;
+      border-radius: var(--radius-full); font-size: 0.75rem; font-weight: 700;
+    }
+
+    .kds-body {
+      padding: 1rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 0.75rem;
+      align-content: start;
+      min-height: calc(100vh - 56px);
+    }
+
+    .kds-ticket {
+      background: #1E293B;
+      border: 2px solid #334155;
+      border-radius: var(--radius);
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+    .kds-ticket:hover { transform: translateY(-2px); }
+    .kds-ticket.urgent { border-color: #EF4444; box-shadow: 0 0 20px rgba(239,68,68,0.2); }
+    .kds-ticket.warning { border-color: #F59E0B; box-shadow: 0 0 20px rgba(245,158,11,0.15); }
+    .kds-ticket.ready { border-color: #22C55E; box-shadow: 0 0 20px rgba(34,197,94,0.15); }
+    .kds-ticket.new { border-color: #3B82F6; box-shadow: 0 0 20px rgba(59,130,246,0.15); }
+
+    .kds-ticket-header {
+      padding: 0.625rem 0.875rem;
+      display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px solid #334155;
+    }
+    .kds-ticket-header-left {
+      display: flex; align-items: center; gap: 0.625rem;
+    }
+    .kds-ticket-id {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700; font-size: 0.875rem;
+    }
+    .kds-ticket-table {
+      font-size: 0.75rem; font-weight: 600;
+      padding: 0.15rem 0.5rem; border-radius: var(--radius-full);
+      background: #334155; color: #94A3B8;
+    }
+    .kds-ticket-timer {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.875rem; font-weight: 700;
+    }
+    .kds-ticket-timer.green { color: #22C55E; }
+    .kds-ticket-timer.amber { color: #F59E0B; }
+    .kds-ticket-timer.red { color: #EF4444; animation: pulse 1s infinite; }
+
+    .kds-ticket-items { padding: 0.625rem 0.875rem; }
+    .kds-ticket-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0.375rem 0;
+      font-size: 0.9375rem; font-weight: 500;
+    }
+    .kds-ticket-item:not(:last-child) { border-bottom: 1px solid rgba(51,65,85,0.5); }
+    .kds-ticket-item-name { flex: 1; }
+    .kds-ticket-item-qty {
+      font-weight: 700; font-size: 0.8125rem;
+      background: #334155; padding: 0.15rem 0.5rem;
+      border-radius: 4px; margin-left: 0.5rem;
+    }
+    .kds-ticket-item-note {
+      font-size: 0.6875rem; color: #94A3B8; font-style: italic;
+      padding: 0.125rem 0; margin-top: 0.125rem;
+    }
+    .kds-ticket-station {
+      font-size: 0.625rem; padding: 0.15rem 0.375rem;
+      border-radius: 3px; font-weight: 600;
+      margin-left: 0.5rem;
+      background: #334155; color: #64748B;
+    }
+
+    .kds-ticket-actions {
+      padding: 0.625rem 0.875rem;
+      border-top: 1px solid #334155;
+      display: flex; gap: 0.5rem;
+    }
+    .kds-action-btn {
+      flex: 1; padding: 0.625rem;
+      border: none; border-radius: var(--radius-sm);
+      font-weight: 700; font-size: 0.8125rem;
+      cursor: pointer; transition: all var(--transition);
+    }
+    .kds-action-btn.preparing { background: #F59E0B; color: #000; }
+    .kds-action-btn.preparing:hover { background: #D97706; }
+    .kds-action-btn.ready { background: #22C55E; color: #000; }
+    .kds-action-btn.ready:hover { background: #16A34A; }
+    .kds-action-btn.done { background: #334155; color: #94A3B8; cursor: default; }
+
+    /* Empty state */
+    .kds-empty {
+      grid-column: 1 / -1;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 4rem; text-align: center; color: #64748B;
+    }
+    .kds-empty-icon { font-size: 4rem; margin-bottom: 1rem; opacity: 0.3; }
+    .kds-empty h3 { color: #94A3B8; margin-bottom: 0.5rem; }
+  </style>
+</head>
+<body>
+
+  <!-- KDS Header -->
+  <div class="kds-header">
+    <div class="kds-header-left">
+      <div class="kds-logo">ScanServe KDS</div>
+      <div class="kds-station-filter">
+        <button class="kds-station-chip active">All</button>
+        <button class="kds-station-chip">🔥 Grill</button>
+        <button class="kds-station-chip">🍛 Curry</button>
+        <button class="kds-station-chip">🍚 Rice</button>
+        <button class="kds-station-chip">🫓 Bread</button>
+        <button class="kds-station-chip">🥤 Beverage</button>
+      </div>
+    </div>
+    <div class="kds-header-right">
+      <div class="kds-order-count">6 Active</div>
+      <div class="kds-clock" id="kdsClock">8:45 PM</div>
+    </div>
+  </div>
+
+  <!-- KDS Body -->
+  <div class="kds-body" id="kdsBody">
+
+    <!-- Ticket 1 — Urgent -->
+    <div class="kds-ticket urgent">
+      <div class="kds-ticket-header">
+        <div class="kds-ticket-header-left">
+          <span class="kds-ticket-id">ORD-0038</span>
+          <span class="kds-ticket-table">T4</span>
+        </div>
+        <span class="kds-ticket-timer red">18:42</span>
+      </div>
+      <div class="kds-ticket-items">
+        <div class="kds-ticket-item">
+          <span class="kds-ticket-item-name">Chicken 65</span>
+          <span class="kds-ticket-station">Grill</span>
+          <span class="kds-ticket-item-qty">× 3</span>
+        </div>
+        <div class="kds-ticket-item">
+          <span class="kds-ticket-item-name">Butter Chicken</span>
+          <span class="kds-ticket-station">Curry</span>
+          <span class="kds-ticket-item-qty">× 1</span>
+        </div>
+        <div class="kds-ticket-item">
+          <span class="kds-ticket-item-name">Butter Naan</span>
+          <span class="kds-ticket-station">Bread</span>
+          <span class="kds-ticket-item-qty">× 6</span>
+          <div class="kds-ticket-item-note">Extra butter</div>
+        </div>
+      </div>
+      <div class="kds-ticket-actions">
+        <button class="kds-action-btn preparing" onclick="markPreparing(this)">Mark Preparing</button>
+        <button class="kds-action-btn ready" onclick="markReady(this)">Ready ✓</button>
+      </div>
+    </div>
+
+    <!-- Ticket 2 — Warning -->
+    <div class="kds-ticket warning">
+      <div class="kds-ticket-header">
+        <div class="kds-ticket-header-left">
+          <span class="kds-ticket-id">ORD-0040</span>
+          <span class="kds-ticket-table">T8</span>
+        </div>
+        <span class="kds-ticket-timer amber">12:15</span>
+      </div>
+      <div class="kds-ticket-items">
+        <div class="kds-ticket-item">
+          <span class="kds-ticket-item-name">Mutton Biryani</span>
+          <span class="kds-ticket-station">Rice</span>
+          <span class="kds-ticket-item-qty">× 2</span>
+        </div>
+        <div class="kds-ticket-item">
+          <span class="kds-ticket-item-name">Raita</span>
+          <span class="kds-ticket-station">Cold</span>
+          <span class="kds-ticket-item-qty">× 2</span>
+        </div>
+      </div>
+      <div class="kds-ticket-actions">
+        <button class="kds-action-btn preparing" onclick="markPreparing(this)">Mark Preparing</button>
+        <button class="kds-action-btn ready" onclick="markReady(this)">Ready ✓</button>
+      </div>
+    </div>
+
+    <!-- Ticket 3 — New -->
+    <div class="kds-ticket new">
+      <div class="kds-ticket-header">
+        <div class="kds-ticket-header-left">
+          <span class="kds-ticket-id">ORD-0043</span>
+          <span class="kds-ticket-table">T12</span>
+        </div>
+        <span class="kds-ticket-timer green">00:48</span>
+      </div>
+      <div class="kds-ticket-items">
+        <div class="kds-ticket-item">
+          <span class="kds-ticket-item-name">Chicken Biryani</span>
+          <span class="kds-ticket-station">Rice</span>
+          <span class="kds-ticket-item-qty">× 1</span>
+          <div class="kds-ticket-item-note">No onions, extra raita</div>
+        </div>
+        <div class="kds-ticket-item">
+          <span class="kds-ticket-item-name">Lime Soda</span>
+          <span class="kds-ticket-station">Bev</span>
+          <span class="kds-ticket-item-qty">× 1</span>
+        </div>
+      </div>
+      <div class="kds-ticket-actions">
+        <button class="kds-action-btn preparing" onclick="markPreparing(this)">Accept & Start</button>
+        <button class="kds-action-btn ready" onclick="markReady(this)">Ready ✓</button>
+      </div>
+    </div>
+
+    <!-- Ticket 4 — Preparing -->
+    <div class="kds-ticket">
+      <div class="kds-ticket-header">
+        <div class="kds-ticket-header-left">
+          <span class="kds-ticket-id">ORD-0041</span>
+          <span class="kds-ticket-table">T2</span>
+        </div>
+        <span class="kds-ticket-timer green">05:22</span>
+      </div>
+      <div class="kds-ticket-items">
+        <div class="kds-ticket-item">
+          <span class="kds-ticket-item-name">Paneer Butter Masala</span>
+          <span class="kds-ticket-station">Curry</span>
+          <span class="kds-ticket-item-qty">× 1</span>
+        </div>
+        <div class="kds-ticket-item">
+          <span class="kds-ticket-item-name">Garlic Naan</span>
+          <span class="kds-ticket-station">Bread</span>
+          <span class="kds-ticket-item-qty">× 2</span>
+        </div>
+      </div>
+      <div class="kds-ticket-actions">
+        <button class="kds-action-btn done">Preparing...</button>
+        <button class="kds-action-btn ready" onclick="markReady(this)">Ready ✓</button>
+      </div>
+    </div>
+
+    <!-- Ticket 5 — Ready -->
+    <div class="kds-ticket ready">
+      <div class="kds-ticket-header">
+        <div class="kds-ticket-header-left">
+          <span class="kds-ticket-id">ORD-0039</span>
+          <span class="kds-ticket-table">T6</span>
+        </div>
+        <span class="kds-ticket-timer green">✓ Done</span>
+      </div>
+      <div class="kds-ticket-items">
+        <div class="kds-ticket-item">
+          <span class="kds-ticket-item-name">Gobi Manchurian</span>
+          <span class="kds-ticket-station">Grill</span>
+          <span class="kds-ticket-item-qty">× 1</span>
+        </div>
+      </div>
+      <div class="kds-ticket-actions">
+        <button class="kds-action-btn done">Awaiting Pickup</button>
+      </div>
+    </div>
+
+    <!-- Ticket 6 — New -->
+    <div class="kds-ticket new">
+      <div class="kds-ticket-header">
+        <div class="kds-ticket-header-left">
+          <span class="kds-ticket-id">ORD-0044</span>
+          <span class="kds-ticket-table">T15</span>
+        </div>
+        <span class="kds-ticket-timer green">00:12</span>
+      </div>
+      <div class="kds-ticket-items">
+        <div class="kds-ticket-item">
+          <span class="kds-ticket-item-name">Veg Biryani</span>
+          <span class="kds-ticket-station">Rice</span>
+          <span class="kds-ticket-item-qty">× 2</span>
+        </div>
+        <div class="kds-ticket-item">
+          <span class="kds-ticket-item-name">Chicken Kabab</span>
+          <span class="kds-ticket-station">Grill</span>
+          <span class="kds-ticket-item-qty">× 1</span>
+        </div>
+        <div class="kds-ticket-item">
+          <span class="kds-ticket-item-name">Masala Chai</span>
+          <span class="kds-ticket-station">Bev</span>
+          <span class="kds-ticket-item-qty">× 2</span>
+        </div>
+      </div>
+      <div class="kds-ticket-actions">
+        <button class="kds-action-btn preparing" onclick="markPreparing(this)">Accept & Start</button>
+        <button class="kds-action-btn ready" onclick="markReady(this)">Ready ✓</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Station filter
+    document.querySelectorAll('.kds-station-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('.kds-station-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+      });
+    });
+
+    // Clock
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('kdsClock').textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    function markPreparing(btn) {
+      const ticket = btn.closest('.kds-ticket');
+      ticket.className = 'kds-ticket';
+      btn.className = 'kds-action-btn done';
+      btn.textContent = 'Preparing...';
+    }
+
+    function markReady(btn) {
+      const ticket = btn.closest('.kds-ticket');
+      ticket.className = 'kds-ticket ready';
+      const actions = ticket.querySelector('.kds-ticket-actions');
+      actions.innerHTML = '<button class="kds-action-btn done">Awaiting Pickup</button>';
+
+      // Show notification sound effect (visual)
+      const toast = document.createElement('div');
+      toast.className = 'toast toast-success';
+      toast.textContent = `Order ready — waiter notified for ${ticket.querySelector('.kds-ticket-table').textContent}`;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    // Timer tick
+    document.querySelectorAll('.kds-ticket-timer').forEach(timer => {
+      if (timer.textContent.includes('Done')) return;
+      let parts = timer.textContent.split(':');
+      let seconds = parseInt(parts[0]) * 60 + parseInt(parts[1]);
+      setInterval(() => {
+        seconds++;
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        timer.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+        if (seconds > 600) timer.className = 'kds-ticket-timer red';
+        else if (seconds > 300) timer.className = 'kds-ticket-timer amber';
+      }, 1000);
+    });
+  </script>
+</body>
+</html>

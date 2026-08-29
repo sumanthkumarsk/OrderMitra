@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Service Requests — Annapurna Kitchen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/shared.css">
+  <style>
+    body { background: var(--bg); min-height: 100vh; }
+    .help-header {
+      background: white; border-bottom: 1px solid var(--border-light);
+      padding: 1rem 1.25rem; position: sticky; top: 0; z-index: 50;
+    }
+    .help-header-top { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; }
+    .help-back { width: 36px; height: 36px; border: none; background: var(--bg); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.125rem; }
+    .help-title { font-weight: 700; font-size: 1.125rem; flex: 1; }
+    .help-table-badge {
+      font-size: 0.75rem; background: var(--primary-light); color: var(--primary);
+      padding: 0.25rem 0.75rem; border-radius: var(--radius-full); font-weight: 600;
+    }
+    .help-body { padding: 1rem; max-width: 600px; margin: 0 auto; padding-bottom: 120px; }
+
+    .help-section-title {
+      font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);
+      text-transform: uppercase; letter-spacing: 0.05em;
+      margin-bottom: 0.75rem; margin-top: 1rem;
+    }
+    .help-presets {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem;
+    }
+    .help-preset {
+      padding: 1.25rem 0.75rem;
+      background: white; border: 2px solid var(--border-light);
+      border-radius: var(--radius); text-align: center;
+      cursor: pointer; transition: all var(--transition);
+    }
+    .help-preset:hover { border-color: var(--primary); box-shadow: var(--shadow-sm); }
+    .help-preset.sent { border-color: var(--success); background: var(--success-light); }
+    .help-preset .icon { font-size: 2rem; margin-bottom: 0.5rem; display: block; }
+    .help-preset .label { font-weight: 600; font-size: 0.8125rem; }
+    .help-preset .status { font-size: 0.625rem; margin-top: 0.375rem; font-weight: 600; }
+    .help-preset.sent .status { color: var(--success); }
+
+    /* Custom request */
+    .custom-request {
+      margin-top: 1rem; padding: 1rem;
+      background: white; border-radius: var(--radius);
+      border: 1px solid var(--border-light);
+    }
+    .custom-request textarea {
+      width: 100%; padding: 0.625rem; border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm); font-size: 0.875rem;
+      resize: none; height: 80px; outline: none; font-family: inherit;
+    }
+    .custom-request textarea:focus { border-color: var(--primary); }
+    .custom-request .btn { margin-top: 0.5rem; }
+
+    /* Active requests */
+    .active-requests { margin-top: 1.5rem; }
+    .request-card {
+      display: flex; align-items: flex-start; gap: 0.75rem;
+      padding: 0.875rem; background: white;
+      border-radius: var(--radius); border: 1px solid var(--border-light);
+      margin-bottom: 0.5rem;
+    }
+    .request-icon { font-size: 1.5rem; flex-shrink: 0; }
+    .request-info { flex: 1; }
+    .request-title { font-weight: 600; font-size: 0.875rem; }
+    .request-time { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.125rem; }
+    .request-status-badge {
+      padding: 0.2rem 0.625rem; border-radius: var(--radius-full);
+      font-size: 0.6875rem; font-weight: 600; flex-shrink: 0;
+    }
+    .request-status-badge.pending { background: var(--warning-light); color: #856404; }
+    .request-status-badge.on-the-way { background: var(--info-light); color: #0C4A6E; }
+    .request-status-badge.fulfilled { background: var(--success-light); color: #064E3B; }
+
+    /* Progress bar */
+    .request-progress {
+      height: 3px; background: var(--border-light); border-radius: 2px;
+      margin-top: 0.5rem; overflow: hidden;
+    }
+    .request-progress-fill {
+      height: 100%; border-radius: 2px; transition: width 0.5s ease;
+    }
+    .request-progress-fill.pending { background: var(--warning); width: 30%; }
+    .request-progress-fill.on-the-way { background: var(--info); width: 65%; }
+    .request-progress-fill.fulfilled { background: var(--success); width: 100%; }
+  </style>
+</head>
+<body>
+
+  <div class="help-header">
+    <div class="help-header-top">
+      <button class="help-back" onclick="history.back()">←</button>
+      <div class="help-title">Need Something?</div>
+      <div class="help-table-badge">Table 12</div>
+    </div>
+  </div>
+
+  <div class="help-body">
+    <div class="help-section-title">Quick Requests</div>
+    <div class="help-presets">
+      <div class="help-preset" onclick="sendRequest(this, 'Water')">
+        <span class="icon">💧</span>
+        <span class="label">Water</span>
+        <span class="status"></span>
+      </div>
+      <div class="help-preset" onclick="sendRequest(this, 'Tissue')">
+        <span class="icon">🧻</span>
+        <span class="label">Tissue</span>
+        <span class="status"></span>
+      </div>
+      <div class="help-preset" onclick="sendRequest(this, 'Extra Plate')">
+        <span class="icon">🍽️</span>
+        <span class="label">Extra Plate</span>
+        <span class="status"></span>
+      </div>
+      <div class="help-preset" onclick="sendRequest(this, 'Spoon')">
+        <span class="icon">🥄</span>
+        <span class="label">Spoon</span>
+        <span class="status"></span>
+      </div>
+      <div class="help-preset" onclick="sendRequest(this, 'Condiments')">
+        <span class="icon">🧂</span>
+        <span class="label">Condiments</span>
+        <span class="status"></span>
+      </div>
+      <div class="help-preset" onclick="sendRequest(this, 'Call Waiter')">
+        <span class="icon">👨‍🍳</span>
+        <span class="label">Call Waiter</span>
+        <span class="status"></span>
+      </div>
+      <div class="help-preset" onclick="sendRequest(this, 'Request Bill')">
+        <span class="icon">📄</span>
+        <span class="label">Request Bill</span>
+        <span class="status"></span>
+      </div>
+      <div class="help-preset" onclick="sendRequest(this, 'Extra Chair')">
+        <span class="icon">🪑</span>
+        <span class="label">Extra Chair</span>
+        <span class="status"></span>
+      </div>
+      <div class="help-preset" onclick="sendRequest(this, 'Wi-Fi')">
+        <span class="icon">📶</span>
+        <span class="label">Wi-Fi</span>
+        <span class="status"></span>
+      </div>
+    </div>
+
+    <!-- Custom request -->
+    <div class="custom-request">
+      <div class="help-section-title" style="margin-top:0;">Custom Request</div>
+      <textarea placeholder="Type your request here... (e.g., 'Please clean the table')"></textarea>
+      <button class="btn btn-primary btn-sm" style="width:100%;">Send Custom Request</button>
+    </div>
+
+    <!-- Active Requests -->
+    <div class="active-requests">
+      <div class="help-section-title">Your Active Requests</div>
+
+      <div class="request-card">
+        <div class="request-icon">💧</div>
+        <div class="request-info">
+          <div class="request-title">Water</div>
+          <div class="request-time">Requested 2 min ago</div>
+          <div class="request-progress"><div class="request-progress-fill on-the-way"></div></div>
+        </div>
+        <span class="request-status-badge on-the-way">On The Way</span>
+      </div>
+
+      <div class="request-card">
+        <div class="request-icon">🧻</div>
+        <div class="request-info">
+          <div class="request-title">Tissue</div>
+          <div class="request-time">Requested 30 sec ago</div>
+          <div class="request-progress"><div class="request-progress-fill pending"></div></div>
+        </div>
+        <span class="request-status-badge pending">Pending</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function sendRequest(preset, type) {
+      if (preset.classList.contains('sent')) return;
+      preset.classList.add('sent');
+      preset.querySelector('.status').textContent = '✓ Sent';
+
+      // Simulate status update
+      setTimeout(() => {
+        preset.querySelector('.status').textContent = 'On The Way';
+      }, 3000);
+
+      // Show toast
+      const toast = document.createElement('div');
+      toast.className = 'toast toast-success';
+      toast.textContent = `${type} request sent to your waiter!`;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+  </script>
+</body>
+</html>

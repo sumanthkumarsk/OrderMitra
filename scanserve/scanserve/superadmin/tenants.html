@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tenant Management — ScanServe Platform</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/shared.css">
+  <style>
+    .sidebar { background: #0F1B2D; }
+    .sidebar-header { border-bottom-color: rgba(255,255,255,0.06); }
+    .sidebar-logo {
+      background: linear-gradient(135deg, var(--primary), #FF6B6B);
+      font-family: var(--font-display);
+      font-size: 0.8125rem;
+      letter-spacing: -0.02em;
+    }
+    .sidebar-brand span { color: rgba(255,255,255,0.5); font-weight: 500; font-size: 0.75rem; }
+    .sidebar-link svg { width: 18px; height: 18px; }
+    .sidebar-link.active { background: rgba(230,57,70,0.12); color: #fff; border-right: 3px solid var(--primary); }
+    .sidebar-link .link-badge {
+      margin-left: auto;
+      background: rgba(230,57,70,0.2);
+      color: var(--primary);
+      font-size: 0.6875rem;
+      font-weight: 700;
+      padding: 0.125rem 0.5rem;
+      border-radius: var(--radius-full);
+    }
+    .topbar { background: #fff; }
+    .topbar .search-wrap {
+      position: relative;
+      width: 280px;
+    }
+    .topbar .search-wrap input {
+      width: 100%;
+      padding: 0.5rem 0.875rem 0.5rem 2.25rem;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-full);
+      font-size: 0.8125rem;
+      background: var(--bg);
+      outline: none;
+      transition: all var(--transition);
+    }
+    .topbar .search-wrap input:focus {
+      border-color: var(--primary);
+      background: #fff;
+      box-shadow: 0 0 0 3px var(--primary-light);
+    }
+    .topbar .search-wrap svg {
+      position: absolute;
+      left: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      stroke: var(--text-muted);
+    }
+    .topbar-admin {
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+    }
+    .topbar-admin .admin-name { font-weight: 600; font-size: 0.8125rem; }
+    .topbar-admin .admin-role { font-size: 0.6875rem; color: var(--text-muted); }
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .stat-card {
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-card .stat-icon {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .stat-card .stat-icon svg { width: 20px; height: 20px; }
+    .stat-card .stat-value {
+      font-family: var(--font-display);
+      font-size: 1.75rem;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+    .stat-card .stat-label {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+    .stat-card .stat-change {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-top: 0.25rem;
+    }
+    .stat-card .stat-change.up { color: var(--success); }
+    .stat-card .stat-change.down { color: var(--danger); }
+
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .filter-tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 2px solid var(--border-light);
+    }
+    .filter-tab {
+      padding: 0.625rem 1.125rem;
+      border: none;
+      background: none;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      cursor: pointer;
+      position: relative;
+      transition: color var(--transition);
+    }
+    .filter-tab:hover { color: var(--text); }
+    .filter-tab.active { color: var(--primary); }
+    .filter-tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--primary);
+    }
+    .filter-tab .tab-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 0.375rem;
+      border-radius: var(--radius-full);
+      font-size: 0.6875rem;
+      font-weight: 700;
+      background: var(--bg);
+      color: var(--text-secondary);
+      margin-left: 0.375rem;
+    }
+    .filter-tab.active .tab-count {
+      background: var(--primary-light);
+      color: var(--primary);
+    }
+
+    .tenants-table { width: 100%; }
+    .tenants-table th {
+      padding: 0.75rem 1rem;
+      font-size: 0.6875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      background: var(--bg);
+      border-bottom: 2px solid var(--border);
+      white-space: nowrap;
+    }
+    .tenants-table td {
+      padding: 0.875rem 1rem;
+      font-size: 0.875rem;
+      border-bottom: 1px solid var(--border-light);
+      vertical-align: middle;
+    }
+    .tenants-table tr { cursor: pointer; transition: background var(--transition); }
+    .tenants-table tbody tr:hover { background: #F8F9FA; }
+    .tenant-name-cell {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .tenant-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.75rem;
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .tenant-name { font-weight: 600; color: var(--text); }
+    .tenant-slug { font-size: 0.75rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    .tier-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.2rem 0.625rem;
+      border-radius: var(--radius-full);
+      font-size: 0.6875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .tier-basic { background: #E8F5E9; color: #2E7D32; }
+    .tier-standard { background: #E3F2FD; color: #1565C0; }
+    .tier-premium { background: #FFF3E0; color: #E65100; }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.2rem 0.625rem;
+      border-radius: var(--radius-full);
+      font-size: 0.6875rem;
+      font-weight: 600;
+    }
+    .status-badge .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+    .status-active { background: var(--success-light); color: #1B5E20; }
+    .status-active .dot { background: var(--success); }
+    .status-trial { background: #EDE7F6; color: #4527A0; }
+    .status-trial .dot { background: #7C4DFF; }
+    .status-churned { background: #F1F3F5; color: var(--text-muted); }
+    .status-churned .dot { background: var(--text-muted); }
+
+    .action-btns {
+      display: flex;
+      gap: 0.375rem;
+    }
+    .action-btn {
+      padding: 0.375rem 0.625rem;
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      background: #fff;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--transition);
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    .action-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .action-btn.view:hover { border-color: var(--info); color: var(--info); background: var(--info-light); }
+    .action-btn.suspend:hover { border-color: var(--danger); color: var(--danger); background: var(--danger-light); }
+    .action-btn.upgrade:hover { border-color: var(--success); color: var(--success); background: var(--success-light); }
+    .action-btn svg { width: 14px; height: 14px; }
+
+    .expand-row { display: none; }
+    .expand-row.open { display: table-row; }
+    .expand-cell {
+      padding: 0 !important;
+      border-bottom: 2px solid var(--primary-light) !important;
+      background: #FAFBFC;
+    }
+    .expand-panel {
+      padding: 1.25rem 1.5rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 1.25rem;
+      animation: fadeIn 0.2s ease;
+    }
+    .expand-section h4 {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 0.625rem;
+    }
+    .expand-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.375rem 0;
+      font-size: 0.8125rem;
+    }
+    .expand-item .label { color: var(--text-secondary); }
+    .expand-item .value { font-weight: 600; }
+    .outlet-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.25rem 0.5rem;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      margin-bottom: 0.25rem;
+    }
+    .outlet-tag .status-dot { width: 6px; height: 6px; }
+    .activity-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      padding: 0.375rem 0;
+      font-size: 0.8125rem;
+    }
+    .activity-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      margin-top: 0.4rem;
+      flex-shrink: 0;
+    }
+    .ai-bar {
+      height: 4px;
+      background: var(--border-light);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 0.25rem;
+    }
+    .ai-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+    }
+
+    @media (max-width: 1200px) {
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      .expand-panel { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 768px) {
+      .stats-row { grid-template-columns: 1fr; }
+      .expand-panel { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">SS</div>
+        <div>
+          <div class="sidebar-brand">ScanServe</div>
+          <span>Platform Admin</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Platform</div>
+        </div>
+        <a href="tenants.html" class="sidebar-link active">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Tenants
+          <span class="link-badge">48</span>
+        </a>
+        <a href="#" class="sidebar-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+          Subscriptions
+        </a>
+        <a href="#" class="sidebar-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          AI Quotas
+        </a>
+        <a href="#" class="sidebar-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+          POS Integrations
+        </a>
+
+        <div class="sidebar-section" style="margin-top: 1.25rem;">
+          <div class="sidebar-section-label">Support</div>
+        </div>
+        <a href="#" class="sidebar-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          Health Dashboard
+        </a>
+        <a href="#" class="sidebar-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Support Tickets
+          <span class="link-badge">3</span>
+        </a>
+
+        <div class="sidebar-section" style="margin-top: 1.25rem;">
+          <div class="sidebar-section-label">Platform Admin</div>
+        </div>
+        <a href="#" class="sidebar-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+          Settings
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="#" class="sidebar-link" style="padding: 0.625rem 0; margin: 0;">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/><circle cx="12" cy="12" r="4"/></svg>
+          View Platform
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Topbar -->
+      <header class="topbar">
+        <div style="display:flex;align-items:center;gap:1rem;">
+          <h1 style="font-size:1rem;font-weight:700;font-family:var(--font-display);">Platform Admin</h1>
+          <div class="search-wrap">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" placeholder="Search tenants, owners, outlets...">
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn-icon btn-ghost" style="position:relative;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+            <span style="position:absolute;top:4px;right:4px;width:8px;height:8px;background:var(--danger);border-radius:50%;border:2px solid #fff;"></span>
+          </button>
+          <div class="topbar-admin">
+            <div class="avatar" style="background:var(--secondary);width:34px;height:34px;font-size:0.75rem;">AK</div>
+            <div>
+              <div class="admin-name">Arun Kumar</div>
+              <div class="admin-role">Super Admin</div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Page Content -->
+      <div class="page-content">
+        <div class="page-header">
+          <div>
+            <h2 style="font-size:1.375rem;margin-bottom:0.125rem;">Tenant Management</h2>
+            <p class="text-sm text-muted">Manage all restaurant tenants on the ScanServe platform</p>
+          </div>
+          <div style="display:flex;gap:0.625rem;">
+            <button class="btn btn-outline btn-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+              Export CSV
+            </button>
+            <button class="btn btn-primary btn-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+              Add Tenant
+            </button>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-icon" style="background:var(--info-light);color:var(--info);">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div class="stat-label">Total Tenants</div>
+            <div class="stat-value">48</div>
+            <div class="stat-change up">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+              +4 this month
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:var(--success-light);color:var(--success);">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <div class="stat-label">Active</div>
+            <div class="stat-value" style="color:var(--success);">42</div>
+            <div class="stat-change up">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+              87.5% retention
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:#EDE7F6;color:#7C4DFF;">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div class="stat-label">Trial</div>
+            <div class="stat-value" style="color:#7C4DFF;">6</div>
+            <div class="stat-change up">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+              2 converting soon
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:var(--warning-light);color:#E65100;">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </div>
+            <div class="stat-label">MRR</div>
+            <div class="stat-value" style="font-size:1.5rem;">₹2,84,000</div>
+            <div class="stat-change up">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+              +₹18,500 vs last month
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter + Table -->
+        <div class="card">
+          <div style="padding:0.75rem 1.25rem;border-bottom:1px solid var(--border-light);">
+            <div class="filter-bar" style="margin-bottom:0;">
+              <div class="filter-tabs">
+                <button class="filter-tab active" onclick="filterTenants('all', this)">All<span class="tab-count">48</span></button>
+                <button class="filter-tab" onclick="filterTenants('active', this)">Active<span class="tab-count">42</span></button>
+                <button class="filter-tab" onclick="filterTenants('trial', this)">Trial<span class="tab-count">6</span></button>
+                <button class="filter-tab" onclick="filterTenants('churned', this)">Churned<span class="tab-count">0</span></button>
+              </div>
+              <div style="display:flex;gap:0.5rem;">
+                <select class="form-select" style="padding:0.375rem 0.625rem;font-size:0.8125rem;border-radius:6px;">
+                  <option>All Tiers</option>
+                  <option>Basic</option>
+                  <option>Standard</option>
+                  <option>Premium</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="tenants-table">
+              <thead>
+                <tr>
+                  <th style="width:22%;">Restaurant Name</th>
+                  <th>Owner</th>
+                  <th>Outlets</th>
+                  <th>Tier</th>
+                  <th>Status</th>
+                  <th>MRR</th>
+                  <th>Scans/week</th>
+                  <th>Since</th>
+                  <th style="width:13%;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="tenantsBody">
+              </tbody>
+            </table>
+          </div>
+          <div style="padding:0.875rem 1.25rem;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border-light);">
+            <span class="text-sm text-muted">Showing <strong>10</strong> of <strong>48</strong> tenants</span>
+            <div style="display:flex;gap:0.375rem;">
+              <button class="action-btn" disabled style="opacity:0.4;">Previous</button>
+              <button class="action-btn" style="border-color:var(--primary);color:var(--primary);background:var(--primary-light);">1</button>
+              <button class="action-btn">2</button>
+              <button class="action-btn">3</button>
+              <button class="action-btn">4</button>
+              <button class="action-btn">5</button>
+              <button class="action-btn">Next</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const tenants = [
+      {
+        name: "Annapurna Kitchen",
+        slug: "annapurna-kitchen",
+        owner: "Priya Sharma",
+        ownerInitials: "PS",
+        avatarBg: "#E63946",
+        outlets: 3,
+        tier: "premium",
+        status: "active",
+        mrr: 14999,
+        scans: 1240,
+        since: "Jan 2024",
+        email: "priya@annapurnakitchen.in",
+        phone: "+91 98765 43210",
+        outletList: [
+          { name: "Koramangala", status: "active", scans: 520 },
+          { name: "Indiranagar", status: "active", scans: 460 },
+          { name: "HSR Layout", status: "active", scans: 260 }
+        ],
+        aiUsage: { used: 8400, total: 10000 },
+        activity: [
+          { text: "Menu updated — 12 items changed", time: "2h ago", color: "var(--info)" },
+          { text: "Monthly report generated", time: "1d ago", color: "var(--success)" },
+          { text: "New outlet added: HSR Layout", time: "5d ago", color: "#7C4DFF" },
+          { text: "Subscription renewed — Premium", time: "12d ago", color: "var(--success)" }
+        ]
+      },
+      {
+        name: "Spice Garden",
+        slug: "spice-garden",
+        owner: "Rajesh Patel",
+        ownerInitials: "RP",
+        avatarBg: "#E76F51",
+        outlets: 2,
+        tier: "standard",
+        status: "active",
+        mrr: 8999,
+        scans: 860,
+        since: "Mar 2024",
+        email: "rajesh@spicegarden.co",
+        phone: "+91 87654 32109",
+        outletList: [
+          { name: "Whitefield", status: "active", scans: 480 },
+          { name: "Marathahalli", status: "active", scans: 380 }
+        ],
+        aiUsage: { used: 5200, total: 6000 },
+        activity: [
+          { text: "AI menu descriptions regenerated", time: "4h ago", color: "#7C4DFF" },
+          { text: "Bill #4521 — ₹2,340", time: "1d ago", color: "var(--success)" },
+          { text: "Staff member added: Vikram S.", time: "3d ago", color: "var(--info)" }
+        ]
+      },
+      {
+        name: "Das Prakash",
+        slug: "das-prakash",
+        owner: "Ananya Das",
+        ownerInitials: "AD",
+        avatarBg: "#2D936C",
+        outlets: 1,
+        tier: "basic",
+        status: "active",
+        mrr: 4999,
+        scans: 310,
+        since: "Jun 2024",
+        email: "ananya@dasprakash.com",
+        phone: "+91 76543 21098",
+        outletList: [
+          { name: "Jayanagar", status: "active", scans: 310 }
+        ],
+        aiUsage: { used: 1800, total: 3000 },
+        activity: [
+          { text: "QR code regenerated for table 8", time: "6h ago", color: "var(--info)" },
+          { text: "Weekly scan summary: 310 scans", time: "2d ago", color: "var(--success)" }
+        ]
+      },
+      {
+        name: "Sagar Ratna",
+        slug: "sagar-ratna",
+        owner: "Meena Iyer",
+        ownerInitials: "MI",
+        avatarBg: "#457B9D",
+        outlets: 5,
+        tier: "premium",
+        status: "active",
+        mrr: 19999,
+        scans: 2100,
+        since: "Nov 2023",
+        email: "meena@sagarratna.in",
+        phone: "+91 65432 10987",
+        outletList: [
+          { name: "CP, Delhi", status: "active", scans: 580 },
+          { name: "Noida Sector 18", status: "active", scans: 420 },
+          { name: "Gurgaon MG Road", status: "active", scans: 390 },
+          { name: "Dwarka", status: "active", scans: 380 },
+          { name: "Nehru Place", status: "active", scans: 330 }
+        ],
+        aiUsage: { used: 9200, total: 10000 },
+        activity: [
+          { text: "Billing integration updated for all outlets", time: "1h ago", color: "var(--info)" },
+          { text: "Premium menu photos uploaded — 48 items", time: "3h ago", color: "var(--success)" },
+          { text: "Subscription renewed — Premium (5 outlets)", time: "8d ago", color: "var(--success)" },
+          { text: "Support ticket resolved #892", time: "10d ago", color: "var(--text-muted)" }
+        ]
+      },
+      {
+        name: "Barbeque Nation",
+        slug: "barbeque-nation",
+        owner: "Vikram Singh",
+        ownerInitials: "VS",
+        avatarBg: "#E63946",
+        outlets: 8,
+        tier: "premium",
+        status: "active",
+        mrr: 34999,
+        scans: 4200,
+        since: "Sep 2023",
+        email: "vikram@barbequenation.com",
+        phone: "+91 54321 09876",
+        outletList: [
+          { name: "Koramangala", status: "active", scans: 720 },
+          { name: "HSR Layout", status: "active", scans: 610 },
+          { name: "Electronic City", status: "active", scans: 540 },
+          { name: "Whitefield", status: "active", scans: 480 },
+          { name: "JP Nagar", status: "active", scans: 510 },
+          { name: "BTM Layout", status: "active", scans: 440 },
+          { name: "Hebbal", status: "active", scans: 460 },
+          { name: "Sarjapur Road", status: "active", scans: 440 }
+        ],
+        aiUsage: { used: 14800, total: 15000 },
+        activity: [
+          { text: "AI descriptions updated for winter specials", time: "30m ago", color: "#7C4DFF" },
+          { text: "New campaign: BBQ Festival — all outlets", time: "2h ago", color: "var(--danger)" },
+          { text: "Bulk menu update — 156 items across 8 outlets", time: "5h ago", color: "var(--info)" },
+          { text: "Monthly revenue report: ₹4,28,000", time: "1d ago", color: "var(--success)" }
+        ]
+      },
+      {
+        name: "Saravana Bhavan",
+        slug: "saravana-bhavan",
+        owner: "Lakshmi Narayan",
+        ownerInitials: "LN",
+        avatarBg: "#E9C46A",
+        outlets: 4,
+        tier: "premium",
+        status: "active",
+        mrr: 14999,
+        scans: 1890,
+        since: "Feb 2024",
+        email: "lakshmi@saravanabhavan.in",
+        phone: "+91 43210 98765",
+        outletList: [
+          { name: "T Nagar, Chennai", status: "active", scans: 620 },
+          { name: "Adyar", status: "active", scans: 480 },
+          { name: "Anna Nagar", status: "active", scans: 430 },
+          { name: "Velachery", status: "active", scans: 360 }
+        ],
+        aiUsage: { used: 6800, total: 10000 },
+        activity: [
+          { text: "South Indian menu — AI translations to Hindi added", time: "3h ago", color: "#7C4DFF" },
+          { text: "QR code analytics report generated", time: "1d ago", color: "var(--success)" },
+          { text: "Outlet manager role assigned: Ravi K.", time: "4d ago", color: "var(--info)" }
+        ]
+      },
+      {
+        name: "Haldiram's",
+        slug: "haldirams",
+        owner: "Shyam Haldiram",
+        ownerInitials: "SH",
+        avatarBg: "#E76F51",
+        outlets: 6,
+        tier: "premium",
+        status: "active",
+        mrr: 24999,
+        scans: 3100,
+        since: "Aug 2023",
+        email: "shyam@haldirams.com",
+        phone: "+91 32109 87654",
+        outletList: [
+          { name: "Chandni Chowk", status: "active", scans: 680 },
+          { name: "Connaught Place", status: "active", scans: 620 },
+          { name: "Lajpat Nagar", status: "active", scans: 510 },
+          { name: "Noida", status: "active", scans: 480 },
+          { name: "Jaipur", status: "active", scans: 440 },
+          { name: "Lucknow", status: "active", scans: 370 }
+        ],
+        aiUsage: { used: 11400, total: 12000 },
+        activity: [
+          { text: "Festival menu pushed to all outlets", time: "45m ago", color: "var(--danger)" },
+          { text: "AI-generated allergen info updated", time: "2h ago", color: "#7C4DFF" },
+          { text: "POS sync completed — all 6 outlets", time: "6h ago", color: "var(--success)" },
+          { text: "New outlet onboarding: Lucknow", time: "3d ago", color: "var(--info)" }
+        ]
+      },
+      {
+        name: "Behrouz Biryani",
+        slug: "behrouz-biryani",
+        owner: "Farhan Khan",
+        ownerInitials: "FK",
+        avatarBg: "#457B9D",
+        outlets: 2,
+        tier: "standard",
+        status: "active",
+        mrr: 8999,
+        scans: 740,
+        since: "Apr 2024",
+        email: "farhan@behrouz.in",
+        phone: "+91 21098 76543",
+        outletList: [
+          { name: "Koramangala", status: "active", scans: 420 },
+          { name: "BTM Layout", status: "active", scans: 320 }
+        ],
+        aiUsage: { used: 3600, total: 6000 },
+        activity: [
+          { text: "Biryani specialty photos uploaded — 8 items", time: "5h ago", color: "var(--success)" },
+          { text: "Menu reorganized: by biryani type", time: "2d ago", color: "var(--info)" },
+          { text: "Customer feedback survey enabled", time: "4d ago", color: "#7C4DFF" }
+        ]
+      },
+      {
+        name: "Thelewala Express",
+        slug: "thewlewala-express",
+        owner: "Pappu Yadav",
+        ownerInitials: "PY",
+        avatarBg: "#2D936C",
+        outlets: 1,
+        tier: "basic",
+        status: "trial",
+        mrr: 0,
+        scans: 85,
+        since: "Aug 2025",
+        email: "pappu@thewlewala.in",
+        phone: "+91 10987 65432",
+        outletList: [
+          { name: "Chawri Bazar", status: "active", scans: 85 }
+        ],
+        aiUsage: { used: 420, total: 1000 },
+        activity: [
+          { text: "Trial activated — 14 days remaining", time: "1d ago", color: "#7C4DFF" },
+          { text: "First QR scan recorded", time: "1d ago", color: "var(--success)" },
+          { text: "Account created — onboarding complete", time: "2d ago", color: "var(--info)" }
+        ]
+      },
+      {
+        name: "Chai Point",
+        slug: "chai-point",
+        owner: "Arvind Rao",
+        ownerInitials: "AR",
+        avatarBg: "#E63946",
+        outlets: 3,
+        tier: "standard",
+        status: "trial",
+        mrr: 0,
+        scans: 190,
+        since: "Aug 2025",
+        email: "arvind@chaipoint.com",
+        phone: "+91 09876 54321",
+        outletList: [
+          { name: "Koramangala", status: "active", scans: 80 },
+          { name: "MG Road", status: "active", scans: 65 },
+          { name: "HSR Layout", status: "active", scans: 45 }
+        ],
+        aiUsage: { used: 780, total: 2000 },
+        activity: [
+          { text: "Trial activated — 10 days remaining", time: "4d ago", color: "#7C4DFF" },
+          { text: "3 outlets onboarded successfully", time: "4d ago", color: "var(--success)" },
+          { text: "Menu uploaded: 24 items", time: "5d ago", color: "var(--info)" }
+        ]
+      }
+    ];
+
+    function formatMRR(amount) {
+      if (amount === 0) return '—';
+      return '₹' + amount.toLocaleString('en-IN');
+    }
+
+    function formatScans(n) {
+      return n.toLocaleString('en-IN');
+    }
+
+    function renderTenants(filter) {
+      const tbody = document.getElementById('tenantsBody');
+      tbody.innerHTML = '';
+
+      const filtered = filter === 'all' ? tenants : tenants.filter(t => t.status === filter);
+
+      filtered.forEach((t, i) => {
+        const tierClass = `tier-${t.tier}`;
+        const statusClass = `status-${t.status}`;
+
+        const row = document.createElement('tr');
+        row.dataset.status = t.status;
+        row.onclick = () => toggleExpand(i);
+        row.innerHTML = `
+          <td>
+            <div class="tenant-name-cell">
+              <div class="tenant-avatar" style="background:${t.avatarBg};">${t.ownerInitials}</div>
+              <div>
+                <div class="tenant-name">${t.name}</div>
+                <div class="tenant-slug">${t.slug}</div>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div style="font-weight:500;">${t.owner}</div>
+            <div class="text-xs text-muted">${t.email}</div>
+          </td>
+          <td><strong>${t.outlets}</strong></td>
+          <td><span class="tier-badge ${tierClass}">${t.tier}</span></td>
+          <td><span class="status-badge ${statusClass}"><span class="dot"></span>${t.status.charAt(0).toUpperCase() + t.status.slice(1)}</span></td>
+          <td><strong style="font-family:'JetBrains Mono',monospace;font-size:0.8125rem;">${formatMRR(t.mrr)}</strong></td>
+          <td><span style="font-family:'JetBrains Mono',monospace;font-size:0.8125rem;">${formatScans(t.scans)}</span></td>
+          <td class="text-muted text-sm">${t.since}</td>
+          <td onclick="event.stopPropagation();">
+            <div class="action-btns">
+              <button class="action-btn view" title="View Details" onclick="toggleExpand(${i})">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+              ${t.status !== 'churned' ? `
+              <button class="action-btn suspend" title="Suspend Tenant" onclick="suspendTenant('${t.name}')">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="4" height="16" x="6" y="4"/><rect width="4" height="16" x="14" y="4"/></svg>
+              </button>` : ''}
+              <button class="action-btn upgrade" title="Upgrade Plan" onclick="upgradeTenant('${t.name}')">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+              </button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(row);
+
+        const expandRow = document.createElement('tr');
+        expandRow.className = 'expand-row';
+        expandRow.id = `expand-${i}`;
+        expandRow.innerHTML = `
+          <td colspan="9" class="expand-cell">
+            <div class="expand-panel">
+              <div class="expand-section">
+                <h4>Outlets</h4>
+                ${t.outletList.map(o => `
+                  <div class="outlet-tag">
+                    <span class="status-dot active"></span>
+                    ${o.name}
+                    <span class="text-xs text-muted" style="margin-left:auto;">${o.scans}/wk</span>
+                  </div>
+                `).join('')}
+              </div>
+              <div class="expand-section">
+                <h4>Subscription</h4>
+                <div class="expand-item">
+                  <span class="label">Plan</span>
+                  <span class="value"><span class="tier-badge ${tierClass}" style="font-size:0.625rem;">${t.tier}</span></span>
+                </div>
+                <div class="expand-item">
+                  <span class="label">Monthly</span>
+                  <span class="value" style="font-family:'JetBrains Mono',monospace;font-size:0.8125rem;">${formatMRR(t.mrr)}</span>
+                </div>
+                <div class="expand-item">
+                  <span class="label">Since</span>
+                  <span class="value">${t.since}</span>
+                </div>
+                <div class="expand-item">
+                  <span class="label">Phone</span>
+                  <span class="value text-sm">${t.phone}</span>
+                </div>
+              </div>
+              <div class="expand-section">
+                <h4>AI Usage</h4>
+                <div style="margin-bottom:0.5rem;">
+                  <div class="expand-item" style="padding:0;">
+                    <span class="label">Menu Descriptions</span>
+                    <span class="value text-sm">${((t.aiUsage.used / t.aiUsage.total) * 100).toFixed(0)}%</span>
+                  </div>
+                  <div class="ai-bar">
+                    <div class="ai-bar-fill" style="width:${(t.aiUsage.used / t.aiUsage.total) * 100}%;background:${t.aiUsage.used / t.aiUsage.total > 0.9 ? 'var(--danger)' : t.aiUsage.used / t.aiUsage.total > 0.7 ? 'var(--warning)' : 'var(--success)'};"></div>
+                  </div>
+                  <div class="text-xs text-muted" style="margin-top:0.25rem;">${t.aiUsage.used.toLocaleString('en-IN')} / ${t.aiUsage.total.toLocaleString('en-IN')} tokens</div>
+                </div>
+                <div class="expand-item">
+                  <span class="label">Total Scans</span>
+                  <span class="value" style="font-family:'JetBrains Mono',monospace;font-size:0.8125rem;">${formatScans(t.scans)}/wk</span>
+                </div>
+              </div>
+              <div class="expand-section">
+                <h4>Recent Activity</h4>
+                ${t.activity.map(a => `
+                  <div class="activity-item">
+                    <span class="activity-dot" style="background:${a.color};"></span>
+                    <div>
+                      <div style="font-size:0.8125rem;">${a.text}</div>
+                      <div class="text-xs text-muted">${a.time}</div>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(expandRow);
+      });
+    }
+
+    function toggleExpand(index) {
+      const row = document.getElementById(`expand-${index}`);
+      row.classList.toggle('open');
+    }
+
+    function filterTenants(filter, el) {
+      document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+      renderTenants(filter);
+    }
+
+    function suspendTenant(name) {
+      alert(`Suspend tenant: ${name}\n\nThis would open a suspension confirmation dialog.`);
+    }
+
+    function upgradeTenant(name) {
+      alert(`Upgrade plan for: ${name}\n\nThis would open the plan upgrade modal.`);
+    }
+
+    renderTenants('all');
+  </script>
+</body>
+</html>

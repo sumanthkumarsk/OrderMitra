@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Owner Assistant — Annapurna Kitchen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/shared.css">
+  <style>
+    .ai-badge {
+      display: inline-flex; align-items: center; gap: 0.375rem;
+      background: linear-gradient(135deg, #7C3AED, #6D28D9);
+      color: white; font-size: 0.6875rem; font-weight: 700;
+      padding: 0.2rem 0.625rem; border-radius: var(--radius-full);
+      letter-spacing: 0.02em;
+    }
+    .ai-badge::before { content: '✦'; font-size: 0.5625rem; }
+
+    /* Topbar */
+    .ai-topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 1.5rem; background: white;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .ai-topbar-left { display: flex; align-items: center; gap: 0.75rem; }
+    .ai-topbar h1 {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 1.25rem; font-weight: 800; margin: 0;
+    }
+    .ai-topbar-right { display: flex; align-items: center; gap: 0.75rem; }
+    .ai-topbar-status {
+      display: flex; align-items: center; gap: 0.375rem;
+      font-size: 0.75rem; color: #16A34A; font-weight: 600;
+    }
+    .ai-topbar-status::before {
+      content: ''; width: 7px; height: 7px;
+      background: #16A34A; border-radius: 50%;
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; } 50% { opacity: 0.4; }
+    }
+
+    /* Main content */
+    .ai-main {
+      flex: 1; overflow-y: auto; padding: 1.5rem;
+      display: flex; flex-direction: column; gap: 1.25rem;
+      max-height: calc(100vh - 57px);
+    }
+
+    /* Daily Digest */
+    .digest-card {
+      background: linear-gradient(135deg, #FAF5FF 0%, #F0E7FF 100%);
+      border: 1px solid #E9D5FF; border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+    .digest-header {
+      display: flex; align-items: center; gap: 0.5rem;
+      padding: 0.875rem 1.25rem 0;
+      font-size: 0.6875rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.06em; color: #7C3AED;
+    }
+    .digest-header svg { width: 14px; height: 14px; }
+    .digest-body {
+      padding: 0.75rem 1.25rem 1rem;
+    }
+    .digest-title {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 0.9375rem; font-weight: 800; margin-bottom: 0.625rem;
+      color: #1E1B4B;
+    }
+    .digest-message {
+      font-size: 0.8125rem; line-height: 1.7; color: #374151;
+      background: white; border-radius: var(--radius); padding: 0.875rem 1rem;
+      border: 1px solid #E9D5FF; position: relative;
+    }
+    .digest-message::before {
+      content: '🤖'; position: absolute; top: -8px; left: 12px;
+      font-size: 0.875rem; background: white; padding: 0 4px;
+    }
+    .digest-metrics {
+      display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.5rem;
+      margin-top: 0.75rem;
+    }
+    .digest-metric {
+      text-align: center; padding: 0.5rem 0.25rem;
+      background: white; border-radius: var(--radius);
+      border: 1px solid #E9D5FF;
+    }
+    .digest-metric-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.125rem; font-weight: 700; color: #1E1B4B;
+    }
+    .digest-metric-label {
+      font-size: 0.625rem; font-weight: 600; color: #7C3AED;
+      text-transform: uppercase; letter-spacing: 0.04em; margin-top: 0.125rem;
+    }
+    .digest-time {
+      font-size: 0.6875rem; color: #9CA3AF; text-align: right;
+      margin-top: 0.5rem; font-style: italic;
+    }
+
+    /* Chat area */
+    .chat-area { flex: 1; display: flex; flex-direction: column; gap: 1rem; }
+
+    .chat-msg {
+      display: flex; gap: 0.625rem; max-width: 85%;
+      animation: msgIn 0.3s ease;
+    }
+    @keyframes msgIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .chat-msg.user { margin-left: auto; flex-direction: row-reverse; }
+    .chat-msg.ai { margin-right: auto; }
+
+    .chat-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.8125rem; font-weight: 700; flex-shrink: 0;
+    }
+    .chat-avatar.ai-av {
+      background: linear-gradient(135deg, #7C3AED, #6D28D9); color: white;
+    }
+    .chat-avatar.user-av { background: #DBEAFE; color: #1D4ED8; }
+
+    .chat-bubble {
+      padding: 0.875rem 1rem; border-radius: var(--radius);
+      font-size: 0.8125rem; line-height: 1.65;
+    }
+    .chat-msg.ai .chat-bubble {
+      background: white; border: 1px solid var(--border-light);
+      color: var(--text);
+    }
+    .chat-msg.user .chat-bubble {
+      background: #1E1B4B; color: white;
+    }
+
+    /* Metric inline */
+    .metric-highlight {
+      display: inline-flex; align-items: baseline; gap: 0.25rem;
+      background: #F5F3FF; border: 1px solid #E9D5FF; border-radius: 6px;
+      padding: 0.125rem 0.5rem; margin: 0.125rem 0;
+    }
+    .metric-highlight .val {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700; font-size: 0.875rem; color: #6D28D9;
+    }
+    .metric-highlight .lbl {
+      font-size: 0.6875rem; color: #7C3AED; font-weight: 500;
+    }
+    .chat-msg.user .metric-highlight {
+      background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.2);
+    }
+    .chat-msg.user .metric-highlight .val { color: white; }
+    .chat-msg.user .metric-highlight .lbl { color: rgba(255,255,255,0.7); }
+
+    .chat-table {
+      width: 100%; border-collapse: collapse; margin: 0.625rem 0;
+      font-size: 0.75rem;
+    }
+    .chat-table th {
+      text-align: left; padding: 0.375rem 0.5rem;
+      font-weight: 700; font-size: 0.625rem; text-transform: uppercase;
+      letter-spacing: 0.05em; color: #7C3AED;
+      border-bottom: 2px solid #E9D5FF;
+    }
+    .chat-table td {
+      padding: 0.375rem 0.5rem; border-bottom: 1px solid #F3F4F6;
+      color: #374151;
+    }
+    .chat-table td.mono {
+      font-family: 'JetBrains Mono', monospace; font-weight: 600;
+    }
+    .chat-table .positive { color: #16A34A; }
+    .chat-table .negative { color: #DC2626; }
+
+    .chat-observation {
+      margin-top: 0.625rem; padding: 0.625rem 0.75rem;
+      background: #FFFBEB; border-left: 3px solid #F59E0B;
+      border-radius: 0 var(--radius) var(--radius) 0;
+      font-size: 0.75rem; color: #92400E; line-height: 1.6;
+    }
+    .chat-observation strong { font-weight: 700; }
+
+    /* Suggestion chips */
+    .chips-row {
+      display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0 0.5rem;
+    }
+    .chip {
+      background: white; border: 1px solid var(--border-light);
+      border-radius: var(--radius-full); padding: 0.4rem 0.875rem;
+      font-size: 0.75rem; font-weight: 600; color: #6D28D9;
+      cursor: pointer; transition: all var(--transition);
+      font-family: 'Inter', sans-serif;
+    }
+    .chip:hover {
+      background: #F5F3FF; border-color: #C4B5FD;
+      box-shadow: 0 2px 8px rgba(109,40,217,0.1);
+    }
+
+    /* Quick Insights */
+    .insights-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
+    .insight-card {
+      background: white; border: 1px solid var(--border-light);
+      border-radius: var(--radius); padding: 1rem;
+      transition: all var(--transition);
+    }
+    .insight-card:hover { box-shadow: var(--shadow-sm); }
+    .insight-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; margin-bottom: 0.625rem;
+    }
+    .insight-icon.alert { background: #FEE2E2; color: #DC2626; }
+    .insight-icon.tip { background: #DBEAFE; color: #2563EB; }
+    .insight-icon.star { background: #DCFCE7; color: #16A34A; }
+    .insight-title {
+      font-size: 0.8125rem; font-weight: 700; margin-bottom: 0.25rem;
+    }
+    .insight-body { font-size: 0.75rem; color: var(--text-secondary); line-height: 1.55; }
+    .insight-body strong { font-weight: 700; color: var(--text); }
+
+    /* Chat input */
+    .chat-input-bar {
+      display: flex; align-items: center; gap: 0.625rem;
+      padding: 0.875rem 1.25rem; background: white;
+      border-top: 1px solid var(--border-light);
+    }
+    .chat-input-bar input {
+      flex: 1; border: 1px solid var(--border-light);
+      border-radius: var(--radius-full); padding: 0.625rem 1rem;
+      font-size: 0.8125rem; font-family: 'Inter', sans-serif;
+      outline: none; transition: border var(--transition);
+    }
+    .chat-input-bar input:focus { border-color: #7C3AED; }
+    .chat-input-bar input::placeholder { color: #9CA3AF; }
+    .send-btn {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: linear-gradient(135deg, #7C3AED, #6D28D9);
+      border: none; color: white; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all var(--transition); flex-shrink: 0;
+    }
+    .send-btn:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(109,40,217,0.35); }
+    .send-btn svg { width: 18px; height: 18px; }
+
+    @media (max-width: 768px) {
+      .insights-grid { grid-template-columns: 1fr; }
+      .digest-metrics { grid-template-columns: repeat(3, 1fr); }
+      .chat-msg { max-width: 95%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">SS</div>
+        <div class="sidebar-brand">ScanServe</div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Main</div>
+        </div>
+        <a class="sidebar-link" href="dashboard.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </a>
+        <a class="sidebar-link" href="orders.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Orders
+        </a>
+        <a class="sidebar-link" href="billing.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          Billing
+        </a>
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Management</div>
+        </div>
+        <a class="sidebar-link" href="menu-management.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          Menu
+        </a>
+        <a class="sidebar-link" href="table-map.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+          Table Map
+        </a>
+        <a class="sidebar-link" href="waiters.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Waiters
+        </a>
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Intelligence</div>
+        </div>
+        <a class="sidebar-link" href="analytics.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          Analytics
+        </a>
+        <a class="sidebar-link active" href="ai-owner.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          AI Assistant
+        </a>
+        <a class="sidebar-link" href="ai-controls.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          AI Controls
+        </a>
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Setup</div>
+        </div>
+        <a class="sidebar-link" href="onboarding.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          Onboarding
+        </a>
+        <a class="sidebar-link" href="#">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Settings
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div style="display:flex;align-items:center;gap:0.625rem;">
+          <div class="avatar avatar-sm">R</div>
+          <div>
+            <div style="font-size:0.8125rem;font-weight:600;">Ravi</div>
+            <div style="font-size:0.6875rem;color:rgba(255,255,255,0.5);">Owner · Premium</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
+
+      <!-- Topbar -->
+      <div class="ai-topbar">
+        <div class="ai-topbar-left">
+          <h1>AI Business Assistant</h1>
+          <span class="ai-badge">AI Powered</span>
+        </div>
+        <div class="ai-topbar-right">
+          <div class="ai-topbar-status">Live</div>
+        </div>
+      </div>
+
+      <!-- Scrollable content -->
+      <div class="ai-main" id="chatScroll">
+
+        <!-- Daily Digest -->
+        <div class="digest-card">
+          <div class="digest-header">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Daily Digest — Monday, 25 Aug 2025
+          </div>
+          <div class="digest-body">
+            <div class="digest-title">Today's Business Snapshot</div>
+            <div class="digest-message">
+              Good evening, Ravi! Here's how Annapurna Kitchen performed today. Revenue of <span class="metric-highlight"><span class="val">₹42,600</span></span> from <span class="metric-highlight"><span class="val">126</span><span class="lbl">orders</span></span>. Your average order value held steady at <span class="metric-highlight"><span class="val">₹338</span></span>. Chicken Biryani led the menu with <span class="metric-highlight"><span class="val">38</span><span class="lbl">orders</span></span>. Peak hour was <strong>7–9 PM</strong> with 42 orders. Overall a solid Monday — <strong>6% above last Monday's revenue</strong>.
+            </div>
+            <div class="digest-metrics">
+              <div class="digest-metric">
+                <div class="digest-metric-value">₹42,600</div>
+                <div class="digest-metric-label">Revenue</div>
+              </div>
+              <div class="digest-metric">
+                <div class="digest-metric-value">126</div>
+                <div class="digest-metric-label">Orders</div>
+              </div>
+              <div class="digest-metric">
+                <div class="digest-metric-value">₹338</div>
+                <div class="digest-metric-label">AOV</div>
+              </div>
+              <div class="digest-metric">
+                <div class="digest-metric-value">38</div>
+                <div class="digest-metric-label">Top Item</div>
+              </div>
+              <div class="digest-metric">
+                <div class="digest-metric-value">7–9 PM</div>
+                <div class="digest-metric-label">Peak</div>
+              </div>
+            </div>
+            <div class="digest-time">Generated at 9:42 PM IST</div>
+          </div>
+        </div>
+
+        <!-- Chat messages -->
+        <div class="chat-area">
+
+          <!-- AI Welcome -->
+          <div class="chat-msg ai">
+            <div class="chat-avatar ai-av">✦</div>
+            <div class="chat-bubble">
+              Good evening, Ravi! 👋 Here's today's snapshot:
+              <br><br>
+              Revenue <span class="metric-highlight"><span class="val">₹42,600</span></span> from <span class="metric-highlight"><span class="val">126</span><span class="lbl">orders</span></span>. Chicken Biryani was your top seller with <span class="metric-highlight"><span class="val">38</span><span class="lbl">orders</span></span>. Peak window was <strong>7–9 PM</strong>.
+              <br><br>
+              Ask me anything about your business data — I can compare days, find trends, or dig into any metric.
+            </div>
+          </div>
+
+          <!-- Suggestion chips -->
+          <div class="chips-row">
+            <div class="chip" onclick="this.style.display='none'">How was business yesterday?</div>
+            <div class="chip" onclick="this.style.display='none'">Compare this week vs last week</div>
+            <div class="chip" onclick="this.style.display='none'">What are my slowest items?</div>
+            <div class="chip" onclick="this.style.display='none'">Which tables generate most revenue?</div>
+          </div>
+
+          <!-- User question 1 -->
+          <div class="chat-msg user">
+            <div class="chat-avatar user-av">R</div>
+            <div class="chat-bubble">How was business yesterday?</div>
+          </div>
+
+          <!-- AI response 1 -->
+          <div class="chat-msg ai">
+            <div class="chat-avatar ai-av">✦</div>
+            <div class="chat-bubble">
+              <strong>Sunday, 24 Aug 2025 — Performance Summary</strong>
+              <br><br>
+              <div class="metric-highlight"><span class="val">₹39,840</span><span class="lbl">revenue</span></div>
+              <div class="metric-highlight"><span class="val">118</span><span class="lbl">orders</span></div>
+              <div class="metric-highlight"><span class="val">₹338</span><span class="lbl">AOV</span></div>
+              <br><br>
+              <strong>Top items:</strong>
+              <table class="chat-table">
+                <thead><tr><th>#</th><th>Item</th><th>Orders</th><th>Revenue</th></tr></thead>
+                <tbody>
+                  <tr><td>1</td><td>Chicken Biryani</td><td class="mono">34</td><td class="mono">₹13,600</td></tr>
+                  <tr><td>2</td><td>Paneer Butter Masala</td><td class="mono">22</td><td class="mono">₹6,600</td></tr>
+                  <tr><td>3</td><td>Veg Fried Rice</td><td class="mono">18</td><td class="mono">₹4,500</td></tr>
+                  <tr><td>4</td><td>Tandoori Roti</td><td class="mono">16</td><td class="mono">₹2,400</td></tr>
+                  <tr><td>5</td><td>Gulab Jamun</td><td class="mono">14</td><td class="mono">₹1,960</td></tr>
+                </tbody>
+              </table>
+              <strong>Peak window:</strong> 7:30–9:00 PM (38 orders)
+              <br><br>
+              <div class="chat-observation">
+                <strong>⚠️ Insight:</strong> Paneer Tikka sold only <strong>9 orders</strong> yesterday — <strong>18% lower</strong> than last Sunday (11 orders). Consider a weekend combo promotion to boost appetiser sales.
+              </div>
+            </div>
+          </div>
+
+          <!-- User question 2 -->
+          <div class="chat-msg user">
+            <div class="chat-avatar user-av">R</div>
+            <div class="chat-bubble">Compare this Sunday with last Sunday</div>
+          </div>
+
+          <!-- AI response 2 -->
+          <div class="chat-msg ai">
+            <div class="chat-avatar ai-av">✦</div>
+            <div class="chat-bubble">
+              <strong>Sunday Comparison</strong>
+              <br><br>
+              <table class="chat-table">
+                <thead><tr><th>Metric</th><th>24 Aug (This)</th><th>17 Aug (Last)</th><th>Change</th></tr></thead>
+                <tbody>
+                  <tr><td>Revenue</td><td class="mono">₹39,840</td><td class="mono">₹37,200</td><td class="mono positive">▲ +7.1%</td></tr>
+                  <tr><td>Orders</td><td class="mono">118</td><td class="mono">112</td><td class="mono positive">▲ +5.4%</td></tr>
+                  <tr><td>AOV</td><td class="mono">₹338</td><td class="mono">₹332</td><td class="mono positive">▲ +1.8%</td></tr>
+                  <tr><td>Top Item</td><td class="mono">Chicken Biryani (34)</td><td class="mono">Chicken Biryani (31)</td><td class="mono positive">▲ +9.7%</td></tr>
+                  <tr><td>Paneer Tikka</td><td class="mono">9</td><td class="mono">11</td><td class="mono negative">▼ −18.2%</td></tr>
+                  <tr><td>Peak Orders/hr</td><td class="mono">21</td><td class="mono">19</td><td class="mono positive">▲ +10.5%</td></tr>
+                </tbody>
+              </table>
+              <div class="chat-observation">
+                <strong>📌 Summary:</strong> Revenue is up <strong>₹2,640 (+7.1%)</strong> compared to last Sunday. Chicken Biryani continues to dominate. Paneer Tikka underperformed — consider a limited-time promotion or combo deal to reverse the trend.
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Quick Insights -->
+        <div>
+          <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-secondary);margin-bottom:0.625rem;">Quick Insights</div>
+          <div class="insights-grid">
+            <div class="insight-card">
+              <div class="insight-icon alert">📉</div>
+              <div class="insight-title">Sales Dip Detected</div>
+              <div class="insight-body">
+                <strong>Paneer Tikka</strong> is down <strong>18%</strong> vs last Sunday (9 vs 11 orders). Consider a weekend promotion to recover sales.
+              </div>
+            </div>
+            <div class="insight-card">
+              <div class="insight-icon tip">👥</div>
+              <div class="insight-title">Peak Recommendation</div>
+              <div class="insight-body">
+                Your peak window (7–9 PM) averaged <strong>21 orders/hr</strong>. Consider adding <strong>1 extra staff member</strong> during this window to reduce wait times.
+              </div>
+            </div>
+            <div class="insight-card">
+              <div class="insight-icon star">🏆</div>
+              <div class="insight-title">Top Performer</div>
+              <div class="insight-body">
+                <strong>Chicken Biryani</strong> — 38 orders today, generating <strong>₹15,200</strong> (35.7% of total revenue). Your #1 item for 4 consecutive days.
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Chat input -->
+      <div class="chat-input-bar">
+        <input type="text" placeholder="Ask about your business — revenue, items, trends, staff..." id="chatInput" onkeydown="if(event.key==='Enter'){event.preventDefault();}">
+        <button class="send-btn" aria-label="Send">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+
+    </main>
+  </div>
+</body>
+</html>

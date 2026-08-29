@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard — Annapurna Kitchen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/shared.css">
+  <style>
+    .stat-card-icon.revenue { background: #DCFCE7; color: #16A34A; }
+    .stat-card-icon.orders { background: #DBEAFE; color: #2563EB; }
+    .stat-card-icon.aov { background: #FEF3C7; color: #D97706; }
+    .stat-card-icon.scans { background: #F3E8FF; color: #9333EA; }
+    .live-order-card {
+      background: white; border-radius: var(--radius);
+      border: 1px solid var(--border-light); padding: 0.875rem;
+      display: flex; align-items: center; gap: 0.75rem;
+      margin-bottom: 0.5rem; transition: all var(--transition);
+    }
+    .live-order-card:hover { box-shadow: var(--shadow-sm); }
+    .live-order-status {
+      width: 40px; height: 40px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; flex-shrink: 0;
+    }
+    .live-order-status.new { background: #DBEAFE; }
+    .live-order-status.preparing { background: #FEF3C7; }
+    .live-order-status.ready { background: #DCFCE7; }
+    .live-order-status.billed { background: #F3F4F6; }
+    .live-order-info { flex: 1; }
+    .live-order-id { font-weight: 700; font-size: 0.8125rem; font-family: 'JetBrains Mono', monospace; }
+    .live-order-detail { font-size: 0.75rem; color: var(--text-secondary); }
+    .live-order-amount { font-weight: 700; font-size: 0.9375rem; }
+    .live-order-badge {
+      font-size: 0.625rem; padding: 0.15rem 0.5rem;
+      border-radius: var(--radius-full); font-weight: 600;
+    }
+    .live-order-badge.new { background: #DBEAFE; color: #1D4ED8; }
+    .live-order-badge.preparing { background: #FEF3C7; color: #92400E; }
+    .live-order-badge.ready { background: #DCFCE7; color: #166534; }
+    .live-order-badge.billed { background: #F3F4F6; color: #6B7280; }
+    .quick-actions-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; margin-top: 1rem; }
+    .quick-action {
+      background: white; border: 1px solid var(--border-light);
+      border-radius: var(--radius); padding: 1rem;
+      text-align: center; cursor: pointer; transition: all var(--transition);
+      text-decoration: none; color: var(--text);
+    }
+    .quick-action:hover { box-shadow: var(--shadow-sm); border-color: var(--primary); text-decoration: none; }
+    .quick-action .icon { font-size: 1.5rem; margin-bottom: 0.375rem; }
+    .quick-action .label { font-size: 0.8125rem; font-weight: 600; }
+    @media (max-width: 768px) {
+      .quick-actions-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">SS</div>
+        <div class="sidebar-brand">ScanServe</div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Main</div>
+        </div>
+        <a class="sidebar-link active" href="dashboard.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </a>
+        <a class="sidebar-link" href="orders.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Orders
+        </a>
+        <a class="sidebar-link" href="billing.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          Billing
+        </a>
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Management</div>
+        </div>
+        <a class="sidebar-link" href="menu-management.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          Menu
+        </a>
+        <a class="sidebar-link" href="table-map.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+          Table Map
+        </a>
+        <a class="sidebar-link" href="waiters.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Waiters
+        </a>
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Intelligence</div>
+        </div>
+        <a class="sidebar-link" href="analytics.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          Analytics
+        </a>
+        <a class="sidebar-link" href="ai-owner.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          AI Assistant
+        </a>
+        <a class="sidebar-link" href="ai-controls.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          AI Controls
+        </a>
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Setup</div>
+        </div>
+        <a class="sidebar-link" href="onboarding.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          Onboarding
+        </a>
+        <a class="sidebar-link" href="#">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Settings
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div style="display:flex;align-items:center;gap:0.625rem;">
+          <div class="avatar avatar-sm">R</div>
+          <div>
+            <div style="font-size:0.8125rem;font-weight:600;">Ravi</div>
+            <div style="font-size:0.6875rem;color:rgba(255,255,255,0.5);">Owner · Premium</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <div class="main-content">
+      <div class="topbar">
+        <div class="topbar-title">Dashboard</div>
+        <div class="topbar-actions">
+          <span style="font-size:0.8125rem;color:var(--text-secondary);">Annapurna Kitchen — Bengaluru</span>
+          <button class="btn btn-sm btn-outline">QR Code</button>
+        </div>
+      </div>
+
+      <div class="page-content">
+        <!-- Stats -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem;">
+          <div class="stat-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span class="stat-card-label">Today's Revenue</span>
+              <div class="stat-card-icon revenue">💰</div>
+            </div>
+            <div class="stat-card-value">₹42,600</div>
+            <span class="stat-card-change up">↑ 12% vs last Saturday</span>
+          </div>
+          <div class="stat-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span class="stat-card-label">Orders Today</span>
+              <div class="stat-card-icon orders">📋</div>
+            </div>
+            <div class="stat-card-value">126</div>
+            <span class="stat-card-change up">↑ 8% vs last Saturday</span>
+          </div>
+          <div class="stat-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span class="stat-card-label">Avg Order Value</span>
+              <div class="stat-card-icon aov">📈</div>
+            </div>
+            <div class="stat-card-value">₹338</div>
+            <span class="stat-card-change up">↑ ₹12 increase</span>
+          </div>
+          <div class="stat-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span class="stat-card-label">QR Scans</span>
+              <div class="stat-card-icon scans">📱</div>
+            </div>
+            <div class="stat-card-value">89</div>
+            <span class="stat-card-change up">↑ 15% vs last Saturday</span>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions-grid">
+          <a class="quick-action" href="menu-management.html">
+            <div class="icon">📝</div>
+            <div class="label">Manage Menu</div>
+          </a>
+          <a class="quick-action" href="orders.html">
+            <div class="icon">🔍</div>
+            <div class="label">View Orders</div>
+          </a>
+          <a class="quick-action" href="table-map.html">
+            <div class="icon">🗺️</div>
+            <div class="label">Table Map</div>
+          </a>
+          <a class="quick-action" href="billing.html">
+            <div class="icon">🧾</div>
+            <div class="label">Bills</div>
+          </a>
+        </div>
+
+        <!-- Live Orders + Service Requests -->
+        <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:1rem;margin-top:1.5rem;">
+          <!-- Live Orders -->
+          <div class="card">
+            <div class="card-header">
+              <h3>Live Orders</h3>
+              <span class="badge badge-primary">8 Active</span>
+            </div>
+            <div class="card-body" style="padding:0.75rem;">
+              <div class="live-order-card">
+                <div class="live-order-status preparing">👨‍🍳</div>
+                <div class="live-order-info">
+                  <div class="live-order-id">ORD-20260826-0044</div>
+                  <div class="live-order-detail">T15 · Veg Biryani × 2, Chicken Kabab × 1</div>
+                </div>
+                <div style="text-align:right;">
+                  <div class="live-order-amount">₹720</div>
+                  <span class="live-order-badge preparing">Preparing</span>
+                </div>
+              </div>
+              <div class="live-order-card">
+                <div class="live-order-status new">🆕</div>
+                <div class="live-order-info">
+                  <div class="live-order-id">ORD-20260826-0043</div>
+                  <div class="live-order-detail">T12 · Chicken Biryani × 1, Lime Soda × 1</div>
+                </div>
+                <div style="text-align:right;">
+                  <div class="live-order-amount">₹340</div>
+                  <span class="live-order-badge new">New</span>
+                </div>
+              </div>
+              <div class="live-order-card">
+                <div class="live-order-status ready">✓</div>
+                <div class="live-order-info">
+                  <div class="live-order-id">ORD-20260826-0041</div>
+                  <div class="live-order-detail">T2 · Paneer Butter Masala × 1, Garlic Naan × 2</div>
+                </div>
+                <div style="text-align:right;">
+                  <div class="live-order-amount">₹370</div>
+                  <span class="live-order-badge ready">Ready</span>
+                </div>
+              </div>
+              <div class="live-order-card">
+                <div class="live-order-status billed">📄</div>
+                <div class="live-order-info">
+                  <div class="live-order-id">ORD-20260826-0042</div>
+                  <div class="live-order-detail">T12 · 5 items · Bill requested</div>
+                </div>
+                <div style="text-align:right;">
+                  <div class="live-order-amount">₹1,176</div>
+                  <span class="live-order-badge billed">Billed</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Service Requests -->
+          <div class="card">
+            <div class="card-header">
+              <h3>Service Requests</h3>
+              <span class="badge badge-warning">3 Open</span>
+            </div>
+            <div class="card-body" style="padding:0.75rem;">
+              <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                <div style="display:flex;align-items:center;gap:0.625rem;padding:0.625rem;background:var(--danger-light);border-radius:var(--radius-sm);border:1px solid rgba(230,57,70,0.2);">
+                  <span class="table-badge">T14</span>
+                  <div style="flex:1;">
+                    <div style="font-weight:600;font-size:0.8125rem;">💧 Water — Escalated</div>
+                    <div style="font-size:0.6875rem;color:var(--text-secondary);">Unacknowledged for 2:32</div>
+                  </div>
+                  <span class="badge badge-danger">Urgent</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:0.625rem;padding:0.625rem;background:var(--warning-light);border-radius:var(--radius-sm);border:1px solid rgba(233,196,106,0.3);">
+                  <span class="table-badge">T12</span>
+                  <div style="flex:1;">
+                    <div style="font-weight:600;font-size:0.8125rem;">🧻 Tissue</div>
+                    <div style="font-size:0.6875rem;color:var(--text-secondary);">Waiting 1:05</div>
+                  </div>
+                  <span class="badge badge-warning">Pending</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:0.625rem;padding:0.625rem;background:var(--info-light);border-radius:var(--radius-sm);border:1px solid rgba(69,123,157,0.2);">
+                  <span class="table-badge">T16</span>
+                  <div style="flex:1;">
+                    <div style="font-weight:600;font-size:0.8125rem;">📄 Request Bill</div>
+                    <div style="font-size:0.6875rem;color:var(--text-secondary);">New — 0:18</div>
+                  </div>
+                  <span class="badge badge-info">New</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top Items + Waiter Performance -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem;">
+          <div class="card">
+            <div class="card-header">
+              <h3>Top Items Today</h3>
+            </div>
+            <div class="card-body">
+              <div style="display:flex;flex-direction:column;gap:0.625rem;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <span style="font-size:0.875rem;">🥇</span>
+                    <span style="font-weight:600;font-size:0.875rem;">Chicken Biryani</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:0.75rem;">
+                    <div class="progress-bar" style="width:100px;">
+                      <div class="progress-bar-fill" style="width:100%;"></div>
+                    </div>
+                    <span style="font-weight:700;font-size:0.8125rem;">38 orders</span>
+                  </div>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <span style="font-size:0.875rem;">🥈</span>
+                    <span style="font-weight:600;font-size:0.875rem;">Butter Naan</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:0.75rem;">
+                    <div class="progress-bar" style="width:100px;">
+                      <div class="progress-bar-fill" style="width:85%;"></div>
+                    </div>
+                    <span style="font-weight:700;font-size:0.8125rem;">32 orders</span>
+                  </div>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <span style="font-size:0.875rem;">🥉</span>
+                    <span style="font-weight:600;font-size:0.875rem;">Chicken 65</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:0.75rem;">
+                    <div class="progress-bar" style="width:100px;">
+                      <div class="progress-bar-fill" style="width:65%;"></div>
+                    </div>
+                    <span style="font-weight:700;font-size:0.8125rem;">25 orders</span>
+                  </div>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <span style="font-size:0.875rem;">4</span>
+                    <span style="font-weight:600;font-size:0.875rem;">Lime Soda</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:0.75rem;">
+                    <div class="progress-bar" style="width:100px;">
+                      <div class="progress-bar-fill" style="width:52%;"></div>
+                    </div>
+                    <span style="font-weight:700;font-size:0.8125rem;">20 orders</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3>Waiter Performance</h3>
+            </div>
+            <div class="card-body">
+              <div style="display:flex;flex-direction:column;gap:0.75rem;">
+                <div style="display:flex;align-items:center;gap:0.75rem;">
+                  <div class="avatar avatar-sm" style="background:var(--primary);">A</div>
+                  <div style="flex:1;">
+                    <div style="font-weight:600;font-size:0.875rem;">Anil</div>
+                    <div style="font-size:0.6875rem;color:var(--text-secondary);">Zone B · T11–20</div>
+                  </div>
+                  <div style="text-align:right;">
+                    <div style="font-weight:700;font-size:0.875rem;color:var(--success);">52s</div>
+                    <div style="font-size:0.625rem;color:var(--text-muted);">avg response</div>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:0.75rem;">
+                  <div class="avatar avatar-sm" style="background:var(--info);">M</div>
+                  <div style="flex:1;">
+                    <div style="font-weight:600;font-size:0.875rem;">Manoj</div>
+                    <div style="font-size:0.6875rem;color:var(--text-secondary);">Zone A · T1–10</div>
+                  </div>
+                  <div style="text-align:right;">
+                    <div style="font-weight:700;font-size:0.875rem;color:var(--success);">38s</div>
+                    <div style="font-size:0.625rem;color:var(--text-muted);">avg response</div>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:0.75rem;">
+                  <div class="avatar avatar-sm" style="background:var(--accent);">K</div>
+                  <div style="flex:1;">
+                    <div style="font-weight:600;font-size:0.875rem;">Kiran</div>
+                    <div style="font-size:0.6875rem;color:var(--text-secondary);">Zone C · T21–30</div>
+                  </div>
+                  <div style="text-align:right;">
+                    <div style="font-weight:700;font-size:0.875rem;color:var(--warning);">1m 12s</div>
+                    <div style="font-size:0.625rem;color:var(--text-muted);">avg response</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

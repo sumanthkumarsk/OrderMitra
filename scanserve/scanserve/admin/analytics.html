@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics — Annapurna Kitchen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/shared.css">
+  <style>
+    .analytics-topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.25rem 2rem; background: white;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .analytics-topbar h1 {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 1.375rem; font-weight: 800; margin: 0;
+    }
+    .topbar-actions { display: flex; align-items: center; gap: 0.625rem; }
+    .date-range-group {
+      display: flex; background: #F3F4F6; border-radius: var(--radius);
+      padding: 0.1875rem; gap: 0.125rem;
+    }
+    .date-range-btn {
+      padding: 0.375rem 0.75rem; border: none; border-radius: calc(var(--radius) - 2px);
+      background: transparent; font-size: 0.8125rem; font-weight: 500;
+      cursor: pointer; color: var(--text-secondary); transition: all var(--transition);
+      font-family: 'Inter', sans-serif;
+    }
+    .date-range-btn.active { background: white; color: var(--text); box-shadow: var(--shadow-xs); font-weight: 600; }
+    .date-range-btn:hover:not(.active) { color: var(--text); }
+    .export-btn {
+      padding: 0.4375rem 0.875rem; border: 1px solid var(--border-light);
+      border-radius: var(--radius); background: white; font-size: 0.8125rem;
+      font-weight: 500; cursor: pointer; color: var(--text);
+      display: flex; align-items: center; gap: 0.375rem;
+      transition: all var(--transition); font-family: 'Inter', sans-serif;
+    }
+    .export-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .analytics-content { padding: 1.5rem 2rem; }
+    .metrics-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem;
+    }
+    .metric-card {
+      background: white; border: 1px solid var(--border-light);
+      border-radius: var(--radius); padding: 1.25rem; transition: all var(--transition);
+    }
+    .metric-card:hover { box-shadow: var(--shadow-sm); }
+    .metric-label { font-size: 0.8125rem; color: var(--text-secondary); font-weight: 500; margin-bottom: 0.5rem; }
+    .metric-value {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 1.625rem; font-weight: 800; margin-bottom: 0.375rem;
+    }
+    .metric-change { font-size: 0.75rem; font-weight: 600; display: flex; align-items: center; gap: 0.25rem; }
+    .metric-change.up { color: #16A34A; }
+    .metric-change.down { color: #DC2626; }
+    .metric-change .period { color: var(--text-secondary); font-weight: 400; }
+    .metric-icon {
+      width: 40px; height: 40px; border-radius: var(--radius);
+      display: flex; align-items: center; justify-content: center;
+      float: right; margin-top: -0.25rem;
+    }
+    .metric-icon.revenue { background: #DCFCE7; color: #16A34A; }
+    .metric-icon.orders { background: #DBEAFE; color: #2563EB; }
+    .metric-icon.aov { background: #FEF3C7; color: #D97706; }
+    .metric-icon.scans { background: #F3E8FF; color: #9333EA; }
+    .chart-section {
+      background: white; border: 1px solid var(--border-light);
+      border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.5rem;
+    }
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 1.25rem;
+    }
+    .section-title {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 1rem; font-weight: 700;
+    }
+    .section-subtitle { font-size: 0.8125rem; color: var(--text-secondary); }
+    .bar-chart {
+      display: flex; align-items: flex-end; gap: 0.375rem;
+      height: 220px; padding-top: 1rem; position: relative;
+    }
+    .bar-chart-y-axis {
+      position: absolute; left: 0; top: 0; bottom: 0; width: 40px;
+      display: flex; flex-direction: column; justify-content: space-between;
+      padding-bottom: 1.75rem;
+    }
+    .bar-chart-y-label { font-size: 0.625rem; color: var(--text-secondary); text-align: right; width: 100%; }
+    .bar-chart-bars {
+      display: flex; align-items: flex-end; gap: 0.375rem;
+      margin-left: 44px; flex: 1; height: 100%;
+    }
+    .bar-chart-bar {
+      flex: 1; border-radius: 4px 4px 0 0; position: relative;
+      transition: all 0.2s ease; cursor: pointer; min-width: 0;
+    }
+    .bar-chart-bar:hover { opacity: 0.85; transform: scaleY(1.02); transform-origin: bottom; }
+    .bar-chart-bar .bar-value {
+      position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
+      font-size: 0.625rem; font-weight: 600; color: var(--text-secondary);
+      white-space: nowrap; opacity: 0; transition: opacity 0.2s;
+    }
+    .bar-chart-bar:hover .bar-value { opacity: 1; }
+    .bar-chart-labels {
+      display: flex; gap: 0.375rem; margin-left: 44px; margin-top: 0.5rem;
+    }
+    .bar-chart-labels span {
+      flex: 1; text-align: center; font-size: 0.6875rem;
+      color: var(--text-secondary);
+    }
+    .two-col-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+    .three-col-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+    table.analytics-table { width: 100%; border-collapse: collapse; }
+    table.analytics-table th {
+      text-align: left; font-size: 0.75rem; font-weight: 600;
+      color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.03em;
+      padding: 0.625rem 0; border-bottom: 1px solid var(--border-light);
+    }
+    table.analytics-table td {
+      padding: 0.75rem 0; border-bottom: 1px solid #F3F4F6;
+      font-size: 0.875rem; vertical-align: middle;
+    }
+    table.analytics-table tr:last-child td { border-bottom: none; }
+    table.analytics-table tr:hover td { background: #FAFAFA; }
+    .rank-badge {
+      width: 28px; height: 28px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; font-weight: 700;
+    }
+    .rank-1 { background: #FEF3C7; color: #B45309; }
+    .rank-2 { background: #E5E7EB; color: #4B5563; }
+    .rank-3 { background: #FED7AA; color: #C2410C; }
+    .rank-default { background: #F3F4F6; color: #6B7280; }
+    .trend-up { color: #16A34A; font-weight: 600; font-size: 0.8125rem; }
+    .trend-down { color: #DC2626; font-weight: 600; font-size: 0.8125rem; }
+    .trend-flat { color: #6B7280; font-weight: 600; font-size: 0.8125rem; }
+    .pct-bar { display: flex; align-items: center; gap: 0.5rem; }
+    .pct-bar-track {
+      flex: 1; height: 8px; background: #F3F4F6;
+      border-radius: var(--radius-full); overflow: hidden;
+    }
+    .pct-bar-fill { height: 100%; border-radius: var(--radius-full); transition: width 0.3s ease; }
+    .pct-bar-label { font-size: 0.8125rem; font-weight: 600; min-width: 36px; text-align: right; }
+    .category-row {
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 0.5rem 0;
+    }
+    .category-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .category-name { font-size: 0.875rem; font-weight: 500; min-width: 100px; }
+    .category-bar-track {
+      flex: 1; height: 10px; background: #F3F4F6;
+      border-radius: var(--radius-full); overflow: hidden;
+    }
+    .category-bar-fill { height: 100%; border-radius: var(--radius-full); }
+    .category-pct { font-size: 0.875rem; font-weight: 700; min-width: 40px; text-align: right; }
+    .veg-nonveg-bar {
+      display: flex; height: 32px; border-radius: var(--radius); overflow: hidden;
+      margin: 1rem 0;
+    }
+    .veg-segment { display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem; }
+    .veg-legend {
+      display: flex; gap: 1.5rem; margin-top: 0.75rem;
+    }
+    .veg-legend-item { display: flex; align-items: center; gap: 0.375rem; font-size: 0.875rem; }
+    .veg-legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+    .heatmap-grid {
+      display: grid; grid-template-columns: 60px repeat(7, 1fr);
+      gap: 3px; font-size: 0.6875rem;
+    }
+    .heatmap-header { font-weight: 600; color: var(--text-secondary); text-align: center; padding: 0.375rem 0; }
+    .heatmap-time { display: flex; align-items: center; color: var(--text-secondary); font-weight: 500; }
+    .heatmap-cell {
+      aspect-ratio: 1.4; border-radius: 4px; display: flex;
+      align-items: center; justify-content: center;
+      font-size: 0.625rem; font-weight: 600; color: transparent;
+      transition: all 0.15s ease; cursor: default;
+      min-height: 28px;
+    }
+    .heatmap-cell:hover { color: white; transform: scale(1.08); z-index: 1; }
+    .heat-0 { background: #F0FDF4; color: #166534; }
+    .heat-1 { background: #DCFCE7; color: #166534; }
+    .heat-2 { background: #BBF7D0; color: #166534; }
+    .heat-3 { background: #86EFAC; color: #166534; }
+    .heat-4 { background: #4ADE80; color: #166534; }
+    .heat-5 { background: #22C55E; color: white; }
+    .heat-6 { background: #16A34A; color: white; }
+    .compare-grid {
+      display: grid; grid-template-columns: 1fr auto 1fr; gap: 1rem; align-items: start;
+    }
+    .compare-panel { text-align: center; }
+    .compare-divider {
+      display: flex; flex-direction: column; align-items: center;
+      padding-top: 2.5rem;
+    }
+    .compare-divider-line {
+      width: 1px; background: var(--border-light); flex: 1; min-height: 120px;
+    }
+    .compare-vs {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: #F3F4F6; display: flex; align-items: center;
+      justify-content: center; font-weight: 700; font-size: 0.75rem;
+      color: var(--text-secondary); margin: 0.5rem 0;
+    }
+    .compare-period { font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 1rem; font-weight: 500; }
+    .compare-value {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 1.5rem; font-weight: 800; margin-bottom: 0.25rem;
+    }
+    .compare-label { font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.75rem; }
+    .compare-metric-row {
+      display: flex; justify-content: space-between;
+      padding: 0.5rem 0; border-top: 1px solid #F3F4F6;
+      font-size: 0.8125rem;
+    }
+    .compare-metric-row span:first-child { color: var(--text-secondary); }
+    .compare-metric-row span:last-child { font-weight: 600; }
+    .compare-change {
+      display: inline-flex; align-items: center; gap: 0.25rem;
+      font-size: 0.75rem; font-weight: 600; padding: 0.125rem 0.5rem;
+      border-radius: var(--radius-full);
+    }
+    .compare-change.up { background: #DCFCE7; color: #16A34A; }
+    .compare-change.down { background: #FEE2E2; color: #DC2626; }
+    @media (max-width: 1024px) {
+      .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+      .two-col-grid, .three-col-grid { grid-template-columns: 1fr; }
+      .compare-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 768px) {
+      .analytics-topbar { flex-wrap: wrap; gap: 0.75rem; padding: 1rem; }
+      .analytics-content { padding: 1rem; }
+      .metrics-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">SS</div>
+        <div class="sidebar-brand">ScanServe</div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Main</div>
+        </div>
+        <a class="sidebar-link" href="dashboard.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </a>
+        <a class="sidebar-link" href="orders.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Orders
+        </a>
+        <a class="sidebar-link" href="billing.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          Billing
+        </a>
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Management</div>
+        </div>
+        <a class="sidebar-link" href="menu-management.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          Menu
+        </a>
+        <a class="sidebar-link" href="table-map.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+          Table Map
+        </a>
+        <a class="sidebar-link" href="waiters.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Waiters
+        </a>
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Intelligence</div>
+        </div>
+        <a class="sidebar-link active" href="analytics.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          Analytics
+        </a>
+        <a class="sidebar-link" href="ai-owner.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          AI Assistant
+        </a>
+        <a class="sidebar-link" href="ai-controls.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          AI Controls
+        </a>
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Setup</div>
+        </div>
+        <a class="sidebar-link" href="onboarding.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          Onboarding
+        </a>
+        <a class="sidebar-link" href="#">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Settings
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div style="display:flex;align-items:center;gap:0.625rem;">
+          <div class="avatar avatar-sm">R</div>
+          <div>
+            <div style="font-size:0.8125rem;font-weight:600;">Ravi</div>
+            <div style="font-size:0.6875rem;color:rgba(255,255,255,0.5);">Owner · Premium</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <!-- Topbar -->
+      <div class="analytics-topbar">
+        <h1>Analytics</h1>
+        <div class="topbar-actions">
+          <div class="date-range-group">
+            <button class="date-range-btn active">Today</button>
+            <button class="date-range-btn">7 Days</button>
+            <button class="date-range-btn">30 Days</button>
+            <button class="date-range-btn">Custom</button>
+          </div>
+          <button class="export-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export CSV
+          </button>
+          <button class="export-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export PDF
+          </button>
+        </div>
+      </div>
+
+      <div class="analytics-content">
+
+        <!-- Key Metrics Row -->
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-icon revenue">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </div>
+            <div class="metric-label">Total Revenue</div>
+            <div class="metric-value">₹42,380</div>
+            <div class="metric-change up">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+              +12.4% <span class="period">vs yesterday</span>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon orders">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            <div class="metric-label">Total Orders</div>
+            <div class="metric-value">148</div>
+            <div class="metric-change up">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+              +8.2% <span class="period">vs yesterday</span>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon aov">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+            </div>
+            <div class="metric-label">Avg. Order Value</div>
+            <div class="metric-value">₹286</div>
+            <div class="metric-change down">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+              -1.8% <span class="period">vs yesterday</span>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon scans">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            </div>
+            <div class="metric-label">Unique QR Scans</div>
+            <div class="metric-value">312</div>
+            <div class="metric-change up">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+              +15.7% <span class="period">vs yesterday</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Revenue Chart -->
+        <div class="chart-section">
+          <div class="section-header">
+            <div>
+              <div class="section-title">Hourly Revenue</div>
+              <div class="section-subtitle">Revenue distribution across service hours</div>
+            </div>
+            <div style="display:flex;gap:1rem;font-size:0.75rem;color:var(--text-secondary);">
+              <span style="display:flex;align-items:center;gap:0.375rem;"><span style="width:10px;height:10px;border-radius:2px;background:#059669;display:inline-block;"></span> Revenue</span>
+            </div>
+          </div>
+          <div class="bar-chart">
+            <div class="bar-chart-y-axis">
+              <div class="bar-chart-y-label">₹8K</div>
+              <div class="bar-chart-y-label">₹6K</div>
+              <div class="bar-chart-y-label">₹4K</div>
+              <div class="bar-chart-y-label">₹2K</div>
+              <div class="bar-chart-y-label">₹0</div>
+            </div>
+            <div class="bar-chart-bars" style="height:calc(100% - 24px);">
+              <!-- 11AM --> <div class="bar-chart-bar" style="height:22%;background:linear-gradient(180deg,#059669,#10B981);"><span class="bar-value">₹1,780</span></div>
+              <!-- 12PM --> <div class="bar-chart-bar" style="height:48%;background:linear-gradient(180deg,#059669,#10B981);"><span class="bar-value">₹3,920</span></div>
+              <!-- 1PM -->  <div class="bar-chart-bar" style="height:65%;background:linear-gradient(180deg,#059669,#10B981);"><span class="bar-value">₹5,340</span></div>
+              <!-- 2PM -->  <div class="bar-chart-bar" style="height:55%;background:linear-gradient(180deg,#059669,#10B981);"><span class="bar-value">₹4,520</span></div>
+              <!-- 3PM -->  <div class="bar-chart-bar" style="height:25%;background:linear-gradient(180deg,#059669,#10B981);"><span class="bar-value">₹2,040</span></div>
+              <!-- 4PM -->  <div class="bar-chart-bar" style="height:18%;background:linear-gradient(180deg,#059669,#10B981);"><span class="bar-value">₹1,460</span></div>
+              <!-- 5PM -->  <div class="bar-chart-bar" style="height:35%;background:linear-gradient(180deg,#059669,#10B981);"><span class="bar-value">₹2,880</span></div>
+              <!-- 6PM -->  <div class="bar-chart-bar" style="height:62%;background:linear-gradient(180deg,#059669,#10B981);"><span class="bar-value">₹5,100</span></div>
+              <!-- 7PM -->  <div class="bar-chart-bar" style="height:88%;background:linear-gradient(180deg,#047857,#059669);"><span class="bar-value">₹7,240</span></div>
+              <!-- 8PM -->  <div class="bar-chart-bar" style="height:95%;background:linear-gradient(180deg,#047857,#059669);"><span class="bar-value">₹7,800</span></div>
+              <!-- 9PM -->  <div class="bar-chart-bar" style="height:72%;background:linear-gradient(180deg,#059669,#10B981);"><span class="bar-value">₹5,880</span></div>
+              <!-- 10PM --> <div class="bar-chart-bar" style="height:30%;background:linear-gradient(180deg,#059669,#10B981);"><span class="bar-value">₹2,420</span></div>
+            </div>
+          </div>
+          <div class="bar-chart-labels">
+            <span>11AM</span><span>12PM</span><span>1PM</span><span>2PM</span>
+            <span>3PM</span><span>4PM</span><span>5PM</span><span>6PM</span>
+            <span>7PM</span><span>8PM</span><span>9PM</span><span>10PM</span>
+          </div>
+        </div>
+
+        <!-- Top Items + Category Split -->
+        <div class="two-col-grid">
+          <!-- Top Items Table -->
+          <div class="chart-section">
+            <div class="section-header">
+              <div>
+                <div class="section-title">Top Items</div>
+                <div class="section-subtitle">Best performing menu items today</div>
+              </div>
+            </div>
+            <table class="analytics-table">
+              <thead>
+                <tr>
+                  <th style="width:40px;">#</th>
+                  <th>Item Name</th>
+                  <th style="text-align:right;">Orders</th>
+                  <th style="text-align:right;">Revenue</th>
+                  <th style="text-align:right;">% Total</th>
+                  <th style="text-align:center;width:50px;">Trend</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="rank-badge rank-1">1</span></td>
+                  <td style="font-weight:600;">Chicken Biryani</td>
+                  <td style="text-align:right;">38</td>
+                  <td style="text-align:right;font-weight:600;">₹8,360</td>
+                  <td style="text-align:right;">19.7%</td>
+                  <td style="text-align:center;" class="trend-up">▲</td>
+                </tr>
+                <tr>
+                  <td><span class="rank-badge rank-2">2</span></td>
+                  <td style="font-weight:600;">Paneer Butter Masala</td>
+                  <td style="text-align:right;">28</td>
+                  <td style="text-align:right;font-weight:600;">₹5,040</td>
+                  <td style="text-align:right;">11.9%</td>
+                  <td style="text-align:center;" class="trend-up">▲</td>
+                </tr>
+                <tr>
+                  <td><span class="rank-badge rank-3">3</span></td>
+                  <td style="font-weight:600;">Dal Makhani</td>
+                  <td style="text-align:right;">24</td>
+                  <td style="text-align:right;font-weight:600;">₹3,600</td>
+                  <td style="text-align:right;">8.5%</td>
+                  <td style="text-align:center;" class="trend-flat">—</td>
+                </tr>
+                <tr>
+                  <td><span class="rank-badge rank-default">4</span></td>
+                  <td style="font-weight:600;">Garlic Naan</td>
+                  <td style="text-align:right;">42</td>
+                  <td style="text-align:right;font-weight:600;">₹2,940</td>
+                  <td style="text-align:right;">6.9%</td>
+                  <td style="text-align:center;" class="trend-up">▲</td>
+                </tr>
+                <tr>
+                  <td><span class="rank-badge rank-default">5</span></td>
+                  <td style="font-weight:600;">Butter Chicken</td>
+                  <td style="text-align:right;">22</td>
+                  <td style="text-align:right;font-weight:600;">₹5,940</td>
+                  <td style="text-align:right;">14.0%</td>
+                  <td style="text-align:center;" class="trend-down">▼</td>
+                </tr>
+                <tr>
+                  <td><span class="rank-badge rank-default">6</span></td>
+                  <td style="font-weight:600;">Masala Dosa</td>
+                  <td style="text-align:right;">18</td>
+                  <td style="text-align:right;font-weight:600;">₹2,160</td>
+                  <td style="text-align:right;">5.1%</td>
+                  <td style="text-align:center;" class="trend-up">▲</td>
+                </tr>
+                <tr>
+                  <td><span class="rank-badge rank-default">7</span></td>
+                  <td style="font-weight:600;">Mango Lassi</td>
+                  <td style="text-align:right;">30</td>
+                  <td style="text-align:right;font-weight:600;">₹1,500</td>
+                  <td style="text-align:right;">3.5%</td>
+                  <td style="text-align:center;" class="trend-up">▲</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Category Revenue Split -->
+          <div class="chart-section">
+            <div class="section-header">
+              <div>
+                <div class="section-title">Category Revenue Split</div>
+                <div class="section-subtitle">Revenue share by menu category</div>
+              </div>
+            </div>
+            <div style="margin-bottom:1.25rem;">
+              <div class="category-row">
+                <div class="category-dot" style="background:#F59E0B;"></div>
+                <div class="category-name">Biryani</div>
+                <div class="category-bar-track"><div class="category-bar-fill" style="width:32%;background:#F59E0B;"></div></div>
+                <div class="category-pct">32%</div>
+              </div>
+              <div class="category-row">
+                <div class="category-dot" style="background:#8B5CF6;"></div>
+                <div class="category-name">Curries</div>
+                <div class="category-bar-track"><div class="category-bar-fill" style="width:22%;background:#8B5CF6;"></div></div>
+                <div class="category-pct">22%</div>
+              </div>
+              <div class="category-row">
+                <div class="category-dot" style="background:#EF4444;"></div>
+                <div class="category-name">Starters</div>
+                <div class="category-bar-track"><div class="category-bar-fill" style="width:18%;background:#EF4444;"></div></div>
+                <div class="category-pct">18%</div>
+              </div>
+              <div class="category-row">
+                <div class="category-dot" style="background:#3B82F6;"></div>
+                <div class="category-name">Breads</div>
+                <div class="category-bar-track"><div class="category-bar-fill" style="width:15%;background:#3B82F6;"></div></div>
+                <div class="category-pct">15%</div>
+              </div>
+              <div class="category-row">
+                <div class="category-dot" style="background:#10B981;"></div>
+                <div class="category-name">Beverages</div>
+                <div class="category-bar-track"><div class="category-bar-fill" style="width:8%;background:#10B981;"></div></div>
+                <div class="category-pct">8%</div>
+              </div>
+              <div class="category-row">
+                <div class="category-dot" style="background:#EC4899;"></div>
+                <div class="category-name">Desserts</div>
+                <div class="category-bar-track"><div class="category-bar-fill" style="width:5%;background:#EC4899;"></div></div>
+                <div class="category-pct">5%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Veg vs Non-Veg + Peak Hours -->
+        <div class="two-col-grid">
+          <!-- Veg vs Non-Veg Mix -->
+          <div class="chart-section">
+            <div class="section-header">
+              <div>
+                <div class="section-title">Veg vs Non-Veg Mix</div>
+                <div class="section-subtitle">Order distribution by dietary preference</div>
+              </div>
+            </div>
+            <div class="veg-nonveg-bar">
+              <div class="veg-segment" style="width:38%;background:#16A34A;">38%</div>
+              <div class="veg-segment" style="width:62%;background:#EA580C;color:white;">62%</div>
+            </div>
+            <div class="veg-legend">
+              <div class="veg-legend-item">
+                <div class="veg-legend-dot" style="background:#16A34A;"></div>
+                <span style="font-weight:600;">Veg</span> — ₹16,104 (57 orders)
+              </div>
+              <div class="veg-legend-item">
+                <div class="veg-legend-dot" style="background:#EA580C;"></div>
+                <span style="font-weight:600;">Non-Veg</span> — ₹26,276 (91 orders)
+              </div>
+            </div>
+            <div style="margin-top:1.25rem;padding-top:1rem;border-top:1px solid #F3F4F6;">
+              <div style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:0.75rem;font-weight:500;">AOV by preference</div>
+              <div style="display:flex;gap:1rem;">
+                <div style="flex:1;background:#F0FDF4;border-radius:var(--radius);padding:0.75rem;text-align:center;">
+                  <div style="font-size:0.6875rem;color:#16A34A;font-weight:600;">Veg AOV</div>
+                  <div style="font-family:'Plus Jakarta Sans';font-weight:800;font-size:1.125rem;">₹283</div>
+                </div>
+                <div style="flex:1;background:#FFF7ED;border-radius:var(--radius);padding:0.75rem;text-align:center;">
+                  <div style="font-size:0.6875rem;color:#EA580C;font-weight:600;">Non-Veg AOV</div>
+                  <div style="font-family:'Plus Jakarta Sans';font-weight:800;font-size:1.125rem;">₹289</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Peak Hours Heatmap -->
+          <div class="chart-section">
+            <div class="section-header">
+              <div>
+                <div class="section-title">Peak Hours Heatmap</div>
+                <div class="section-subtitle">Order density by hour and day of week</div>
+              </div>
+            </div>
+            <div class="heatmap-grid">
+              <!-- Header row -->
+              <div class="heatmap-header"></div>
+              <div class="heatmap-header">Mon</div>
+              <div class="heatmap-header">Tue</div>
+              <div class="heatmap-header">Wed</div>
+              <div class="heatmap-header">Thu</div>
+              <div class="heatmap-header">Fri</div>
+              <div class="heatmap-header">Sat</div>
+              <div class="heatmap-header">Sun</div>
+              <!-- 12 PM -->
+              <div class="heatmap-time">12 PM</div>
+              <div class="heatmap-cell heat-4">18</div>
+              <div class="heatmap-cell heat-3">14</div>
+              <div class="heatmap-cell heat-4">16</div>
+              <div class="heatmap-cell heat-3">12</div>
+              <div class="heatmap-cell heat-5">22</div>
+              <div class="heatmap-cell heat-6">26</div>
+              <div class="heatmap-cell heat-6">28</div>
+              <!-- 1 PM -->
+              <div class="heatmap-time">1 PM</div>
+              <div class="heatmap-cell heat-5">20</div>
+              <div class="heatmap-cell heat-4">17</div>
+              <div class="heatmap-cell heat-4">19</div>
+              <div class="heatmap-cell heat-4">16</div>
+              <div class="heatmap-cell heat-6">25</div>
+              <div class="heatmap-cell heat-6">30</div>
+              <div class="heatmap-cell heat-6">32</div>
+              <!-- 2 PM -->
+              <div class="heatmap-time">2 PM</div>
+              <div class="heatmap-cell heat-3">12</div>
+              <div class="heatmap-cell heat-3">11</div>
+              <div class="heatmap-cell heat-3">13</div>
+              <div class="heatmap-cell heat-2">9</div>
+              <div class="heatmap-cell heat-4">17</div>
+              <div class="heatmap-cell heat-5">21</div>
+              <div class="heatmap-cell heat-5">23</div>
+              <!-- 6 PM -->
+              <div class="heatmap-time">6 PM</div>
+              <div class="heatmap-cell heat-4">16</div>
+              <div class="heatmap-cell heat-4">15</div>
+              <div class="heatmap-cell heat-5">20</div>
+              <div class="heatmap-cell heat-4">18</div>
+              <div class="heatmap-cell heat-6">28</div>
+              <div class="heatmap-cell heat-6">34</div>
+              <div class="heatmap-cell heat-6">36</div>
+              <!-- 7 PM -->
+              <div class="heatmap-time">7 PM</div>
+              <div class="heatmap-cell heat-6">28</div>
+              <div class="heatmap-cell heat-5">24</div>
+              <div class="heatmap-cell heat-5">26</div>
+              <div class="heatmap-cell heat-5">22</div>
+              <div class="heatmap-cell heat-6">35</div>
+              <div class="heatmap-cell heat-6">42</div>
+              <div class="heatmap-cell heat-6">44</div>
+              <!-- 8 PM -->
+              <div class="heatmap-time">8 PM</div>
+              <div class="heatmap-cell heat-6">32</div>
+              <div class="heatmap-cell heat-6">28</div>
+              <div class="heatmap-cell heat-6">30</div>
+              <div class="heatmap-cell heat-5">25</div>
+              <div class="heatmap-cell heat-6">38</div>
+              <div class="heatmap-cell heat-6">45</div>
+              <div class="heatmap-cell heat-6">48</div>
+              <!-- 9 PM -->
+              <div class="heatmap-time">9 PM</div>
+              <div class="heatmap-cell heat-5">22</div>
+              <div class="heatmap-cell heat-4">18</div>
+              <div class="heatmap-cell heat-5">20</div>
+              <div class="heatmap-cell heat-4">16</div>
+              <div class="heatmap-cell heat-6">30</div>
+              <div class="heatmap-cell heat-6">36</div>
+              <div class="heatmap-cell heat-6">38</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Date Comparison Section -->
+        <div class="chart-section">
+          <div class="section-header">
+            <div>
+              <div class="section-title">Date Comparison</div>
+              <div class="section-subtitle">Compare metrics between two time periods</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:0.75rem;">
+              <label style="font-size:0.8125rem;color:var(--text-secondary);font-weight:500;">Compare with</label>
+              <select style="padding:0.375rem 0.75rem;border:1px solid var(--border-light);border-radius:var(--radius);font-size:0.8125rem;font-family:'Inter',sans-serif;background:white;color:var(--text);cursor:pointer;">
+                <option>Yesterday</option>
+                <option>Last Week</option>
+                <option>Last Month</option>
+                <option>Last 7 Days Avg</option>
+              </select>
+            </div>
+          </div>
+          <div class="compare-grid">
+            <!-- Current Period -->
+            <div class="compare-panel">
+              <div class="compare-period">Today (Aug 25, 2026)</div>
+              <div class="compare-value">₹42,380</div>
+              <div class="compare-label">Total Revenue</div>
+              <div class="compare-metric-row"><span>Total Orders</span><span>148</span></div>
+              <div class="compare-metric-row"><span>Avg. Order Value</span><span>₹286</span></div>
+              <div class="compare-metric-row"><span>Unique Scans</span><span>312</span></div>
+              <div class="compare-metric-row"><span>Peak Hour Revenue</span><span>₹7,800 (8PM)</span></div>
+              <div class="compare-metric-row"><span>Top Item</span><span>Chicken Biryani</span></div>
+            </div>
+
+            <!-- Divider -->
+            <div class="compare-divider">
+              <div class="compare-divider-line"></div>
+              <div class="compare-vs">VS</div>
+              <div class="compare-divider-line"></div>
+            </div>
+
+            <!-- Comparison Period -->
+            <div class="compare-panel">
+              <div class="compare-period">Yesterday (Aug 24, 2026)</div>
+              <div class="compare-value">₹37,712</div>
+              <div class="compare-label">Total Revenue</div>
+              <div class="compare-metric-row">
+                <span>Total Orders</span>
+                <span>137 <span class="compare-change up">+11 ↑</span></span>
+              </div>
+              <div class="compare-metric-row">
+                <span>Avg. Order Value</span>
+                <span>₹275 <span class="compare-change up">+₹11 ↑</span></span>
+              </div>
+              <div class="compare-metric-row">
+                <span>Unique Scans</span>
+                <span>269 <span class="compare-change up">+43 ↑</span></span>
+              </div>
+              <div class="compare-metric-row">
+                <span>Peak Hour Revenue</span>
+                <span>₹6,540 (8PM)</span>
+              </div>
+              <div class="compare-metric-row">
+                <span>Top Item</span>
+                <span>Paneer Butter Masala</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</body>
+</html>

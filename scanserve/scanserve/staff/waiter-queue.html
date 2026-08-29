@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Waiter Queue — Anil</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/shared.css">
+  <style>
+    body { background: var(--bg); min-height: 100vh; }
+    .waiter-header {
+      background: var(--secondary); color: white;
+      padding: 1rem 1.25rem; position: sticky; top: 0; z-index: 50;
+    }
+    .waiter-header-top {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 0.5rem;
+    }
+    .waiter-profile { display: flex; align-items: center; gap: 0.625rem; }
+    .waiter-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700; }
+    .waiter-name { font-weight: 700; font-size: 1rem; }
+    .waiter-zone { font-size: 0.75rem; color: rgba(255,255,255,0.6); }
+    .waiter-on-duty {
+      display: flex; align-items: center; gap: 0.5rem;
+      padding: 0.375rem 0.75rem; border-radius: var(--radius-full);
+      background: rgba(45,147,108,0.2); border: 1px solid rgba(45,147,108,0.3);
+      font-size: 0.75rem; font-weight: 600; cursor: pointer;
+    }
+    .waiter-on-duty .dot { width: 8px; height: 8px; border-radius: 50%; background: #22C55E; }
+    .waiter-stats {
+      display: flex; gap: 1.5rem;
+    }
+    .waiter-stat { text-align: center; }
+    .waiter-stat-val { font-weight: 700; font-size: 1.125rem; }
+    .waiter-stat-label { font-size: 0.625rem; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.05em; }
+
+    .waiter-body { padding: 1rem; max-width: 600px; margin: 0 auto; }
+
+    .queue-section-title {
+      font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);
+      text-transform: uppercase; letter-spacing: 0.05em;
+      margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;
+    }
+    .queue-count {
+      background: var(--primary); color: white;
+      width: 20px; height: 20px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.625rem; font-weight: 700;
+    }
+
+    /* Request Cards */
+    .request-card {
+      background: white; border-radius: var(--radius);
+      border: 2px solid var(--border-light); overflow: hidden;
+      margin-bottom: 0.75rem; transition: all 0.3s ease;
+    }
+    .request-card.urgent { border-color: var(--danger); }
+    .request-card.age-moderate { border-color: var(--warning); }
+    .request-card.age-new { border-color: var(--info); }
+    .request-card.acknowledged { border-color: var(--success); }
+
+    .request-card-header {
+      padding: 0.75rem 1rem;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .request-card-table {
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .table-badge {
+      background: var(--secondary); color: white;
+      padding: 0.25rem 0.5rem; border-radius: 4px;
+      font-weight: 700; font-size: 0.75rem;
+    }
+    .request-card-type { font-weight: 700; font-size: 0.9375rem; }
+    .request-card-elapsed {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.875rem; font-weight: 700;
+    }
+    .request-card-elapsed.urgent { color: var(--danger); }
+    .request-card-elapsed.moderate { color: var(--warning); }
+    .request-card-elapsed.fresh { color: var(--info); }
+
+    .request-card-body {
+      padding: 0 1rem 0.75rem;
+      font-size: 0.8125rem; color: var(--text-secondary);
+    }
+
+    .request-card-actions {
+      padding: 0.625rem 1rem; border-top: 1px solid var(--border-light);
+      display: flex; gap: 0.5rem;
+    }
+    .request-action {
+      flex: 1; padding: 0.625rem;
+      border: none; border-radius: var(--radius-sm);
+      font-weight: 700; font-size: 0.8125rem;
+      cursor: pointer; transition: all var(--transition);
+      text-align: center;
+    }
+    .request-action.accept { background: var(--primary); color: white; }
+    .request-action.accept:hover { background: var(--primary-dark); }
+    .request-action.on-way { background: var(--info); color: white; }
+    .request-action.on-way:hover { background: #3B6D91; }
+    .request-action.fulfilled { background: var(--success); color: white; }
+    .request-action.fulfilled:hover { background: #1F7A55; }
+    .request-action.disabled { background: var(--border-light); color: var(--text-muted); cursor: default; }
+
+    /* Escalated alert */
+    .escalation-alert {
+      background: var(--danger-light); border: 1px solid var(--danger);
+      border-radius: var(--radius); padding: 0.75rem 1rem;
+      display: flex; align-items: center; gap: 0.625rem;
+      margin-bottom: 1rem;
+    }
+    .escalation-alert .icon { font-size: 1.25rem; }
+    .escalation-alert .text { font-size: 0.8125rem; font-weight: 600; color: var(--danger); }
+
+    /* Fulfilled section */
+    .fulfilled-card {
+      background: white; border-radius: var(--radius);
+      border: 1px solid var(--border-light); padding: 0.625rem 1rem;
+      margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.75rem;
+      opacity: 0.6;
+    }
+    .fulfilled-check {
+      width: 24px; height: 24px; border-radius: 50%;
+      background: var(--success); color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; flex-shrink: 0;
+    }
+    .fulfilled-info { flex: 1; }
+    .fulfilled-type { font-weight: 600; font-size: 0.875rem; }
+    .fulfilled-time { font-size: 0.6875rem; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+
+  <!-- Waiter Header -->
+  <div class="waiter-header">
+    <div class="waiter-header-top">
+      <div class="waiter-profile">
+        <div class="waiter-avatar">A</div>
+        <div>
+          <div class="waiter-name">Anil</div>
+          <div class="waiter-zone">Tables 11–20 · Zone B</div>
+        </div>
+      </div>
+      <div class="waiter-on-duty">
+        <div class="dot"></div>
+        On Duty
+      </div>
+    </div>
+    <div class="waiter-stats">
+      <div class="waiter-stat">
+        <div class="waiter-stat-val">4</div>
+        <div class="waiter-stat-label">Open</div>
+      </div>
+      <div class="waiter-stat">
+        <div class="waiter-stat-val">12</div>
+        <div class="waiter-stat-label">Today</div>
+      </div>
+      <div class="waiter-stat">
+        <div class="waiter-stat-val">52s</div>
+        <div class="waiter-stat-label">Avg Ack</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="waiter-body">
+    <!-- Escalation Alert -->
+    <div class="escalation-alert">
+      <span class="icon">⚠️</span>
+      <span class="text">1 request escalated — T14 Water was unacknowledged for 90s</span>
+    </div>
+
+    <div class="queue-section-title">
+      Open Requests <span class="queue-count">4</span>
+    </div>
+
+    <!-- Urgent Request -->
+    <div class="request-card urgent">
+      <div class="request-card-header">
+        <div class="request-card-table">
+          <span class="table-badge">T14</span>
+          <span class="request-card-type">💧 Water</span>
+        </div>
+        <span class="request-card-elapsed urgent">02:32</span>
+      </div>
+      <div class="request-card-body">
+        Escalated from primary waiter · Assigned to you
+      </div>
+      <div class="request-card-actions">
+        <button class="request-action accept" onclick="handleAction(this, 'accept')">Accept</button>
+        <button class="request-action disabled">On The Way</button>
+        <button class="request-action disabled">Fulfilled</button>
+      </div>
+    </div>
+
+    <!-- Moderate Request -->
+    <div class="request-card age-moderate">
+      <div class="request-card-header">
+        <div class="request-card-table">
+          <span class="table-badge">T12</span>
+          <span class="request-card-type">🧻 Tissue</span>
+        </div>
+        <span class="request-card-elapsed moderate">01:05</span>
+      </div>
+      <div class="request-card-body">Waiting for response</div>
+      <div class="request-card-actions">
+        <button class="request-action accept" onclick="handleAction(this, 'accept')">Accept</button>
+        <button class="request-action disabled">On The Way</button>
+        <button class="request-action disabled">Fulfilled</button>
+      </div>
+    </div>
+
+    <!-- New Request -->
+    <div class="request-card age-new">
+      <div class="request-card-header">
+        <div class="request-card-table">
+          <span class="table-badge">T16</span>
+          <span class="request-card-type">📄 Request Bill</span>
+        </div>
+        <span class="request-card-elapsed fresh">00:18</span>
+      </div>
+      <div class="request-card-body">Customer requesting combined bill</div>
+      <div class="request-card-actions">
+        <button class="request-action accept" onclick="handleAction(this, 'accept')">Accept</button>
+        <button class="request-action disabled">On The Way</button>
+        <button class="request-action disabled">Fulfilled</button>
+      </div>
+    </div>
+
+    <!-- Acknowledged Request -->
+    <div class="request-card acknowledged">
+      <div class="request-card-header">
+        <div class="request-card-table">
+          <span class="table-badge">T11</span>
+          <span class="request-card-type">🍴 Extra Plate</span>
+        </div>
+        <span class="request-card-elapsed fresh">00:35</span>
+      </div>
+      <div class="request-card-body">You acknowledged this request</div>
+      <div class="request-card-actions">
+        <button class="request-action disabled">Accepted ✓</button>
+        <button class="request-action on-way" onclick="handleAction(this, 'onway')">On The Way</button>
+        <button class="request-action disabled">Fulfilled</button>
+      </div>
+    </div>
+
+    <!-- Fulfilled Today -->
+    <div class="queue-section-title" style="margin-top: 1.5rem;">Fulfilled Today</div>
+
+    <div class="fulfilled-card">
+      <div class="fulfilled-check">✓</div>
+      <div class="fulfilled-info">
+        <div class="fulfilled-type">T13 · 💧 Water</div>
+        <div class="fulfilled-time">Fulfilled at 7:22 PM · 45s response</div>
+      </div>
+    </div>
+    <div class="fulfilled-card">
+      <div class="fulfilled-check">✓</div>
+      <div class="fulfilled-info">
+        <div class="fulfilled-type">T15 · 📄 Request Bill</div>
+        <div class="fulfilled-time">Fulfilled at 7:15 PM · 30s response</div>
+      </div>
+    </div>
+    <div class="fulfilled-card">
+      <div class="fulfilled-check">✓</div>
+      <div class="fulfilled-info">
+        <div class="fulfilled-type">T11 · 🧂 Condiments</div>
+        <div class="fulfilled-time">Fulfilled at 7:08 PM · 20s response</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function handleAction(btn, action) {
+      const card = btn.closest('.request-card');
+      const buttons = card.querySelectorAll('.request-action');
+
+      if (action === 'accept') {
+        card.className = 'request-card acknowledged';
+        buttons[0].className = 'request-action disabled';
+        buttons[0].textContent = 'Accepted ✓';
+        buttons[1].className = 'request-action on-way';
+        buttons[1].onclick = () => handleAction(buttons[1], 'onway');
+      } else if (action === 'onway') {
+        card.className = 'request-card acknowledged';
+        buttons[1].className = 'request-action disabled';
+        buttons[1].textContent = 'On The Way ✓';
+        buttons[2].className = 'request-action fulfilled';
+        buttons[2].onclick = () => handleAction(buttons[2], 'fulfill');
+      } else if (action === 'fulfill') {
+        card.style.opacity = '0.5';
+        card.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+          card.remove();
+          const toast = document.createElement('div');
+          toast.className = 'toast toast-success';
+          toast.textContent = 'Request fulfilled!';
+          document.body.appendChild(toast);
+          setTimeout(() => toast.remove(), 2000);
+        }, 300);
+      }
+    }
+  </script>
+</body>
+</html>

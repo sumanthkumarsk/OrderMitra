@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ScanServe — UI Prototype Index</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/shared.css">
+  <style>
+    body {
+      background: linear-gradient(160deg, #0F172A 0%, #1D3557 50%, #0F172A 100%);
+      min-height: 100vh; color: white;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 3rem 1.5rem;
+    }
+    .index-header { text-align: center; margin-bottom: 3rem; max-width: 600px; }
+    .index-logo {
+      width: 72px; height: 72px; border-radius: 20px;
+      background: var(--primary); display: flex; align-items: center; justify-content: center;
+      font-size: 1.75rem; font-weight: 900; margin: 0 auto 1.5rem;
+      box-shadow: 0 8px 32px rgba(230,57,70,0.3);
+    }
+    .index-title {
+      font-family: var(--font-display); font-size: 2.5rem; font-weight: 800;
+      letter-spacing: -0.03em; margin-bottom: 0.5rem;
+    }
+    .index-subtitle { color: rgba(255,255,255,0.6); font-size: 1.125rem; line-height: 1.6; }
+    .index-badge {
+      display: inline-block; margin-top: 1rem;
+      padding: 0.375rem 1rem; border-radius: var(--radius-full);
+      background: rgba(230,57,70,0.15); border: 1px solid rgba(230,57,70,0.3);
+      font-size: 0.8125rem; font-weight: 600; color: #FF8A92;
+    }
+
+    .section { width: 100%; max-width: 1000px; margin-bottom: 2.5rem; }
+    .section-header {
+      display: flex; align-items: center; gap: 0.75rem;
+      margin-bottom: 1rem; padding-bottom: 0.75rem;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .section-icon { font-size: 1.5rem; }
+    .section-title {
+      font-family: var(--font-display); font-weight: 700; font-size: 1.25rem;
+    }
+    .section-desc { font-size: 0.8125rem; color: rgba(255,255,255,0.4); margin-left: auto; }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 0.75rem;
+    }
+    .nav-card {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      text-decoration: none; color: white;
+      transition: all 0.25s ease;
+      display: flex; flex-direction: column; gap: 0.5rem;
+      backdrop-filter: blur(8px);
+    }
+    .nav-card:hover {
+      background: rgba(255,255,255,0.1);
+      border-color: rgba(255,255,255,0.2);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+      text-decoration: none;
+    }
+    .nav-card-top { display: flex; align-items: center; justify-content: space-between; }
+    .nav-card-icon { font-size: 1.75rem; }
+    .nav-card-tier {
+      font-size: 0.625rem; padding: 0.15rem 0.5rem;
+      border-radius: var(--radius-full); font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .nav-card-tier.mvp { background: rgba(45,147,108,0.2); color: #6EE7B7; }
+    .nav-card-tier.p2 { background: rgba(233,196,106,0.2); color: #FCD34D; }
+    .nav-card-tier.p3 { background: rgba(139,92,246,0.2); color: #C4B5FD; }
+    .nav-card-title { font-weight: 700; font-size: 1rem; }
+    .nav-card-desc { font-size: 0.8125rem; color: rgba(255,255,255,0.5); line-height: 1.4; }
+    .nav-card-fr {
+      font-family: 'JetBrains Mono', monospace; font-size: 0.6875rem;
+      color: rgba(255,255,255,0.3); margin-top: auto; padding-top: 0.5rem;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .tier-divider {
+      display: flex; align-items: center; gap: 1rem;
+      margin: 2rem 0 1rem;
+    }
+    .tier-divider-line { flex: 1; height: 1px; background: rgba(255,255,255,0.1); }
+    .tier-divider-label {
+      font-size: 0.6875rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.1em; color: rgba(255,255,255,0.3);
+      padding: 0.25rem 0.75rem; border: 1px solid rgba(255,255,255,0.1);
+      border-radius: var(--radius-full);
+    }
+
+    .footer-note {
+      margin-top: 2rem; text-align: center;
+      font-size: 0.75rem; color: rgba(255,255,255,0.25);
+      max-width: 600px; line-height: 1.6;
+    }
+
+    @media (max-width: 640px) {
+      .cards-grid { grid-template-columns: 1fr; }
+      .index-title { font-size: 1.75rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="index-header">
+    <div class="index-logo">SS</div>
+    <div class="index-title">ScanServe</div>
+    <div class="index-subtitle">AI-Powered Dine-In Restaurant Operating & Customer-Experience Platform</div>
+    <div class="index-badge">UI Prototype · v2.0 MVP</div>
+  </div>
+
+  <!-- ═══ CUSTOMER EXPERIENCE ═══ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">👤</span>
+      <span class="section-title">Customer Experience</span>
+      <span class="section-desc">What the diner sees after scanning QR</span>
+    </div>
+    <div class="cards-grid">
+      <a class="nav-card" href="customer/language.html">
+        <div class="nav-card-top">
+          <span class="nav-card-icon">🌐</span>
+          <span class="nav-card-tier mvp">MVP</span>
+        </div>
+        <div class="nav-card-title">Language Selection</div>
+        <div class="nav-card-desc">Post-scan language picker — 5 Indian languages with remember preference</div>
+        <div class="nav-card-fr">FR-004 · FR-005 · FR-851–856</div>
+      </a>
+      <a class="nav-card" href="customer/menu.html">
+        <div class="nav-card-top">
+          <span class="nav-card-icon">📋</span>
+          <span class="nav-card-tier mvp">MVP</span>
+        </div>
+        <div class="nav-card-title">Digital Menu + AI Chat</div>
+        <div class="nav-card-desc">Localized menu with categories, search, availability, veg/non-veg badges, AI assistant</div>
+        <div class="nav-card-fr">FR-101–127 · FR-601–610 · FR-854</div>
+      </a>
+      <a class="nav-card" href="customer/cart.html">
+        <div class="nav-card-top">
+          <span class="nav-card-icon">🛒</span>
+          <span class="nav-card-tier mvp">MVP</span>
+        </div>
+        <div class="nav-card-title">Cart & Checkout</div>
+        <div class="nav-card-desc">Order cart with quantity controls, special instructions, GST breakdown, place order</div>
+        <div class="nav-card-fr">FR-201–205 · FR-231–237</div>
+      </a>
+      <a class="nav-card" href="customer/order-status.html">
+        <div class="nav-card-top">
+          <span class="nav-card-icon">⏱️</span>
+          <span class="nav-card-tier mvp">MVP</span>
+        </div>
+        <div class="nav-card-title">Order Status Timeline</div>
+        <div class="nav-card-desc">Real-time order tracking — Placed → Accepted → Preparing → Ready → Served</div>
+        <div class="nav-card-fr">FR-205 · FR-304 · FR-306</div>
+      </a>
+      <a class="nav-card" href="customer/table-session.html">
+        <div class="nav-card-top">
+          <span class="nav-card-icon">🪑</span>
+          <span class="nav-card-tier mvp">MVP</span>
+        </div>
+        <div class="nav-card-title">Intelligent Table Session</div>
+        <div class="nav-card-desc">Persistent dining context — running tab, multiple orders, add more, reorder, combined bill</div>
+        <div class="nav-card-fr">FR-401–416</div>
+      </a>
+      <a class="nav-card" href="customer/service-requests.html">
+        <div class="nav-card-top">
+          <span class="nav-card-icon">🔔</span>
+          <span class="nav-card-tier mvp">MVP</span>
+        </div>
+        <div class="nav-card-title">Service Requests</div>
+        <div class="nav-card-desc">"Need Something?" — water, tissue, bill, call waiter, custom request with live status</div>
+        <div class="nav-card-fr">FR-311–319</div>
+      </a>
+      <a class="nav-card" href="customer/bill.html">
+        <div class="nav-card-top">
+          <span class="nav-card-icon">📄</span>
+          <span class="nav-card-tier mvp">MVP</span>
+        </div>
+        <div class="nav-card-title">GST Bill & Payment</div>
+        <div class="nav-card-desc">Combined session bill with GST breakup, payment options, download PDF</div>
+        <div class="nav-card-fr">FR-231–237 · FR-405–406</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- ═══ STAFF EXPERIENCE ═══ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">👨‍🍳</span>
+      <span class="section-title">Staff Experience</span>
+      <span class="section-desc">Kitchen and waiter operational views</span>
+    </div>
+    <div class="cards-grid">
+      <a class="nav-card" href="staff/kds.html">
+        <div class="nav-card-top">
+          <span class="nav-card-icon">🖥️</span>
+          <span class="nav-card-tier mvp">MVP</span>
+        </div>
+        <div class="nav-card-title">Kitchen Display System</div>
+        <div class="nav-card-desc">Real-time ticket board with station filters, elapsed timers, prepare/ready actions</div>
+        <div class="nav-card-fr">FR-301–309 · FR-974</div>
+      </a>
+      <a class="nav-card" href="staff/waiter-queue.html">
+        <div class="nav-card-top">
+          <span class="nav-card-icon">📱</span>
+          <span class="nav-card-tier mvp">MVP</span>
+        </div>
+        <div class="nav-card-title">Waiter Request Queue</div>
+        <div class="nav-card-desc">Prioritized request queue with accept/fulfill flow, escalation alerts, performance stats</div>
+        <div class="nav-card-fr">FR-501–512 · FR-505</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- ═══ ADMIN / OWNER ═══ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">⚙️</span>
+      <span class="section-title">Admin & Owner Dashboard</span>
+      <span class="section-desc">Restaurant management and intelligence</span>
+    </div>
+    <div class="cards-grid">
+      <a class="nav-card" href="admin/dashboard.html">
+        <div class="nav-card-top">
+          <span class="nav-card-icon">📊</span>
+          <span class="nav-card-tier mvp">MVP</span>
+        </div>
+        <div class="nav-card-title">Dashboard</div>
+        <div class="nav-card-desc">Today's overview — revenue, orders, AOV, scans, live orders, service requests</div>
+        <div class="nav-card-fr">FR-321–327</div>
+      </a>
+      <a class="nav-card" href="admin/onboarding.html">
+        <div class="nav-card-top">
+          <span class="nav-card-icon">🚀</span>
+          <span class="nav-card-tier mvp">MVP</span>
+        </div>
+        <div class="nav-card-title">AI Onboarding Wizard</div>
+        <div class="nav-card-desc">Photo → AI extraction → review → translate → QR → Live in ~10 minutes</div>
+        <div class="nav-card-fr">FR-901–909 · FR-111–116</div>
+      </a>
+      <a class="nav-card" href="admin/menu-management.html">
+        <div class="nav-card-top">
+          <span class="nav-card-icon">📝</span>
+          <span class="nav-card-tier mvp">MVP</span>
+        </div>
+        <div class="nav-card-title">Menu Management</div>
+        <div class="nav-card-desc">Full CRUD — categories, items, pricing, availability toggles, bulk edit</div>
+        <div class="nav-card-fr">FR-101–107</div>
+      </a>
+      <a class="nav-card" href="admin/orders.html">
+        <div class="nav-card-top">
+          <span class="nav-card-icon">📋</span>
+          <span class="nav-card-tier mvp">MVP</span>
+        </div>
+        <div class="nav-card-title">Orders Management</div>
+        <div class="nav-card-desc">Admin-bill flow — accept, track, mark served, generate bill with GST</div>
+        <div class="nav-card-fr">FR-211–215 · FR-231–237</div>
+      </a>
+      <a class="nav-card" href="admin/table-map.html">
+        <div class="nav-card-top">
+          <span class="nav-card-icon">🗺️</span>
+          <span class="nav-card-tier mvp">MVP</span>
+        </div>
+        <div class="nav-card-title">Table Map & Zones</div>
+        <div class="nav-card-desc">Live table grid with sessions, tabs, waiters, zones, and table detail panel</div>
+        <div class="nav-card-fr">FR-411 · FR-502 · FR-309</div>
+      </a>
+      <a class="nav-card" href="admin/waiters.html">
+        <div class="nav-card-top">
+          <span class="nav-card-icon">👥</span>
+          <span class="nav-card-tier mvp">MVP</span>
+        </div>
+        <div class="nav-card-title">Waiter Management</div>
+        <div class="nav-card-desc">Staff profiles, zone assignments, primary/backup, on-duty toggle, shift handover</div>
+        <div class="nav-card-fr">FR-501–508</div>
+      </a>
+      <a class="nav-card" href="admin/billing.html">
+        <div class="nav-card-top">
+          <span class="nav-card-icon">💰</span>
+          <span class="nav-card-tier mvp">MVP</span>
+        </div>
+        <div class="nav-card-title">Billing & Payments</div>
+        <div class="nav-card-desc">GST bills, payment recording, daily sales summary, thermal print, export</div>
+        <div class="nav-card-fr">FR-231–237 · FR-241–245</div>
+      </a>
+      <a class="nav-card" href="admin/analytics.html">
+        <div class="nav-card-top">
+          <span class="nav-card-icon">📈</span>
+          <span class="nav-card-tier mvp">MVP</span>
+        </div>
+        <div class="nav-card-title">Analytics Dashboard</div>
+        <div class="nav-card-desc">Revenue, orders, AOV, top items, category split, peak hours, date comparison</div>
+        <div class="nav-card-fr">FR-321–327</div>
+      </a>
+      <a class="nav-card" href="admin/ai-owner.html">
+        <div class="nav-card-top">
+          <span class="nav-card-icon">🤖</span>
+          <span class="nav-card-tier mvp">MVP</span>
+        </div>
+        <div class="nav-card-title">AI Owner Assistant</div>
+        <div class="nav-card-desc">"How was business yesterday?" — conversational analytics from real metrics</div>
+        <div class="nav-card-fr">FR-331–338 · FR-335</div>
+      </a>
+      <a class="nav-card" href="admin/ai-controls.html">
+        <div class="nav-card-top">
+          <span class="nav-card-icon">🎛️</span>
+          <span class="nav-card-tier mvp">MVP</span>
+        </div>
+        <div class="nav-card-title">AI Controls Panel</div>
+        <div class="nav-card-desc">Restaurant controls the AI — chef recs, promotions, exclusions, FAQs, quotas</div>
+        <div class="nav-card-fr">FR-751–756</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- ═══ PLATFORM ADMIN ═══ -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">🏢</span>
+      <span class="section-title">Platform (Super Admin)</span>
+      <span class="section-desc">ScanServe SaaS management</span>
+    </div>
+    <div class="cards-grid">
+      <a class="nav-card" href="superadmin/tenants.html">
+        <div class="nav-card-top">
+          <span class="nav-card-icon">🏨</span>
+          <span class="nav-card-tier mvp">MVP</span>
+        </div>
+        <div class="nav-card-title">Tenant Management</div>
+        <div class="nav-card-desc">Restaurant tenants, subscriptions, MRR, usage, support — platform overview</div>
+        <div class="nav-card-fr">FR-001 · FR-008</div>
+      </a>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    All screens are static HTML prototypes based on ScanServe PRD v2.0.<br>
+    MVP features cover Tier 1 (Basic) + Tier 2 (Standard) + Tier 3 (Premium) core flows.<br>
+    Open individual files in a browser to explore each screen.
+  </div>
+
+</body>
+</html>

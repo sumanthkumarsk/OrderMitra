@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Waiter Management — Annapurna Kitchen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/shared.css">
+  <style>
+    .zone-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; margin-top: 1rem; }
+    .zone-card {
+      background: var(--bg-card); border-radius: var(--radius);
+      border: 1px solid var(--border-light); padding: 1.25rem;
+      position: relative; overflow: hidden;
+    }
+    .zone-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+    }
+    .zone-card.zone-a::before { background: #2563EB; }
+    .zone-card.zone-b::before { background: #16A34A; }
+    .zone-card.zone-c::before { background: #9333EA; }
+    .zone-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; }
+    .zone-card-name {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 800; font-size: 1.125rem; color: var(--text);
+    }
+    .zone-card-tables {
+      font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.5rem;
+      border-radius: var(--radius-full); background: var(--bg); color: var(--text-secondary);
+    }
+    .zone-staff { margin-top: 0.75rem; }
+    .zone-staff-row {
+      display: flex; align-items: center; gap: 0.5rem;
+      padding: 0.5rem 0; border-bottom: 1px solid var(--border-light);
+    }
+    .zone-staff-row:last-child { border-bottom: none; }
+    .zone-staff-label {
+      font-size: 0.6875rem; font-weight: 600; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.05em; width: 5rem; flex-shrink: 0;
+    }
+    .zone-staff-name { font-size: 0.8125rem; font-weight: 600; color: var(--text); }
+    .zone-edit-btn {
+      margin-top: 1rem; width: 100%; padding: 0.5rem;
+      background: var(--bg); border: 1px dashed var(--border);
+      border-radius: var(--radius); font-size: 0.75rem; font-weight: 600;
+      color: var(--text-secondary); cursor: pointer; transition: all var(--transition);
+    }
+    .zone-edit-btn:hover { background: var(--primary-light); border-color: var(--primary); color: var(--primary); }
+
+    .waiter-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.25rem; margin-top: 1rem; }
+    .waiter-card {
+      background: var(--bg-card); border-radius: var(--radius);
+      border: 1px solid var(--border-light); padding: 1.25rem;
+      transition: all var(--transition);
+    }
+    .waiter-card:hover { box-shadow: var(--shadow-sm); }
+    .waiter-card-top { display: flex; justify-content: space-between; align-items: flex-start; }
+    .waiter-identity { display: flex; align-items: center; gap: 0.75rem; }
+    .waiter-avatar {
+      width: 48px; height: 48px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800;
+      font-size: 1.125rem; color: white; flex-shrink: 0; position: relative;
+    }
+    .waiter-avatar.a1 { background: linear-gradient(135deg, #2563EB, #60A5FA); }
+    .waiter-avatar.a2 { background: linear-gradient(135deg, #16A34A, #4ADE80); }
+    .waiter-avatar.a3 { background: linear-gradient(135deg, #9333EA, #C084FC); }
+    .waiter-avatar.a4 { background: linear-gradient(135deg, #E63946, #F87171); }
+    .duty-dot {
+      width: 12px; height: 12px; border-radius: 50%;
+      position: absolute; bottom: 0; right: 0; border: 2px solid white;
+    }
+    .duty-dot.on { background: #22C55E; }
+    .duty-dot.off { background: #D1D5DB; }
+    .waiter-name {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 700; font-size: 1rem; color: var(--text);
+    }
+    .waiter-pin {
+      font-size: 0.75rem; color: var(--text-muted);
+      font-family: 'Inter', monospace; margin-top: 0.125rem;
+    }
+    .waiter-badges { display: flex; gap: 0.375rem; margin-top: 0.5rem; flex-wrap: wrap; }
+    .waiter-badge {
+      font-size: 0.6875rem; font-weight: 600; padding: 0.2rem 0.5rem;
+      border-radius: var(--radius-full);
+    }
+    .waiter-badge.zone { background: #DBEAFE; color: #1D4ED8; }
+    .waiter-badge.device { background: #DCFCE7; color: #166534; }
+    .waiter-badge.device.unbound { background: #F3F4F6; color: #6B7280; }
+    .waiter-badge.lang { background: #F3E8FF; color: #7E22CE; }
+
+    .waiter-tables {
+      margin-top: 0.75rem; padding-top: 0.75rem;
+      border-top: 1px solid var(--border-light);
+    }
+    .waiter-tables-row {
+      display: flex; align-items: center; gap: 0.5rem;
+      margin-bottom: 0.375rem;
+    }
+    .waiter-tables-label {
+      font-size: 0.6875rem; font-weight: 600; color: var(--text-muted);
+      width: 5.5rem; flex-shrink: 0;
+    }
+    .table-tags { display: flex; gap: 0.25rem; flex-wrap: wrap; }
+    .table-tag {
+      font-size: 0.6875rem; font-weight: 600; padding: 0.15rem 0.4rem;
+      border-radius: 4px; background: var(--bg); color: var(--text-secondary);
+    }
+    .table-tag.primary { background: #DBEAFE; color: #1D4ED8; }
+
+    .waiter-stats {
+      margin-top: 0.75rem; padding-top: 0.75rem;
+      border-top: 1px solid var(--border-light);
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;
+    }
+    .waiter-stat { text-align: center; }
+    .waiter-stat-value {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 800; font-size: 1.125rem; color: var(--text);
+    }
+    .waiter-stat-label { font-size: 0.625rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    .waiter-actions {
+      margin-top: 0.75rem; padding-top: 0.75rem;
+      border-top: 1px solid var(--border-light);
+      display: flex; gap: 0.5rem;
+    }
+    .waiter-action-btn {
+      flex: 1; padding: 0.5rem; border-radius: var(--radius);
+      font-size: 0.75rem; font-weight: 600; cursor: pointer;
+      transition: all var(--transition); border: 1px solid var(--border-light);
+      text-align: center;
+    }
+    .waiter-action-btn.primary { background: var(--primary); color: white; border-color: var(--primary); }
+    .waiter-action-btn.primary:hover { background: var(--primary-dark); }
+    .waiter-action-btn.secondary { background: white; color: var(--text-secondary); }
+    .waiter-action-btn.secondary:hover { background: var(--bg); border-color: var(--border); }
+
+    .shift-card {
+      background: var(--bg-card); border-radius: var(--radius);
+      border: 1px solid var(--border-light); padding: 1.25rem;
+      display: flex; align-items: center; justify-content: space-between;
+      margin-top: 1rem;
+    }
+    .shift-info { display: flex; gap: 2rem; }
+    .shift-detail { }
+    .shift-detail-label { font-size: 0.6875rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .shift-detail-value {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 700; font-size: 1rem; color: var(--text); margin-top: 0.125rem;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      display: none; align-items: center; justify-content: center; z-index: 1000;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: white; border-radius: calc(var(--radius) * 1.5);
+      padding: 2rem; width: 100%; max-width: 540px;
+      box-shadow: var(--shadow-lg); max-height: 90vh; overflow-y: auto;
+    }
+    .modal-title {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 800; font-size: 1.25rem; color: var(--text); margin-bottom: 1.5rem;
+    }
+    .form-group { margin-bottom: 1rem; }
+    .form-label {
+      display: block; font-size: 0.75rem; font-weight: 600;
+      color: var(--text-secondary); margin-bottom: 0.375rem;
+    }
+    .form-input, .form-select {
+      width: 100%; padding: 0.625rem 0.875rem; border: 1px solid var(--border);
+      border-radius: var(--radius); font-size: 0.875rem; font-family: 'Inter', sans-serif;
+      color: var(--text); background: white; transition: border-color var(--transition);
+      box-sizing: border-box;
+    }
+    .form-input:focus, .form-select:focus {
+      outline: none; border-color: var(--primary);
+    }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .form-checkbox-row { display: flex; align-items: center; gap: 0.5rem; }
+    .toggle-switch {
+      position: relative; width: 44px; height: 24px; flex-shrink: 0;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; inset: 0; background: #D1D5DB; border-radius: 12px;
+      cursor: pointer; transition: all var(--transition);
+    }
+    .toggle-slider::before {
+      content: ''; position: absolute; width: 18px; height: 18px;
+      background: white; border-radius: 50%; top: 3px; left: 3px;
+      transition: all var(--transition); box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    }
+    .toggle-switch input:checked + .toggle-slider { background: #22C55E; }
+    .toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
+    .modal-actions { display: flex; gap: 0.75rem; margin-top: 1.5rem; }
+    .modal-btn {
+      flex: 1; padding: 0.75rem; border-radius: var(--radius);
+      font-size: 0.875rem; font-weight: 600; cursor: pointer;
+      transition: all var(--transition); border: none;
+    }
+    .modal-btn.primary { background: var(--primary); color: white; }
+    .modal-btn.primary:hover { background: var(--primary-dark); }
+    .modal-btn.secondary { background: var(--bg); color: var(--text-secondary); border: 1px solid var(--border); }
+    .modal-btn.secondary:hover { background: var(--border-light); }
+
+    .multi-select {
+      display: flex; flex-wrap: wrap; gap: 0.375rem; margin-top: 0.375rem;
+    }
+    .multi-select-option {
+      padding: 0.3rem 0.625rem; border-radius: var(--radius);
+      font-size: 0.75rem; font-weight: 600; cursor: pointer;
+      border: 1px solid var(--border); color: var(--text-secondary);
+      transition: all var(--transition); background: white;
+    }
+    .multi-select-option.selected { background: #DBEAFE; border-color: #2563EB; color: #1D4ED8; }
+
+    @media (max-width: 768px) {
+      .zone-grid { grid-template-columns: 1fr; }
+      .waiter-grid { grid-template-columns: 1fr; }
+      .shift-card { flex-direction: column; gap: 1rem; align-items: flex-start; }
+      .shift-info { flex-direction: column; gap: 0.75rem; }
+      .form-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">SS</div>
+        <div class="sidebar-brand">ScanServe</div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Main</div>
+        </div>
+        <a class="sidebar-link" href="dashboard.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </a>
+        <a class="sidebar-link" href="orders.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Orders
+        </a>
+        <a class="sidebar-link" href="billing.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          Billing
+        </a>
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Management</div>
+        </div>
+        <a class="sidebar-link" href="menu-management.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          Menu
+        </a>
+        <a class="sidebar-link" href="table-map.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+          Table Map
+        </a>
+        <a class="sidebar-link active" href="waiters.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Waiters
+        </a>
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Intelligence</div>
+        </div>
+        <a class="sidebar-link" href="analytics.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          Analytics
+        </a>
+        <a class="sidebar-link" href="ai-owner.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          AI Assistant
+        </a>
+        <a class="sidebar-link" href="ai-controls.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          AI Controls
+        </a>
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Setup</div>
+        </div>
+        <a class="sidebar-link" href="onboarding.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          Onboarding
+        </a>
+        <a class="sidebar-link" href="#">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Settings
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div style="display:flex;align-items:center;gap:0.625rem;">
+          <div class="avatar avatar-sm">R</div>
+          <div>
+            <div style="font-size:0.8125rem;font-weight:600;">Ravi</div>
+            <div style="font-size:0.6875rem;color:rgba(255,255,255,0.5);">Owner · Premium</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Topbar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <h1 class="topbar-title">Waiter Management</h1>
+        </div>
+        <div class="topbar-right">
+          <button class="btn btn-primary" onclick="openModal()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Waiter
+          </button>
+        </div>
+      </header>
+
+      <!-- Stats Row -->
+      <div class="stats-grid" style="margin-top:1.25rem;">
+        <div class="stat-card">
+          <div class="stat-card-header">
+            <div class="stat-card-icon" style="background:#DBEAFE;color:#2563EB;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+          </div>
+          <div class="stat-card-value">4</div>
+          <div class="stat-card-label">Total Waiters</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-header">
+            <div class="stat-card-icon" style="background:#DCFCE7;color:#16A34A;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+          </div>
+          <div class="stat-card-value">3</div>
+          <div class="stat-card-label">On Duty</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-header">
+            <div class="stat-card-icon" style="background:#FFE5E7;color:#E63946;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+            </div>
+          </div>
+          <div class="stat-card-value">1</div>
+          <div class="stat-card-label">Off Duty</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-header">
+            <div class="stat-card-icon" style="background:#FEF3C7;color:#D97706;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+          </div>
+          <div class="stat-card-value">47s</div>
+          <div class="stat-card-label">Avg Response Time</div>
+        </div>
+      </div>
+
+      <!-- Zone Management -->
+      <section style="margin-top:1.75rem;">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Zone Management</h2>
+              <p class="card-subtitle">Assign waiters to table zones for efficient service coverage</p>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="zone-grid">
+              <!-- Zone A -->
+              <div class="zone-card zone-a">
+                <div class="zone-card-header">
+                  <div class="zone-card-name">Zone A</div>
+                  <div class="zone-card-tables">10 tables</div>
+                </div>
+                <div style="font-size:0.8125rem;color:var(--text-secondary);margin-bottom:0.75rem;">T1 — T10</div>
+                <div class="zone-staff">
+                  <div class="zone-staff-row">
+                    <div class="zone-staff-label">Primary</div>
+                    <div class="zone-staff-name">Manoj</div>
+                  </div>
+                  <div class="zone-staff-row">
+                    <div class="zone-staff-label">Backup</div>
+                    <div class="zone-staff-name">Priya</div>
+                  </div>
+                </div>
+                <button class="zone-edit-btn" onclick="openModal()">Edit Assignment</button>
+              </div>
+
+              <!-- Zone B -->
+              <div class="zone-card zone-b">
+                <div class="zone-card-header">
+                  <div class="zone-card-name">Zone B</div>
+                  <div class="zone-card-tables">10 tables</div>
+                </div>
+                <div style="font-size:0.8125rem;color:var(--text-secondary);margin-bottom:0.75rem;">T11 — T20</div>
+                <div class="zone-staff">
+                  <div class="zone-staff-row">
+                    <div class="zone-staff-label">Primary</div>
+                    <div class="zone-staff-name">Anil</div>
+                  </div>
+                  <div class="zone-staff-row">
+                    <div class="zone-staff-label">Backup</div>
+                    <div class="zone-staff-name">—</div>
+                  </div>
+                </div>
+                <button class="zone-edit-btn" onclick="openModal()">Edit Assignment</button>
+              </div>
+
+              <!-- Zone C -->
+              <div class="zone-card zone-c">
+                <div class="zone-card-header">
+                  <div class="zone-card-name">Zone C</div>
+                  <div class="zone-card-tables">10 tables</div>
+                </div>
+                <div style="font-size:0.8125rem;color:var(--text-secondary);margin-bottom:0.75rem;">T21 — T30</div>
+                <div class="zone-staff">
+                  <div class="zone-staff-row">
+                    <div class="zone-staff-label">Primary</div>
+                    <div class="zone-staff-name">Kiran</div>
+                  </div>
+                  <div class="zone-staff-row">
+                    <div class="zone-staff-label">Backup</div>
+                    <div class="zone-staff-name">—</div>
+                  </div>
+                </div>
+                <button class="zone-edit-btn" onclick="openModal()">Edit Assignment</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Waiter Cards -->
+      <section style="margin-top:1.75rem;">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Waiter Profiles</h2>
+              <p class="card-subtitle">Manage waiter details, device bindings, and assignments</p>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="waiter-grid">
+              <!-- Anil -->
+              <div class="waiter-card">
+                <div class="waiter-card-top">
+                  <div class="waiter-identity">
+                    <div class="waiter-avatar a1">
+                      A
+                      <div class="duty-dot on"></div>
+                    </div>
+                    <div>
+                      <div class="waiter-name">Anil Kumar</div>
+                      <div class="waiter-pin">PIN: 4821</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="waiter-badges">
+                  <span class="waiter-badge zone">Zone B</span>
+                  <span class="waiter-badge device">📱 Bound</span>
+                  <span class="waiter-badge lang">Hindi</span>
+                </div>
+                <div class="waiter-tables">
+                  <div class="waiter-tables-row">
+                    <div class="waiter-tables-label">Primary</div>
+                    <div class="table-tags">
+                      <span class="table-tag primary">T11</span>
+                      <span class="table-tag primary">T12</span>
+                      <span class="table-tag primary">T13</span>
+                      <span class="table-tag primary">T14</span>
+                      <span class="table-tag primary">T15</span>
+                    </div>
+                  </div>
+                  <div class="waiter-tables-row">
+                    <div class="waiter-tables-label">Backup</div>
+                    <div class="table-tags">
+                      <span class="table-tag">—</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="waiter-stats">
+                  <div class="waiter-stat">
+                    <div class="waiter-stat-value">18</div>
+                    <div class="waiter-stat-label">Requests</div>
+                  </div>
+                  <div class="waiter-stat">
+                    <div class="waiter-stat-value">52s</div>
+                    <div class="waiter-stat-label">Avg Response</div>
+                  </div>
+                  <div class="waiter-stat">
+                    <div class="waiter-stat-value">2</div>
+                    <div class="waiter-stat-label">Escalations</div>
+                  </div>
+                </div>
+                <div class="waiter-actions">
+                  <button class="waiter-action-btn primary" onclick="openModal()">Edit</button>
+                  <button class="waiter-action-btn secondary">View Activity Log</button>
+                </div>
+              </div>
+
+              <!-- Manoj -->
+              <div class="waiter-card">
+                <div class="waiter-card-top">
+                  <div class="waiter-identity">
+                    <div class="waiter-avatar a2">
+                      M
+                      <div class="duty-dot on"></div>
+                    </div>
+                    <div>
+                      <div class="waiter-name">Manoj Singh</div>
+                      <div class="waiter-pin">PIN: 7356</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="waiter-badges">
+                  <span class="waiter-badge zone">Zone A</span>
+                  <span class="waiter-badge device">📱 Bound</span>
+                  <span class="waiter-badge lang">Hindi</span>
+                </div>
+                <div class="waiter-tables">
+                  <div class="waiter-tables-row">
+                    <div class="waiter-tables-label">Primary</div>
+                    <div class="table-tags">
+                      <span class="table-tag primary">T1</span>
+                      <span class="table-tag primary">T2</span>
+                      <span class="table-tag primary">T3</span>
+                      <span class="table-tag primary">T4</span>
+                      <span class="table-tag primary">T5</span>
+                    </div>
+                  </div>
+                  <div class="waiter-tables-row">
+                    <div class="waiter-tables-label">Backup</div>
+                    <div class="table-tags">
+                      <span class="table-tag">—</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="waiter-stats">
+                  <div class="waiter-stat">
+                    <div class="waiter-stat-value">22</div>
+                    <div class="waiter-stat-label">Requests</div>
+                  </div>
+                  <div class="waiter-stat">
+                    <div class="waiter-stat-value">38s</div>
+                    <div class="waiter-stat-label">Avg Response</div>
+                  </div>
+                  <div class="waiter-stat">
+                    <div class="waiter-stat-value">1</div>
+                    <div class="waiter-stat-label">Escalations</div>
+                  </div>
+                </div>
+                <div class="waiter-actions">
+                  <button class="waiter-action-btn primary" onclick="openModal()">Edit</button>
+                  <button class="waiter-action-btn secondary">View Activity Log</button>
+                </div>
+              </div>
+
+              <!-- Kiran -->
+              <div class="waiter-card">
+                <div class="waiter-card-top">
+                  <div class="waiter-identity">
+                    <div class="waiter-avatar a3">
+                      K
+                      <div class="duty-dot on"></div>
+                    </div>
+                    <div>
+                      <div class="waiter-name">Kiran Patil</div>
+                      <div class="waiter-pin">PIN: 9014</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="waiter-badges">
+                  <span class="waiter-badge zone">Zone C</span>
+                  <span class="waiter-badge device">📱 Bound</span>
+                  <span class="waiter-badge lang">Marathi</span>
+                </div>
+                <div class="waiter-tables">
+                  <div class="waiter-tables-row">
+                    <div class="waiter-tables-label">Primary</div>
+                    <div class="table-tags">
+                      <span class="table-tag primary">T21</span>
+                      <span class="table-tag primary">T22</span>
+                      <span class="table-tag primary">T23</span>
+                      <span class="table-tag primary">T24</span>
+                      <span class="table-tag primary">T25</span>
+                    </div>
+                  </div>
+                  <div class="waiter-tables-row">
+                    <div class="waiter-tables-label">Backup</div>
+                    <div class="table-tags">
+                      <span class="table-tag">—</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="waiter-stats">
+                  <div class="waiter-stat">
+                    <div class="waiter-stat-value">14</div>
+                    <div class="waiter-stat-label">Requests</div>
+                  </div>
+                  <div class="waiter-stat">
+                    <div class="waiter-stat-value">1m12s</div>
+                    <div class="waiter-stat-label">Avg Response</div>
+                  </div>
+                  <div class="waiter-stat">
+                    <div class="waiter-stat-value">3</div>
+                    <div class="waiter-stat-label">Escalations</div>
+                  </div>
+                </div>
+                <div class="waiter-actions">
+                  <button class="waiter-action-btn primary" onclick="openModal()">Edit</button>
+                  <button class="waiter-action-btn secondary">View Activity Log</button>
+                </div>
+              </div>
+
+              <!-- Priya -->
+              <div class="waiter-card">
+                <div class="waiter-card-top">
+                  <div class="waiter-identity">
+                    <div class="waiter-avatar a4">
+                      P
+                      <div class="duty-dot off"></div>
+                    </div>
+                    <div>
+                      <div class="waiter-name">Priya Deshmukh</div>
+                      <div class="waiter-pin">PIN: 3675</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="waiter-badges">
+                  <span class="waiter-badge zone">Zone A</span>
+                  <span class="waiter-badge device unbound">🚫 Unbound</span>
+                  <span class="waiter-badge lang">English</span>
+                </div>
+                <div class="waiter-tables">
+                  <div class="waiter-tables-row">
+                    <div class="waiter-tables-label">Primary</div>
+                    <div class="table-tags">
+                      <span class="table-tag">—</span>
+                    </div>
+                  </div>
+                  <div class="waiter-tables-row">
+                    <div class="waiter-tables-label">Backup</div>
+                    <div class="table-tags">
+                      <span class="table-tag">T6</span>
+                      <span class="table-tag">T7</span>
+                      <span class="table-tag">T8</span>
+                      <span class="table-tag">T9</span>
+                      <span class="table-tag">T10</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="waiter-stats">
+                  <div class="waiter-stat">
+                    <div class="waiter-stat-value">0</div>
+                    <div class="waiter-stat-label">Requests</div>
+                  </div>
+                  <div class="waiter-stat">
+                    <div class="waiter-stat-value">—</div>
+                    <div class="waiter-stat-label">Avg Response</div>
+                  </div>
+                  <div class="waiter-stat">
+                    <div class="waiter-stat-value">0</div>
+                    <div class="waiter-stat-label">Escalations</div>
+                  </div>
+                </div>
+                <div class="waiter-actions">
+                  <button class="waiter-action-btn primary" onclick="openModal()">Edit</button>
+                  <button class="waiter-action-btn secondary">View Activity Log</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Shift Handover -->
+      <section style="margin-top:1.75rem;margin-bottom:2rem;">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Shift Handover</h2>
+              <p class="card-subtitle">Current shift summary and handover controls</p>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="shift-card">
+              <div class="shift-info">
+                <div class="shift-detail">
+                  <div class="shift-detail-label">Shift Started</div>
+                  <div class="shift-detail-value">11:00 AM</div>
+                </div>
+                <div class="shift-detail">
+                  <div class="shift-detail-label">Requests Fulfilled</div>
+                  <div class="shift-detail-value">54</div>
+                </div>
+                <div class="shift-detail">
+                  <div class="shift-detail-label">Tables Served</div>
+                  <div class="shift-detail-value">28 / 30</div>
+                </div>
+                <div class="shift-detail">
+                  <div class="shift-detail-label">Active Waiters</div>
+                  <div class="shift-detail-value">3 of 4</div>
+                </div>
+              </div>
+              <button class="btn btn-primary" style="white-space:nowrap;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                Handover to Next Shift
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Edit Waiter Modal -->
+  <div class="modal-overlay" id="editModal">
+    <div class="modal">
+      <div class="modal-title">Edit Waiter</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Name</label>
+          <input class="form-input" type="text" value="Anil Kumar" id="modalName">
+        </div>
+        <div class="form-group">
+          <label class="form-label">PIN</label>
+          <input class="form-input" type="text" value="4821" id="modalPin">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Zone Assignment</label>
+          <select class="form-select" id="modalZone">
+            <option value="A" selected>Zone A</option>
+            <option value="B">Zone B</option>
+            <option value="C">Zone C</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Language Preference</label>
+          <select class="form-select" id="modalLang">
+            <option value="hindi" selected>Hindi</option>
+            <option value="english">English</option>
+            <option value="marathi">Marathi</option>
+            <option value="telugu">Telugu</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Primary Tables</label>
+        <div class="multi-select" id="modalPrimaryTables">
+          <span class="multi-select-option selected" data-table="T1">T1</span>
+          <span class="multi-select-option selected" data-table="T2">T2</span>
+          <span class="multi-select-option selected" data-table="T3">T3</span>
+          <span class="multi-select-option selected" data-table="T4">T4</span>
+          <span class="multi-select-option selected" data-table="T5">T5</span>
+          <span class="multi-select-option" data-table="T6">T6</span>
+          <span class="multi-select-option" data-table="T7">T7</span>
+          <span class="multi-select-option" data-table="T8">T8</span>
+          <span class="multi-select-option" data-table="T9">T9</span>
+          <span class="multi-select-option" data-table="T10">T10</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Backup Tables</label>
+        <div class="multi-select" id="modalBackupTables">
+          <span class="multi-select-option" data-table="T1">T1</span>
+          <span class="multi-select-option" data-table="T2">T2</span>
+          <span class="multi-select-option" data-table="T3">T3</span>
+          <span class="multi-select-option" data-table="T4">T4</span>
+          <span class="multi-select-option" data-table="T5">T5</span>
+          <span class="multi-select-option" data-table="T6">T6</span>
+          <span class="multi-select-option" data-table="T7">T7</span>
+          <span class="multi-select-option" data-table="T8">T8</span>
+          <span class="multi-select-option" data-table="T9">T9</span>
+          <span class="multi-select-option" data-table="T10">T10</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="form-checkbox-row">
+          <label class="toggle-switch">
+            <input type="checkbox" checked id="modalDuty">
+            <span class="toggle-slider"></span>
+          </label>
+          <span style="font-size:0.8125rem;font-weight:600;color:var(--text);">On Duty</span>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn secondary" onclick="closeModal()">Cancel</button>
+        <button class="modal-btn primary" onclick="closeModal()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function openModal() {
+      document.getElementById('editModal').classList.add('active');
+    }
+    function closeModal() {
+      document.getElementById('editModal').classList.remove('active');
+    }
+    document.getElementById('editModal').addEventListener('click', function(e) {
+      if (e.target === this) closeModal();
+    });
+    document.querySelectorAll('.multi-select-option').forEach(function(opt) {
+      opt.addEventListener('click', function() {
+        this.classList.toggle('selected');
+      });
+    });
+  </script>
+</body>
+</html>

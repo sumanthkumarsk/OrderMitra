@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Bill — Annapurna Kitchen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/shared.css">
+  <style>
+    body { background: var(--bg); min-height: 100vh; }
+    .bill-header {
+      background: white; border-bottom: 1px solid var(--border-light);
+      padding: 1rem 1.25rem; position: sticky; top: 0; z-index: 50;
+      display: flex; align-items: center; gap: 0.75rem;
+    }
+    .bill-back { width: 36px; height: 36px; border: none; background: var(--bg); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.125rem; }
+    .bill-title { font-weight: 700; font-size: 1.125rem; flex: 1; }
+    .bill-body { padding: 1rem; max-width: 480px; margin: 0 auto; padding-bottom: 120px; }
+
+    /* Bill receipt card */
+    .bill-receipt {
+      background: white; border-radius: var(--radius); overflow: hidden;
+      border: 1px solid var(--border-light); box-shadow: var(--shadow);
+    }
+    .bill-receipt-header {
+      text-align: center; padding: 1.5rem 1rem 1rem;
+      border-bottom: 2px dashed var(--border);
+    }
+    .bill-receipt-logo { font-size: 2rem; margin-bottom: 0.5rem; }
+    .bill-receipt-restaurant { font-family: var(--font-display); font-weight: 800; font-size: 1.25rem; }
+    .bill-receipt-address { font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem; }
+    .bill-receipt-gst { font-size: 0.6875rem; color: var(--text-muted); margin-top: 0.375rem; font-family: 'JetBrains Mono', monospace; }
+    .bill-receipt-meta {
+      display: flex; justify-content: space-between;
+      padding: 0.75rem 1rem; font-size: 0.75rem; color: var(--text-secondary);
+      border-bottom: 1px solid var(--border-light);
+    }
+    .bill-receipt-meta strong { color: var(--text); font-family: 'JetBrains Mono', monospace; }
+    .bill-receipt-status {
+      text-align: center; padding: 0.5rem;
+      font-size: 0.6875rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .bill-receipt-status.pending { background: var(--warning-light); color: #856404; }
+    .bill-receipt-status.paid { background: var(--success-light); color: #064E3B; }
+
+    /* Order section in bill */
+    .bill-order-section {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .bill-order-label {
+      font-size: 0.6875rem; font-weight: 600; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.05em;
+      margin-bottom: 0.375rem;
+    }
+    .bill-line-item {
+      display: flex; justify-content: space-between;
+      padding: 0.375rem 0; font-size: 0.875rem;
+    }
+    .bill-line-name { color: var(--text); }
+    .bill-line-qty { color: var(--text-secondary); font-size: 0.8125rem; }
+    .bill-line-price { font-weight: 600; font-family: 'JetBrains Mono', monospace; font-size: 0.8125rem; }
+    .bill-line-note { font-size: 0.6875rem; color: var(--text-muted); font-style: italic; padding-left: 0.5rem; }
+
+    /* Totals */
+    .bill-totals {
+      padding: 0.75rem 1rem;
+      border-top: 2px dashed var(--border);
+    }
+    .bill-total-row {
+      display: flex; justify-content: space-between;
+      padding: 0.25rem 0; font-size: 0.875rem;
+    }
+    .bill-total-row.grand {
+      font-weight: 800; font-size: 1.125rem;
+      border-top: 2px solid var(--text);
+      padding-top: 0.5rem; margin-top: 0.375rem;
+    }
+    .bill-total-label { color: var(--text-secondary); }
+    .bill-total-value { font-family: 'JetBrains Mono', monospace; }
+
+    /* Footer */
+    .bill-receipt-footer {
+      text-align: center; padding: 1rem;
+      border-top: 2px dashed var(--border);
+      font-size: 0.6875rem; color: var(--text-muted);
+    }
+    .bill-receipt-footer .thank-you {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 0.875rem; color: var(--text-secondary);
+      margin-bottom: 0.25rem;
+    }
+
+    /* Payment section */
+    .bill-payment {
+      margin-top: 1rem; background: white; border-radius: var(--radius);
+      border: 1px solid var(--border-light); padding: 1rem;
+    }
+    .bill-payment-title { font-weight: 700; font-size: 0.9375rem; margin-bottom: 0.75rem; }
+    .payment-options {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;
+    }
+    .payment-option {
+      padding: 0.875rem; border: 2px solid var(--border);
+      border-radius: var(--radius-sm); text-align: center;
+      cursor: pointer; transition: all var(--transition);
+      background: white;
+    }
+    .payment-option:hover { border-color: var(--primary); }
+    .payment-option.selected { border-color: var(--primary); background: var(--primary-light); }
+    .payment-option .icon { font-size: 1.5rem; }
+    .payment-option .label { font-weight: 600; font-size: 0.8125rem; margin-top: 0.25rem; }
+    .bill-split-note {
+      margin-top: 0.75rem; padding: 0.625rem; background: var(--bg);
+      border-radius: var(--radius-sm); font-size: 0.75rem;
+      color: var(--text-secondary); text-align: center;
+    }
+
+    /* Download/share */
+    .bill-actions {
+      display: flex; gap: 0.5rem; margin-top: 1rem;
+    }
+    .bill-actions .btn { flex: 1; }
+  </style>
+</head>
+<body>
+
+  <div class="bill-header">
+    <button class="bill-back" onclick="history.back()">←</button>
+    <div class="bill-title">Your Bill</div>
+  </div>
+
+  <div class="bill-body">
+    <div class="bill-receipt">
+      <div class="bill-receipt-header">
+        <div class="bill-receipt-logo">🍽️</div>
+        <div class="bill-receipt-restaurant">Annapurna Kitchen</div>
+        <div class="bill-receipt-address">123 MG Road, Bengaluru 560001</div>
+        <div class="bill-receipt-gst">GSTIN: 29AABCA1234F1Z5</div>
+      </div>
+
+      <div class="bill-receipt-meta">
+        <div>Bill No: <strong>BILL-0842</strong></div>
+        <div>Date: <strong>26/08/2026</strong></div>
+      </div>
+      <div class="bill-receipt-meta">
+        <div>Table: <strong>12</strong></div>
+        <div>Time: <strong>8:45 PM</strong></div>
+      </div>
+      <div class="bill-receipt-meta" style="border-bottom:none; padding-bottom: 0.25rem;">
+        <div>Order IDs: <strong>ORD-0042, ORD-0043</strong></div>
+      </div>
+
+      <div class="bill-receipt-status pending">PENDING PAYMENT</div>
+
+      <!-- Order 1 items -->
+      <div class="bill-order-section">
+        <div class="bill-order-label">Order #ORD-0042</div>
+        <div class="bill-line-item">
+          <div><span class="bill-line-name">Chicken 65</span> <span class="bill-line-qty">× 2</span></div>
+          <span class="bill-line-price">₹520</span>
+        </div>
+        <div class="bill-line-item">
+          <div><span class="bill-line-name">Butter Naan</span> <span class="bill-line-qty">× 4</span></div>
+          <span class="bill-line-price">₹200</span>
+        </div>
+        <div class="bill-line-item">
+          <div><span class="bill-line-name">Lime Soda</span> <span class="bill-line-qty">× 1</span></div>
+          <span class="bill-line-price">₹60</span>
+        </div>
+      </div>
+
+      <!-- Order 2 items -->
+      <div class="bill-order-section">
+        <div class="bill-order-label">Order #ORD-0043</div>
+        <div class="bill-line-item">
+          <div>
+            <span class="bill-line-name">Chicken Biryani</span> <span class="bill-line-qty">× 1</span>
+            <div class="bill-line-note">No onions, extra raita</div>
+          </div>
+          <span class="bill-line-price">₹280</span>
+        </div>
+        <div class="bill-line-item">
+          <div><span class="bill-line-name">Lime Soda</span> <span class="bill-line-qty">× 1</span></div>
+          <span class="bill-line-price">₹60</span>
+        </div>
+      </div>
+
+      <!-- Totals -->
+      <div class="bill-totals">
+        <div class="bill-total-row">
+          <span class="bill-total-label">Subtotal</span>
+          <span class="bill-total-value">₹1,120.00</span>
+        </div>
+        <div class="bill-total-row">
+          <span class="bill-total-label">GST (5%)</span>
+          <span class="bill-total-value">₹56.00</span>
+        </div>
+        <div class="bill-total-row">
+          <span class="bill-total-label">Service Charge</span>
+          <span class="bill-total-value">₹0.00</span>
+        </div>
+        <div class="bill-total-row">
+          <span class="bill-total-label">Discount</span>
+          <span class="bill-total-value">-₹0.00</span>
+        </div>
+        <div class="bill-total-row grand">
+          <span>Total</span>
+          <span class="bill-total-value">₹1,176.00</span>
+        </div>
+      </div>
+
+      <div class="bill-receipt-footer">
+        <div class="thank-you">Thank you for dining with us! 🙏</div>
+        <div>Powered by ScanServe · scanserve.app</div>
+      </div>
+    </div>
+
+    <!-- Payment Options -->
+    <div class="bill-payment">
+      <div class="bill-payment-title">Pay Now</div>
+      <div class="payment-options">
+        <div class="payment-option selected" onclick="selectPayment(this)">
+          <div class="icon">💵</div>
+          <div class="label">Cash</div>
+        </div>
+        <div class="payment-option" onclick="selectPayment(this)">
+          <div class="icon">📱</div>
+          <div class="label">UPI</div>
+        </div>
+        <div class="payment-option" onclick="selectPayment(this)">
+          <div class="icon">💳</div>
+          <div class="label">Card</div>
+        </div>
+        <div class="payment-option" onclick="selectPayment(this)">
+          <div class="icon">🔖</div>
+          <div class="label">Pay at Counter</div>
+        </div>
+      </div>
+      <div class="bill-split-note">
+        Split bill feature coming soon — ask your server for split assistance
+      </div>
+    </div>
+
+    <div class="bill-actions">
+      <button class="btn btn-outline" onclick="downloadBill()">📥 Download PDF</button>
+      <button class="btn btn-primary" onclick="confirmPayment()">✅ Confirm Payment</button>
+    </div>
+  </div>
+
+  <script>
+    function selectPayment(el) {
+      document.querySelectorAll('.payment-option').forEach(o => o.classList.remove('selected'));
+      el.classList.add('selected');
+    }
+    function confirmPayment() {
+      const btn = document.querySelector('.bill-actions .btn-primary');
+      btn.innerHTML = 'Processing...';
+      btn.disabled = true;
+      setTimeout(() => {
+        document.querySelector('.bill-receipt-status').className = 'bill-receipt-status paid';
+        document.querySelector('.bill-receipt-status').textContent = '✓ PAID';
+        btn.innerHTML = '✅ Payment Confirmed';
+        btn.style.background = 'var(--success)';
+      }, 1500);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Menu Management — Annapurna Kitchen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/shared.css">
+  <style>
+    .category-filters { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+    .menu-table-img {
+      width: 48px; height: 48px; border-radius: var(--radius-sm);
+      background: var(--border-light); display: flex; align-items: center;
+      justify-content: center; font-size: 1.5rem; flex-shrink: 0;
+    }
+    .menu-table-name { font-weight: 600; font-size: 0.875rem; }
+    .menu-table-desc { font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.125rem; }
+    .menu-table-price { font-weight: 700; font-size: 0.9375rem; font-family: var(--font-display); }
+    .menu-table-actions { display: flex; gap: 0.375rem; }
+    .menu-table-actions button {
+      width: 32px; height: 32px; border-radius: 6px; border: 1px solid var(--border-light);
+      background: white; cursor: pointer; display: flex; align-items: center;
+      justify-content: center; transition: all var(--transition); font-size: 0.875rem;
+    }
+    .menu-table-actions button:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+    .menu-table-actions button.delete:hover { border-color: var(--danger); color: var(--danger); background: var(--danger-light); }
+    .checkbox-cell { width: 40px; }
+    .checkbox-cell input[type="checkbox"] {
+      width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer;
+    }
+    .bulk-bar {
+      background: var(--secondary); color: white; padding: 0.75rem 1.5rem;
+      border-radius: var(--radius); display: none; align-items: center;
+      justify-content: space-between; margin-bottom: 1rem; animation: slideUp 0.2s ease;
+    }
+    .bulk-bar.visible { display: flex; }
+    .bulk-bar-actions { display: flex; gap: 0.5rem; }
+    .bulk-bar-actions .btn { font-size: 0.8125rem; padding: 0.375rem 0.875rem; }
+    .bulk-bar .btn-outline { border-color: rgba(255,255,255,0.3); color: white; }
+    .bulk-bar .btn-outline:hover { background: rgba(255,255,255,0.1); border-color: white; }
+    .bulk-bar .btn-danger { background: rgba(230,57,70,0.9); }
+    .bulk-bar .btn-danger:hover { background: var(--danger); }
+    .modal-overlay { display: none; }
+    .modal-overlay.open { display: flex; }
+    .topbar-search {
+      position: relative; display: flex; align-items: center;
+    }
+    .topbar-search input {
+      padding: 0.5rem 0.75rem 0.5rem 2.25rem; border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm); font-size: 0.8125rem; width: 220px;
+      background: var(--bg); transition: all var(--transition); outline: none;
+    }
+    .topbar-search input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); width: 280px; }
+    .topbar-search svg {
+      position: absolute; left: 0.625rem; width: 16px; height: 16px;
+      color: var(--text-muted); pointer-events: none;
+    }
+    .item-count { font-size: 0.8125rem; color: var(--text-secondary); }
+    .summary-bar {
+      display: flex; gap: 1.5rem; margin-bottom: 1.25rem; padding: 0.875rem 1rem;
+      background: white; border-radius: var(--radius); border: 1px solid var(--border-light);
+    }
+    .summary-stat { display: flex; flex-direction: column; }
+    .summary-stat .label { font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); font-weight: 600; }
+    .summary-stat .value { font-size: 1.125rem; font-weight: 700; font-family: var(--font-display); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .form-radio-group { display: flex; gap: 1rem; margin-top: 0.25rem; }
+    .form-radio-group label {
+      display: flex; align-items: center; gap: 0.375rem; font-size: 0.875rem;
+      cursor: pointer; font-weight: 500;
+    }
+    .form-radio-group input[type="radio"] { accent-color: var(--primary); width: 16px; height: 16px; }
+    @media (max-width: 768px) {
+      .summary-bar { flex-wrap: wrap; gap: 1rem; }
+      .form-row { grid-template-columns: 1fr; }
+      .topbar-search input { width: 160px; }
+      .topbar-search input:focus { width: 200px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">SS</div>
+        <div class="sidebar-brand">ScanServe</div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Main</div>
+        </div>
+        <a class="sidebar-link" href="dashboard.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </a>
+        <a class="sidebar-link" href="orders.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Orders
+        </a>
+        <a class="sidebar-link" href="billing.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          Billing
+        </a>
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Management</div>
+        </div>
+        <a class="sidebar-link active" href="menu-management.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          Menu
+        </a>
+        <a class="sidebar-link" href="table-map.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+          Table Map
+        </a>
+        <a class="sidebar-link" href="waiters.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Waiters
+        </a>
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Intelligence</div>
+        </div>
+        <a class="sidebar-link" href="analytics.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          Analytics
+        </a>
+        <a class="sidebar-link" href="ai-owner.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          AI Assistant
+        </a>
+        <a class="sidebar-link" href="ai-controls.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          AI Controls
+        </a>
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Setup</div>
+        </div>
+        <a class="sidebar-link" href="onboarding.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          Onboarding
+        </a>
+        <a class="sidebar-link" href="#">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Settings
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div style="display:flex;align-items:center;gap:0.625rem;">
+          <div class="avatar avatar-sm">R</div>
+          <div>
+            <div style="font-size:0.8125rem;font-weight:600;">Ravi</div>
+            <div style="font-size:0.6875rem;color:rgba(255,255,255,0.5);">Owner · Premium</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <div class="main-content">
+      <div class="topbar">
+        <div class="topbar-title">Menu Management</div>
+        <div class="topbar-actions">
+          <div class="topbar-search">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" placeholder="Search menu items..." id="searchInput">
+          </div>
+          <button class="btn btn-sm btn-outline" id="bulkEditBtn">Bulk Edit</button>
+          <button class="btn btn-sm btn-primary" id="addItemBtn">+ Add Item</button>
+        </div>
+      </div>
+
+      <div class="page-content">
+        <!-- Summary Stats -->
+        <div class="summary-bar">
+          <div class="summary-stat">
+            <span class="label">Total Items</span>
+            <span class="value">10</span>
+          </div>
+          <div class="summary-stat">
+            <span class="label">Available</span>
+            <span class="value" style="color:var(--success);">8</span>
+          </div>
+          <div class="summary-stat">
+            <span class="label">Unavailable</span>
+            <span class="value" style="color:var(--danger);">2</span>
+          </div>
+          <div class="summary-stat">
+            <span class="label">Categories</span>
+            <span class="value">6</span>
+          </div>
+        </div>
+
+        <!-- Category Filters -->
+        <div class="category-filters">
+          <button class="btn-chip active" data-category="all">All</button>
+          <button class="btn-chip" data-category="starters">Starters</button>
+          <button class="btn-chip" data-category="biryani">Biryani</button>
+          <button class="btn-chip" data-category="curries">Curries</button>
+          <button class="btn-chip" data-category="breads">Breads</button>
+          <button class="btn-chip" data-category="rice">Rice</button>
+          <button class="btn-chip" data-category="beverages">Beverages</button>
+          <button class="btn-chip" data-category="desserts">Desserts</button>
+        </div>
+
+        <!-- Bulk Edit Bar -->
+        <div class="bulk-bar" id="bulkBar">
+          <span><span id="selectedCount">0</span> items selected</span>
+          <div class="bulk-bar-actions">
+            <button class="btn btn-sm btn-outline">Mark Available</button>
+            <button class="btn btn-sm btn-outline">Mark Unavailable</button>
+            <button class="btn btn-sm btn-outline">Change Category</button>
+            <button class="btn btn-sm btn-danger">Delete Selected</button>
+          </div>
+        </div>
+
+        <!-- Menu Table -->
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th class="checkbox-cell" style="display:none;" id="checkboxHeader"><input type="checkbox" id="selectAll"></th>
+                  <th style="width:60px;">Image</th>
+                  <th>Name</th>
+                  <th>Category</th>
+                  <th>Price</th>
+                  <th>Type</th>
+                  <th style="width:100px;">Availability</th>
+                  <th style="width:90px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="menuTableBody">
+                <tr data-category="biryani">
+                  <td class="checkbox-cell" style="display:none;"><input type="checkbox" class="row-check"></td>
+                  <td><div class="menu-table-img">🍛</div></td>
+                  <td>
+                    <div class="menu-table-name">Chicken Biryani</div>
+                    <div class="menu-table-desc">Basmati rice, chicken, saffron, whole spices</div>
+                  </td>
+                  <td><span class="badge badge-primary">Biryani</span></td>
+                  <td><span class="menu-table-price">₹320</span></td>
+                  <td><span class="nonveg-indicator"></span></td>
+                  <td><button class="toggle active" onclick="this.classList.toggle('active')"></button></td>
+                  <td>
+                    <div class="menu-table-actions">
+                      <button title="Edit">✏️</button>
+                      <button class="delete" title="Delete">🗑️</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr data-category="breads">
+                  <td class="checkbox-cell" style="display:none;"><input type="checkbox" class="row-check"></td>
+                  <td><div class="menu-table-img">🫓</div></td>
+                  <td>
+                    <div class="menu-table-name">Butter Naan</div>
+                    <div class="menu-table-desc">Soft leavened bread, brushed with butter</div>
+                  </td>
+                  <td><span class="badge badge-info">Breads</span></td>
+                  <td><span class="menu-table-price">₹60</span></td>
+                  <td><span class="veg-indicator"></span></td>
+                  <td><button class="toggle active" onclick="this.classList.toggle('active')"></button></td>
+                  <td>
+                    <div class="menu-table-actions">
+                      <button title="Edit">✏️</button>
+                      <button class="delete" title="Delete">🗑️</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr data-category="starters">
+                  <td class="checkbox-cell" style="display:none;"><input type="checkbox" class="row-check"></td>
+                  <td><div class="menu-table-img">🍗</div></td>
+                  <td>
+                    <div class="menu-table-name">Chicken 65</div>
+                    <div class="menu-table-desc">Spicy deep-fried chicken with curry leaves</div>
+                  </td>
+                  <td><span class="badge badge-warning">Starters</span></td>
+                  <td><span class="menu-table-price">₹180</span></td>
+                  <td><span class="nonveg-indicator"></span></td>
+                  <td><button class="toggle active" onclick="this.classList.toggle('active')"></button></td>
+                  <td>
+                    <div class="menu-table-actions">
+                      <button title="Edit">✏️</button>
+                      <button class="delete" title="Delete">🗑️</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr data-category="curries">
+                  <td class="checkbox-cell" style="display:none;"><input type="checkbox" class="row-check"></td>
+                  <td><div class="menu-table-img">🥘</div></td>
+                  <td>
+                    <div class="menu-table-name">Paneer Butter Masala</div>
+                    <div class="menu-table-desc">Cottage cheese in creamy tomato gravy</div>
+                  </td>
+                  <td><span class="badge badge-success">Curries</span></td>
+                  <td><span class="menu-table-price">₹240</span></td>
+                  <td><span class="veg-indicator"></span></td>
+                  <td><button class="toggle active" onclick="this.classList.toggle('active')"></button></td>
+                  <td>
+                    <div class="menu-table-actions">
+                      <button title="Edit">✏️</button>
+                      <button class="delete" title="Delete">🗑️</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr data-category="beverages">
+                  <td class="checkbox-cell" style="display:none;"><input type="checkbox" class="row-check"></td>
+                  <td><div class="menu-table-img">🍋</div></td>
+                  <td>
+                    <div class="menu-table-name">Lime Soda</div>
+                    <div class="menu-table-desc">Fresh lime with soda, sweet or salted</div>
+                  </td>
+                  <td><span class="badge badge-neutral">Beverages</span></td>
+                  <td><span class="menu-table-price">₹50</span></td>
+                  <td><span class="veg-indicator"></span></td>
+                  <td><button class="toggle active" onclick="this.classList.toggle('active')"></button></td>
+                  <td>
+                    <div class="menu-table-actions">
+                      <button title="Edit">✏️</button>
+                      <button class="delete" title="Delete">🗑️</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr data-category="biryani">
+                  <td class="checkbox-cell" style="display:none;"><input type="checkbox" class="row-check"></td>
+                  <td><div class="menu-table-img">🍚</div></td>
+                  <td>
+                    <div class="menu-table-name">Veg Biryani</div>
+                    <div class="menu-table-desc">Mixed vegetables, basmati rice, mint raita</div>
+                  </td>
+                  <td><span class="badge badge-primary">Biryani</span></td>
+                  <td><span class="menu-table-price">₹220</span></td>
+                  <td><span class="veg-indicator"></span></td>
+                  <td><button class="toggle active" onclick="this.classList.toggle('active')"></button></td>
+                  <td>
+                    <div class="menu-table-actions">
+                      <button title="Edit">✏️</button>
+                      <button class="delete" title="Delete">🗑️</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr data-category="curries">
+                  <td class="checkbox-cell" style="display:none;"><input type="checkbox" class="row-check"></td>
+                  <td><div class="menu-table-img">🍛</div></td>
+                  <td>
+                    <div class="menu-table-name">Chicken Tikka Masala</div>
+                    <div class="menu-table-desc">Grilled chicken in spiced onion-tomato gravy</div>
+                  </td>
+                  <td><span class="badge badge-success">Curries</span></td>
+                  <td><span class="menu-table-price">₹280</span></td>
+                  <td><span class="nonveg-indicator"></span></td>
+                  <td><button class="toggle" onclick="this.classList.toggle('active')"></button></td>
+                  <td>
+                    <div class="menu-table-actions">
+                      <button title="Edit">✏️</button>
+                      <button class="delete" title="Delete">🗑️</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr data-category="rice">
+                  <td class="checkbox-cell" style="display:none;"><input type="checkbox" class="row-check"></td>
+                  <td><div class="menu-table-img">🍚</div></td>
+                  <td>
+                    <div class="menu-table-name">Jeera Rice</div>
+                    <div class="menu-table-desc">Basmati rice tempered with cumin seeds</div>
+                  </td>
+                  <td><span class="badge badge-info">Rice</span></td>
+                  <td><span class="menu-table-price">₹140</span></td>
+                  <td><span class="veg-indicator"></span></td>
+                  <td><button class="toggle active" onclick="this.classList.toggle('active')"></button></td>
+                  <td>
+                    <div class="menu-table-actions">
+                      <button title="Edit">✏️</button>
+                      <button class="delete" title="Delete">🗑️</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr data-category="breads">
+                  <td class="checkbox-cell" style="display:none;"><input type="checkbox" class="row-check"></td>
+                  <td><div class="menu-table-img">🫓</div></td>
+                  <td>
+                    <div class="menu-table-name">Garlic Naan</div>
+                    <div class="menu-table-desc">Tandoor-baked naan with garlic and coriander</div>
+                  </td>
+                  <td><span class="badge badge-info">Breads</span></td>
+                  <td><span class="menu-table-price">₹75</span></td>
+                  <td><span class="veg-indicator"></span></td>
+                  <td><button class="toggle" onclick="this.classList.toggle('active')"></button></td>
+                  <td>
+                    <div class="menu-table-actions">
+                      <button title="Edit">✏️</button>
+                      <button class="delete" title="Delete">🗑️</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr data-category="desserts">
+                  <td class="checkbox-cell" style="display:none;"><input type="checkbox" class="row-check"></td>
+                  <td><div class="menu-table-img">🍮</div></td>
+                  <td>
+                    <div class="menu-table-name">Gulab Jamun</div>
+                    <div class="menu-table-desc">Deep-fried milk dumplings in sugar syrup</div>
+                  </td>
+                  <td><span class="badge badge-primary">Desserts</span></td>
+                  <td><span class="menu-table-price">₹90</span></td>
+                  <td><span class="veg-indicator"></span></td>
+                  <td><button class="toggle active" onclick="this.classList.toggle('active')"></button></td>
+                  <td>
+                    <div class="menu-table-actions">
+                      <button title="Edit">✏️</button>
+                      <button class="delete" title="Delete">🗑️</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add New Item Modal -->
+  <div class="modal-overlay" id="addItemModal">
+    <div class="modal" style="max-width:560px;">
+      <div class="modal-header">
+        <h3>Add New Menu Item</h3>
+        <button class="btn btn-icon btn-ghost" id="closeModal" style="font-size:1.25rem;">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group" style="margin-bottom:1rem;">
+          <label class="form-label">Item Name</label>
+          <input type="text" class="form-input" placeholder="e.g. Mutton Rogan Josh">
+        </div>
+        <div class="form-row" style="margin-bottom:1rem;">
+          <div class="form-group">
+            <label class="form-label">Category</label>
+            <select class="form-select">
+              <option value="">Select category</option>
+              <option>Starters</option>
+              <option>Biryani</option>
+              <option>Curries</option>
+              <option>Breads</option>
+              <option>Rice</option>
+              <option>Beverages</option>
+              <option>Desserts</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Price (₹)</label>
+            <input type="number" class="form-input" placeholder="0">
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:1rem;">
+          <label class="form-label">Description</label>
+          <textarea class="form-textarea" placeholder="Brief description of the dish..."></textarea>
+        </div>
+        <div class="form-row" style="margin-bottom:1rem;">
+          <div class="form-group">
+            <label class="form-label">Type</label>
+            <div class="form-radio-group">
+              <label><input type="radio" name="type" value="veg" checked> Veg</label>
+              <label><input type="radio" name="type" value="nonveg"> Non-Veg</label>
+              <label><input type="radio" name="type" value="egg"> Egg</label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Prep Time (min)</label>
+            <input type="number" class="form-input" placeholder="e.g. 15">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Item Image</label>
+          <div style="border:2px dashed var(--border);border-radius:var(--radius-sm);padding:1.5rem;text-align:center;cursor:pointer;transition:all var(--transition);" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
+            <div style="font-size:2rem;margin-bottom:0.375rem;">📷</div>
+            <div style="font-size:0.8125rem;color:var(--text-secondary);">Click to upload or drag and drop</div>
+            <div style="font-size:0.6875rem;color:var(--text-muted);margin-top:0.25rem;">PNG, JPG up to 2MB</div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-sm btn-outline" id="cancelModal">Cancel</button>
+        <button class="btn btn-sm btn-primary">Add Item</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Category filter
+    document.querySelectorAll('.category-filters .btn-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('.category-filters .btn-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        const cat = chip.dataset.category;
+        document.querySelectorAll('#menuTableBody tr').forEach(row => {
+          row.style.display = (cat === 'all' || row.dataset.category === cat) ? '' : 'none';
+        });
+      });
+    });
+
+    // Bulk edit mode
+    let bulkMode = false;
+    const bulkEditBtn = document.getElementById('bulkEditBtn');
+    const bulkBar = document.getElementById('bulkBar');
+    const checkboxHeader = document.getElementById('checkboxHeader');
+    const checkboxes = document.querySelectorAll('.checkbox-cell');
+    const rowChecks = document.querySelectorAll('.row-check');
+    const selectAll = document.getElementById('selectAll');
+    const selectedCount = document.getElementById('selectedCount');
+
+    bulkEditBtn.addEventListener('click', () => {
+      bulkMode = !bulkMode;
+      bulkEditBtn.textContent = bulkMode ? 'Cancel Bulk' : 'Bulk Edit';
+      bulkBar.classList.toggle('visible', bulkMode);
+      checkboxes.forEach(cb => cb.style.display = bulkMode ? '' : 'none');
+      if (!bulkMode) {
+        rowChecks.forEach(c => c.checked = false);
+        updateSelectedCount();
+      }
+    });
+
+    selectAll.addEventListener('change', () => {
+      rowChecks.forEach(c => c.checked = selectAll.checked);
+      updateSelectedCount();
+    });
+
+    rowChecks.forEach(c => c.addEventListener('change', updateSelectedCount));
+
+    function updateSelectedCount() {
+      const count = document.querySelectorAll('.row-check:checked').length;
+      selectedCount.textContent = count;
+    }
+
+    // Search
+    document.getElementById('searchInput').addEventListener('input', function() {
+      const q = this.value.toLowerCase();
+      document.querySelectorAll('#menuTableBody tr').forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(q) ? '' : 'none';
+      });
+    });
+
+    // Modal
+    const modal = document.getElementById('addItemModal');
+    document.getElementById('addItemBtn').addEventListener('click', () => modal.classList.add('open'));
+    document.getElementById('closeModal').addEventListener('click', () => modal.classList.remove('open'));
+    document.getElementById('cancelModal').addEventListener('click', () => modal.classList.remove('open'));
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('open'); });
+  </script>
+</body>
+</html>

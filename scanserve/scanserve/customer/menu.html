@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Menu — Annapurna Kitchen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/shared.css">
+  <style>
+    body { background: var(--bg); }
+    .menu-header {
+      position: sticky; top: 0; z-index: 50;
+      background: white;
+      border-bottom: 1px solid var(--border-light);
+      padding: 0.75rem 1rem;
+    }
+    .menu-header-top {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 0.5rem;
+    }
+    .menu-restaurant {
+      display: flex; align-items: center; gap: 0.625rem;
+    }
+    .menu-restaurant-logo {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--primary-light); display: flex; align-items: center; justify-content: center;
+      font-size: 1.125rem;
+    }
+    .menu-restaurant-name { font-weight: 700; font-size: 0.9375rem; }
+    .menu-restaurant-sub { font-size: 0.6875rem; color: var(--text-secondary); }
+    .menu-lang-switch {
+      padding: 0.375rem 0.75rem; border-radius: var(--radius-full);
+      border: 1.5px solid var(--border); background: white;
+      font-size: 0.8125rem; font-weight: 600; color: var(--text-secondary);
+      cursor: pointer; display: flex; align-items: center; gap: 0.375rem;
+    }
+    .menu-search {
+      position: relative;
+    }
+    .menu-search input {
+      width: 100%; padding: 0.625rem 1rem 0.625rem 2.5rem;
+      border: 1.5px solid var(--border); border-radius: var(--radius-full);
+      font-size: 0.875rem; background: var(--bg); outline: none;
+    }
+    .menu-search input:focus { border-color: var(--primary); background: white; }
+    .menu-search svg {
+      position: absolute; left: 0.875rem; top: 50%; transform: translateY(-50%);
+      width: 18px; height: 18px; color: var(--text-muted);
+    }
+
+    /* Category tabs */
+    .category-nav {
+      display: flex; gap: 0.375rem;
+      padding: 0.625rem 1rem;
+      overflow-x: auto;
+      background: white;
+      border-bottom: 1px solid var(--border-light);
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .category-nav::-webkit-scrollbar { display: none; }
+    .category-chip {
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-full);
+      border: 1.5px solid var(--border);
+      background: white;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all var(--transition);
+      color: var(--text-secondary);
+    }
+    .category-chip:hover { border-color: var(--primary); color: var(--primary); }
+    .category-chip.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: white;
+    }
+
+    /* Menu items */
+    .menu-body { padding: 1rem; padding-bottom: 120px; }
+    .menu-section { margin-bottom: 1.5rem; }
+    .menu-section-title {
+      font-size: 1rem; font-weight: 700; color: var(--text);
+      padding-bottom: 0.5rem; margin-bottom: 0.75rem;
+      border-bottom: 2px solid var(--primary);
+      display: inline-block;
+    }
+    .menu-item {
+      display: flex; gap: 0.875rem;
+      padding: 0.875rem;
+      background: white;
+      border-radius: var(--radius);
+      margin-bottom: 0.625rem;
+      border: 1px solid var(--border-light);
+      position: relative;
+      transition: box-shadow var(--transition);
+    }
+    .menu-item:hover { box-shadow: var(--shadow-sm); }
+    .menu-item.sold-out { opacity: 0.6; }
+    .menu-item-img {
+      width: 80px; height: 80px;
+      border-radius: var(--radius-sm);
+      background: var(--bg);
+      object-fit: cover;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.75rem;
+      overflow: hidden;
+    }
+    .menu-item-img img { width: 100%; height: 100%; object-fit: cover; }
+    .menu-item-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.25rem; }
+    .menu-item-top { display: flex; align-items: flex-start; gap: 0.375rem; }
+    .menu-item-name { font-weight: 600; font-size: 0.9375rem; line-height: 1.3; }
+    .menu-item-desc {
+      font-size: 0.8125rem; color: var(--text-secondary);
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      overflow: hidden; line-height: 1.4;
+    }
+    .menu-item-meta {
+      display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+      margin-top: auto;
+    }
+    .menu-item-price { font-weight: 700; font-size: 0.9375rem; color: var(--text); }
+    .menu-item-badges { display: flex; gap: 0.25rem; flex-wrap: wrap; }
+    .item-badge {
+      font-size: 0.625rem; padding: 0.15rem 0.5rem; border-radius: var(--radius-full);
+      font-weight: 600; background: var(--primary-light); color: var(--primary);
+    }
+    .item-badge.chef { background: #FFF3CD; color: #856404; }
+    .item-badge.spicy { background: #FFE5E7; color: var(--primary); }
+    .menu-item-add {
+      position: absolute; bottom: 0.875rem; right: 0.875rem;
+    }
+    .add-btn {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--primary); color: white; border: none;
+      font-size: 1.25rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all var(--transition);
+      box-shadow: 0 2px 8px rgba(230,57,70,0.3);
+    }
+    .add-btn:hover { background: var(--primary-dark); transform: scale(1.1); }
+    .qty-control {
+      display: flex; align-items: center; gap: 0;
+      background: var(--primary); border-radius: 20px;
+      overflow: hidden;
+    }
+    .qty-btn {
+      width: 28px; height: 28px; border: none;
+      background: transparent; color: white;
+      font-size: 1rem; cursor: pointer; font-weight: 700;
+    }
+    .qty-val {
+      min-width: 20px; text-align: center;
+      color: white; font-weight: 700; font-size: 0.875rem;
+    }
+
+    /* Floating cart bar */
+    .cart-bar {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--secondary);
+      color: white;
+      padding: 0.875rem 1.25rem;
+      display: flex; align-items: center; justify-content: space-between;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+      z-index: 100;
+      transform: translateY(100%);
+      transition: transform 0.3s ease;
+    }
+    .cart-bar.visible { transform: translateY(0); }
+    .cart-bar-info { display: flex; align-items: center; gap: 0.75rem; }
+    .cart-bar-count {
+      background: var(--primary); width: 28px; height: 28px;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.8125rem;
+    }
+    .cart-bar-total { font-weight: 700; font-size: 1rem; }
+    .cart-bar-btn {
+      padding: 0.625rem 1.25rem;
+      background: var(--primary);
+      color: white; border: none; border-radius: var(--radius-sm);
+      font-weight: 700; font-size: 0.875rem;
+      cursor: pointer; transition: all var(--transition);
+    }
+    .cart-bar-btn:hover { background: var(--primary-dark); }
+
+    /* AI Chat Widget */
+    .ai-chat-fab {
+      position: fixed; bottom: 80px; right: 1rem;
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--accent-dark));
+      color: white; border: none;
+      font-size: 1.5rem;
+      box-shadow: 0 4px 16px rgba(230,57,70,0.4);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.3s ease;
+      z-index: 90;
+    }
+    .ai-chat-fab:hover { transform: scale(1.08); box-shadow: 0 6px 24px rgba(230,57,70,0.5); }
+    .ai-chat-fab .fab-pulse {
+      position: absolute;
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      background: var(--primary);
+      animation: pulse 2s infinite;
+      opacity: 0.3;
+    }
+
+    /* AI Chat Panel */
+    .ai-chat-panel {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      height: 85vh;
+      background: white;
+      border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+      box-shadow: 0 -8px 40px rgba(0,0,0,0.2);
+      z-index: 200;
+      display: flex; flex-direction: column;
+      transform: translateY(100%);
+      transition: transform 0.35s ease;
+    }
+    .ai-chat-panel.open { transform: translateY(0); }
+    .ai-chat-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border-light);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .ai-chat-header-title { display: flex; align-items: center; gap: 0.625rem; }
+    .ai-chat-header-title span { font-weight: 700; font-size: 1rem; }
+    .ai-badge {
+      background: var(--primary-light); color: var(--primary);
+      font-size: 0.625rem; padding: 0.15rem 0.5rem;
+      border-radius: var(--radius-full); font-weight: 700;
+    }
+    .ai-chat-close {
+      width: 32px; height: 32px; border-radius: 50%;
+      border: none; background: var(--bg); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.125rem; color: var(--text-secondary);
+    }
+    .ai-chat-body {
+      flex: 1; overflow-y: auto; padding: 1rem;
+      display: flex; flex-direction: column; gap: 0.75rem;
+    }
+    .chat-msg {
+      max-width: 85%; padding: 0.75rem 1rem;
+      border-radius: var(--radius); font-size: 0.875rem;
+      line-height: 1.5;
+    }
+    .chat-msg.ai {
+      background: var(--bg);
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+    .chat-msg.user {
+      background: var(--primary);
+      color: white;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+    .chat-product-cards {
+      display: flex; gap: 0.625rem; overflow-x: auto;
+      padding: 0.25rem 0;
+      -webkit-overflow-scrolling: touch;
+    }
+    .chat-product-card {
+      min-width: 160px;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.75rem;
+      flex-shrink: 0;
+    }
+    .chat-product-card-name { font-weight: 600; font-size: 0.8125rem; margin-bottom: 0.25rem; }
+    .chat-product-card-price { font-weight: 700; color: var(--primary); font-size: 0.875rem; }
+    .chat-product-card-add {
+      margin-top: 0.5rem;
+      width: 100%; padding: 0.375rem;
+      background: var(--primary-light); color: var(--primary);
+      border: none; border-radius: 6px;
+      font-weight: 600; font-size: 0.75rem;
+      cursor: pointer;
+    }
+    .chat-product-card-add:hover { background: var(--primary); color: white; }
+    .ai-chat-input {
+      padding: 0.75rem 1rem;
+      border-top: 1px solid var(--border-light);
+      display: flex; gap: 0.5rem; align-items: center;
+    }
+    .ai-chat-input input {
+      flex: 1; padding: 0.625rem 1rem;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-full);
+      font-size: 0.875rem; outline: none;
+    }
+    .ai-chat-input input:focus { border-color: var(--primary); }
+    .ai-chat-send {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--primary); color: white; border: none;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .ai-typing { display: flex; gap: 4px; padding: 0.5rem 0; }
+    .ai-typing span { width: 6px; height: 6px; background: var(--text-muted); border-radius: 50%; animation: pulse 1s infinite; }
+    .ai-typing span:nth-child(2) { animation-delay: 0.2s; }
+    .ai-typing span:nth-child(3) { animation-delay: 0.4s; }
+
+    /* Session banner */
+    .session-banner {
+      background: var(--success-light);
+      border: 1px solid var(--success);
+      border-radius: var(--radius-sm);
+      padding: 0.5rem 0.75rem;
+      margin: 0.5rem 1rem;
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.8125rem;
+    }
+    .session-banner-left { display: flex; align-items: center; gap: 0.5rem; font-weight: 600; color: #064E3B; }
+    .session-banner-right { font-weight: 700; color: var(--success); }
+
+    /* Sold out overlay */
+    .sold-out-tag {
+      position: absolute; top: 0.5rem; left: 0.5rem;
+      background: var(--text-secondary); color: white;
+      padding: 0.15rem 0.5rem; border-radius: 4px;
+      font-size: 0.625rem; font-weight: 700; text-transform: uppercase;
+    }
+
+    @media (min-width: 768px) {
+      .menu-body { max-width: 600px; margin: 0 auto; }
+      .ai-chat-panel { max-width: 420px; left: auto; right: 1rem; bottom: 1rem; height: 70vh; border-radius: var(--radius-xl); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="menu-header">
+    <div class="menu-header-top">
+      <div class="menu-restaurant">
+        <div class="menu-restaurant-logo">🍽️</div>
+        <div>
+          <div class="menu-restaurant-name">Annapurna Kitchen</div>
+          <div class="menu-restaurant-sub">Open now · 11 AM – 10 PM</div>
+        </div>
+      </div>
+      <button class="menu-lang-switch" onclick="window.location.href='language.html'">
+        🌐 English ▾
+      </button>
+    </div>
+    <div class="menu-search">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Search dishes, cuisines..." id="searchInput">
+    </div>
+  </div>
+
+  <!-- Category Nav -->
+  <div class="category-nav" id="categoryNav">
+    <button class="category-chip active" data-cat="all">All</button>
+    <button class="category-chip" data-cat="starters">🔥 Starters</button>
+    <button class="category-chip" data-cat="biryani">🍚 Biryani</button>
+    <button class="category-chip" data-cat="curry">🍛 Curries</button>
+    <button class="category-chip" data-cat="bread">🫓 Breads</button>
+    <button class="category-chip" data-cat="rice">🍚 Rice</button>
+    <button class="category-chip" data-cat="beverages">🥤 Beverages</button>
+    <button class="category-chip" data-cat="desserts">🍰 Desserts</button>
+  </div>
+
+  <!-- Session Banner -->
+  <div class="session-banner" id="sessionBanner" style="display: none;">
+    <div class="session-banner-left">
+      <span class="status-dot active"></span>
+      Table 12 · Active Session
+    </div>
+    <div class="session-banner-right">₹920</div>
+  </div>
+
+  <!-- Menu Body -->
+  <div class="menu-body" id="menuBody">
+
+    <!-- Starters -->
+    <div class="menu-section" data-category="starters">
+      <div class="menu-section-title">🔥 Starters</div>
+
+      <div class="menu-item">
+        <div class="menu-item-img">🍗</div>
+        <div class="menu-item-info">
+          <div class="menu-item-top">
+            <div class="veg-indicator"></div>
+            <div class="menu-item-name">Gobi Manchurian</div>
+          </div>
+          <div class="menu-item-desc">Crispy cauliflower florets tossed in tangy Manchurian sauce with bell peppers</div>
+          <div class="menu-item-meta">
+            <span class="menu-item-price">₹180</span>
+            <div class="menu-item-badges">
+              <span class="item-badge chef">Chef's Special</span>
+              <span class="item-badge spicy">🌶️ Medium</span>
+            </div>
+          </div>
+        </div>
+        <div class="menu-item-add">
+          <button class="add-btn" onclick="addToCart(this, 'Gobi Manchurian', 180)">+</button>
+        </div>
+      </div>
+
+      <div class="menu-item">
+        <div class="menu-item-img">🍖</div>
+        <div class="menu-item-info">
+          <div class="menu-item-top">
+            <div class="nonveg-indicator"></div>
+            <div class="menu-item-name">Chicken 65</div>
+          </div>
+          <div class="menu-item-desc">Deep-fried chicken marinated in spicy red masala, garnished with curry leaves</div>
+          <div class="menu-item-meta">
+            <span class="menu-item-price">₹260</span>
+            <div class="menu-item-badges">
+              <span class="item-badge" style="background:#E8F5E9;color:#2E7D32;">⭐ Bestseller</span>
+              <span class="item-badge spicy">🌶️ Hot</span>
+            </div>
+          </div>
+        </div>
+        <div class="menu-item-add">
+          <button class="add-btn" onclick="addToCart(this, 'Chicken 65', 260)">+</button>
+        </div>
+      </div>
+
+      <div class="menu-item">
+        <div class="menu-item-img">🍢</div>
+        <div class="menu-item-info">
+          <div class="menu-item-top">
+            <div class="nonveg-indicator"></div>
+            <div class="menu-item-name">Chicken Kabab</div>
+          </div>
+          <div class="menu-item-desc">Succulent chicken pieces marinated in yogurt and spices, charcoal grilled</div>
+          <div class="menu-item-meta">
+            <span class="menu-item-price">₹220</span>
+            <div class="menu-item-badges">
+              <span class="item-badge spicy">🌶️ Medium</span>
+            </div>
+          </div>
+        </div>
+        <div class="menu-item-add">
+          <button class="add-btn" onclick="addToCart(this, 'Chicken Kabab', 220)">+</button>
+        </div>
+      </div>
+
+      <div class="menu-item sold-out">
+        <div class="sold-out-tag">SOLD OUT</div>
+        <div class="menu-item-img">🥘</div>
+        <div class="menu-item-info">
+          <div class="menu-item-top">
+            <div class="veg-indicator"></div>
+            <div class="menu-item-name">Paneer Tikka</div>
+          </div>
+          <div class="menu-item-desc">Marinated cottage cheese grilled in tandoor with onions and capsicum</div>
+          <div class="menu-item-meta">
+            <span class="menu-item-price">₹240</span>
+            <div class="menu-item-badges">
+              <span class="item-badge chef">Chef's Special</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Biryani -->
+    <div class="menu-section" data-category="biryani">
+      <div class="menu-section-title">🍚 Biryani</div>
+
+      <div class="menu-item">
+        <div class="menu-item-img">🍛</div>
+        <div class="menu-item-info">
+          <div class="menu-item-top">
+            <div class="nonveg-indicator"></div>
+            <div class="menu-item-name">Chicken Biryani</div>
+          </div>
+          <div class="menu-item-desc">Aromatic basmati rice layered with tender chicken, saffron, and fried onions. Dum-cooked to perfection.</div>
+          <div class="menu-item-meta">
+            <span class="menu-item-price">₹280</span>
+            <div class="menu-item-badges">
+              <span class="item-badge" style="background:#E8F5E9;color:#2E7D32;">⭐ Bestseller</span>
+              <span class="item-badge chef">Chef's Special</span>
+            </div>
+          </div>
+        </div>
+        <div class="menu-item-add">
+          <button class="add-btn" onclick="addToCart(this, 'Chicken Biryani', 280)">+</button>
+        </div>
+      </div>
+
+      <div class="menu-item">
+        <div class="menu-item-img">🍚</div>
+        <div class="menu-item-info">
+          <div class="menu-item-top">
+            <div class="veg-indicator"></div>
+            <div class="menu-item-name">Veg Biryani</div>
+          </div>
+          <div class="menu-item-desc">Fragrant basmati rice with mixed vegetables, mint, and spices</div>
+          <div class="menu-item-meta">
+            <span class="menu-item-price">₹220</span>
+            <div class="menu-item-badges">
+              <span class="item-badge spicy">🌶️ Mild</span>
+            </div>
+          </div>
+        </div>
+        <div class="menu-item-add">
+          <button class="add-btn" onclick="addToCart(this, 'Veg Biryani', 220)">+</button>
+        </div>
+      </div>
+
+      <div class="menu-item">
+        <div class="menu-item-img">🍖</div>
+        <div class="menu-item-info">
+          <div class="menu-item-top">
+            <div class="nonveg-indicator"></div>
+            <div class="menu-item-name">Mutton Biryani</div>
+          </div>
+          <div class="menu-item-desc">Slow-cooked mutton with aged basmati, saffron, and whole spices</div>
+          <div class="menu-item-meta">
+            <span class="menu-item-price">₹380</span>
+            <div class="menu-item-badges">
+              <span class="item-badge spicy">🌶️ Medium</span>
+            </div>
+          </div>
+        </div>
+        <div class="menu-item-add">
+          <button class="add-btn" onclick="addToCart(this, 'Mutton Biryani', 380)">+</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Curries -->
+    <div class="menu-section" data-category="curry">
+      <div class="menu-section-title">🍛 Curries</div>
+
+      <div class="menu-item">
+        <div class="menu-item-img">🫕</div>
+        <div class="menu-item-info">
+          <div class="menu-item-top">
+            <div class="nonveg-indicator"></div>
+            <div class="menu-item-name">Butter Chicken</div>
+          </div>
+          <div class="menu-item-desc">Tender chicken in rich, creamy tomato-butter gravy with aromatic spices</div>
+          <div class="menu-item-meta">
+            <span class="menu-item-price">₹300</span>
+            <div class="menu-item-badges">
+              <span class="item-badge" style="background:#E8F5E9;color:#2E7D32;">⭐ Bestseller</span>
+            </div>
+          </div>
+        </div>
+        <div class="menu-item-add">
+          <button class="add-btn" onclick="addToCart(this, 'Butter Chicken', 300)">+</button>
+        </div>
+      </div>
+
+      <div class="menu-item">
+        <div class="menu-item-img">🥬</div>
+        <div class="menu-item-info">
+          <div class="menu-item-top">
+            <div class="veg-indicator"></div>
+            <div class="menu-item-name">Paneer Butter Masala</div>
+          </div>
+          <div class="menu-item-desc">Soft paneer cubes in velvety tomato-cashew gravy, finished with butter</div>
+          <div class="menu-item-meta">
+            <span class="menu-item-price">₹250</span>
+            <div class="menu-item-badges">
+              <span class="item-badge spicy">🌶️ Mild</span>
+            </div>
+          </div>
+        </div>
+        <div class="menu-item-add">
+          <button class="add-btn" onclick="addToCart(this, 'Paneer Butter Masala', 250)">+</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Breads -->
+    <div class="menu-section" data-category="bread">
+      <div class="menu-section-title">🫓 Breads</div>
+
+      <div class="menu-item">
+        <div class="menu-item-img">🫓</div>
+        <div class="menu-item-info">
+          <div class="menu-item-top">
+            <div class="veg-indicator"></div>
+            <div class="menu-item-name">Butter Naan</div>
+          </div>
+          <div class="menu-item-desc">Soft leavened bread from tandoor, brushed with butter</div>
+          <div class="menu-item-meta">
+            <span class="menu-item-price">₹50</span>
+            <div class="menu-item-badges">
+              <span class="item-badge" style="background:#E8F5E9;color:#2E7D32;">⭐ Bestseller</span>
+            </div>
+          </div>
+        </div>
+        <div class="menu-item-add">
+          <button class="add-btn" onclick="addToCart(this, 'Butter Naan', 50)">+</button>
+        </div>
+      </div>
+
+      <div class="menu-item">
+        <div class="menu-item-img">🫓</div>
+        <div class="menu-item-info">
+          <div class="menu-item-top">
+            <div class="veg-indicator"></div>
+            <div class="menu-item-name">Garlic Naan</div>
+          </div>
+          <div class="menu-item-desc">Naan topped with garlic and coriander, baked in tandoor</div>
+          <div class="menu-item-meta">
+            <span class="menu-item-price">₹60</span>
+          </div>
+        </div>
+        <div class="menu-item-add">
+          <button class="add-btn" onclick="addToCart(this, 'Garlic Naan', 60)">+</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Beverages -->
+    <div class="menu-section" data-category="beverages">
+      <div class="menu-section-title">🥤 Beverages</div>
+
+      <div class="menu-item">
+        <div class="menu-item-img">🍋</div>
+        <div class="menu-item-info">
+          <div class="menu-item-top">
+            <div class="veg-indicator"></div>
+            <div class="menu-item-name">Lime Soda</div>
+          </div>
+          <div class="menu-item-desc">Fresh lime soda — sweet, salt, or mixed</div>
+          <div class="menu-item-meta">
+            <span class="menu-item-price">₹60</span>
+          </div>
+        </div>
+        <div class="menu-item-add">
+          <button class="add-btn" onclick="addToCart(this, 'Lime Soda', 60)">+</button>
+        </div>
+      </div>
+
+      <div class="menu-item">
+        <div class="menu-item-img">🍵</div>
+        <div class="menu-item-info">
+          <div class="menu-item-top">
+            <div class="veg-indicator"></div>
+            <div class="menu-item-name">Masala Chai</div>
+          </div>
+          <div class="menu-item-desc">Freshly brewed chai with ginger, cardamom, and cinnamon</div>
+          <div class="menu-item-meta">
+            <span class="menu-item-price">₹40</span>
+          </div>
+        </div>
+        <div class="menu-item-add">
+          <button class="add-btn" onclick="addToCart(this, 'Masala Chai', 40)">+</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Floating Cart Bar -->
+  <div class="cart-bar" id="cartBar">
+    <div class="cart-bar-info">
+      <div class="cart-bar-count" id="cartCount">0</div>
+      <div class="cart-bar-total" id="cartTotal">₹0</div>
+    </div>
+    <button class="cart-bar-btn" onclick="window.location.href='cart.html'">View Cart →</button>
+  </div>
+
+  <!-- AI Chat FAB -->
+  <button class="ai-chat-fab" id="chatFab" onclick="toggleChat()">
+    <div class="fab-pulse"></div>
+    💬
+  </button>
+
+  <!-- AI Chat Panel -->
+  <div class="ai-chat-panel" id="chatPanel">
+    <div class="ai-chat-header">
+      <div class="ai-chat-header-title">
+        <span>Menu Assistant</span>
+        <span class="ai-badge">AI</span>
+      </div>
+      <button class="ai-chat-close" onclick="toggleChat()">✕</button>
+    </div>
+    <div class="ai-chat-body" id="chatBody">
+      <div class="chat-msg ai">
+        Hi! I'm your menu assistant. Ask me anything about our dishes — I can help you find what you're looking for! 🍽️
+      </div>
+      <div class="chat-msg ai" style="font-size:0.8125rem; color: var(--text-secondary);">
+        Try: <em>"Chicken items below ₹300"</em> or <em>"What's the best biryani?"</em>
+      </div>
+    </div>
+    <div class="ai-chat-input">
+      <input type="text" id="chatInput" placeholder="Ask about our menu..." onkeypress="if(event.key==='Enter')sendChat()">
+      <button class="ai-chat-send" onclick="sendChat()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    let cart = {};
+    let totalItems = 0;
+    let totalPrice = 0;
+
+    // Category filter
+    document.querySelectorAll('.category-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('.category-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        const cat = chip.dataset.cat;
+        document.querySelectorAll('.menu-section').forEach(sec => {
+          sec.style.display = (cat === 'all' || sec.dataset.category === cat) ? '' : 'none';
+        });
+      });
+    });
+
+    // Search
+    document.getElementById('searchInput').addEventListener('input', function() {
+      const q = this.value.toLowerCase();
+      document.querySelectorAll('.menu-item').forEach(item => {
+        const name = item.querySelector('.menu-item-name')?.textContent.toLowerCase() || '';
+        const desc = item.querySelector('.menu-item-desc')?.textContent.toLowerCase() || '';
+        item.style.display = (name.includes(q) || desc.includes(q)) ? '' : 'none';
+      });
+    });
+
+    function addToCart(btn, name, price) {
+      if (!cart[name]) cart[name] = { qty: 0, price };
+      cart[name].qty++;
+      totalItems++;
+      totalPrice += price;
+      updateCartUI(btn, name);
+    }
+
+    function updateCartUI(btn, name) {
+      const qty = cart[name].qty;
+      const container = btn.closest('.menu-item-add');
+      if (qty > 0) {
+        container.innerHTML = `
+          <div class="qty-control">
+            <button class="qty-btn" onclick="changeQty(this, '${name}', -1)">−</button>
+            <span class="qty-val">${qty}</span>
+            <button class="qty-btn" onclick="changeQty(this, '${name}', 1)">+</button>
+          </div>`;
+      }
+      document.getElementById('cartCount').textContent = totalItems;
+      document.getElementById('cartTotal').textContent = `₹${totalPrice}`;
+      const bar = document.getElementById('cartBar');
+      if (totalItems > 0) bar.classList.add('visible');
+      else bar.classList.remove('visible');
+    }
+
+    function changeQty(btn, name, delta) {
+      cart[name].qty += delta;
+      totalItems += delta;
+      totalPrice += delta * cart[name].price;
+      if (cart[name].qty <= 0) { delete cart[name]; }
+      const container = btn.closest('.menu-item-add');
+      if (cart[name] && cart[name].qty > 0) {
+        container.innerHTML = `
+          <div class="qty-control">
+            <button class="qty-btn" onclick="changeQty(this, '${name}', -1)">−</button>
+            <span class="qty-val">${cart[name].qty}</span>
+            <button class="qty-btn" onclick="changeQty(this, '${name}', 1)">+</button>
+          </div>`;
+      } else {
+        container.innerHTML = `<button class="add-btn" onclick="addToCart(this, '${name}', ${cart[name] ? cart[name].price : 0})">+</button>`;
+      }
+      if (totalItems <= 0) totalItems = 0;
+      if (totalPrice <= 0) totalPrice = 0;
+      document.getElementById('cartCount').textContent = totalItems;
+      document.getElementById('cartTotal').textContent = `₹${totalPrice}`;
+      const bar = document.getElementById('cartBar');
+      if (totalItems > 0) bar.classList.add('visible');
+      else bar.classList.remove('visible');
+    }
+
+    // Chat
+    function toggleChat() {
+      const panel = document.getElementById('chatPanel');
+      panel.classList.toggle('open');
+      const fab = document.getElementById('chatFab');
+      fab.style.display = panel.classList.contains('open') ? 'none' : 'flex';
+    }
+
+    function sendChat() {
+      const input = document.getElementById('chatInput');
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = '';
+      const body = document.getElementById('chatBody');
+      body.innerHTML += `<div class="chat-msg user">${text}</div>`;
+
+      // Typing indicator
+      body.innerHTML += `<div class="chat-msg ai" id="typingIndicator"><div class="ai-typing"><span></span><span></span><span></span></div></div>`;
+      body.scrollTop = body.scrollHeight;
+
+      setTimeout(() => {
+        document.getElementById('typingIndicator')?.remove();
+        let response = '';
+        let cards = '';
+        const lower = text.toLowerCase();
+        if (lower.includes('chicken')) {
+          cards = `
+            <div class="chat-product-cards">
+              <div class="chat-product-card">
+                <div class="chat-product-card-name">Chicken 65</div>
+                <div class="chat-product-card-price">₹260</div>
+                <button class="chat-product-card-add">+ Add to Cart</button>
+              </div>
+              <div class="chat-product-card">
+                <div class="chat-product-card-name">Chicken Kabab</div>
+                <div class="chat-product-card-price">₹220</div>
+                <button class="chat-product-card-add">+ Add to Cart</button>
+              </div>
+              <div class="chat-product-card">
+                <div class="chat-product-card-name">Butter Chicken</div>
+                <div class="chat-product-card-price">₹300</div>
+                <button class="chat-product-card-add">+ Add to Cart</button>
+              </div>
+            </div>`;
+          response = "Here are our chicken items! 🍗 All within ₹300. Tap Add to add any item to your cart.";
+        } else if (lower.includes('biryani') || lower.includes('best')) {
+          cards = `
+            <div class="chat-product-cards">
+              <div class="chat-product-card">
+                <div class="chat-product-card-name">⭐ Chicken Biryani</div>
+                <div class="chat-product-card-price">₹280</div>
+                <button class="chat-product-card-add">+ Add to Cart</button>
+              </div>
+            </div>`;
+          response = "Our bestseller is the Chicken Biryani! 🍚 Aromatic basmati rice layered with tender chicken, saffron, and fried onions. Dum-cooked to perfection.";
+        } else if (lower.includes('veg') || lower.includes('paneer') || lower.includes('gobi')) {
+          cards = `
+            <div class="chat-product-cards">
+              <div class="chat-product-card">
+                <div class="chat-product-card-name">Gobi Manchurian</div>
+                <div class="chat-product-card-price">₹180</div>
+                <button class="chat-product-card-add">+ Add to Cart</button>
+              </div>
+              <div class="chat-product-card">
+                <div class="chat-product-card-name">Paneer Butter Masala</div>
+                <div class="chat-product-card-price">₹250</div>
+                <button class="chat-product-card-add">+ Add to Cart</button>
+              </div>
+              <div class="chat-product-card">
+                <div class="chat-product-card-name">Veg Biryani</div>
+                <div class="chat-product-card-price">₹220</div>
+                <button class="chat-product-card-add">+ Add to Cart</button>
+              </div>
+            </div>`;
+          response = "Here are our vegetarian options! 🥬 All freshly prepared.";
+        } else {
+          response = "I can help you find dishes! Try asking about specific items like <em>\"chicken items\"</em>, <em>\"biryani\"</em>, <em>\"vegetarian dishes\"</em>, or ask for recommendations. 😊";
+        }
+        body.innerHTML += `<div class="chat-msg ai">${response}</div>${cards}`;
+        body.scrollTop = body.scrollHeight;
+      }, 1200);
+    }
+
+    // Show session banner if session active
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('session') === 'active') {
+      document.getElementById('sessionBanner').style.display = 'flex';
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Order Status — Annapurna Kitchen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/shared.css">
+  <style>
+    body { background: var(--bg); min-height: 100vh; display: flex; flex-direction: column; }
+    .status-header {
+      background: white; border-bottom: 1px solid var(--border-light);
+      padding: 1rem 1.25rem; display: flex; align-items: center; gap: 0.75rem;
+      position: sticky; top: 0; z-index: 50;
+    }
+    .status-back { width: 36px; height: 36px; border: none; background: var(--bg); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.125rem; }
+    .status-title { font-weight: 700; font-size: 1.125rem; }
+    .status-body { flex: 1; padding: 1rem; max-width: 600px; margin: 0 auto; width: 100%; }
+
+    /* Order ID hero */
+    .order-hero {
+      text-align: center; padding: 2rem 1rem;
+      background: linear-gradient(135deg, var(--secondary), #264673);
+      border-radius: var(--radius-lg); color: white;
+      margin-bottom: 1.5rem;
+    }
+    .order-hero-label { font-size: 0.8125rem; color: rgba(255,255,255,0.7); margin-bottom: 0.25rem; }
+    .order-hero-id { font-family: var(--font-display); font-size: 1.75rem; font-weight: 800; letter-spacing: 0.02em; }
+    .order-hero-table { font-size: 0.875rem; color: rgba(255,255,255,0.6); margin-top: 0.5rem; }
+    .order-hero-time { font-size: 0.75rem; color: rgba(255,255,255,0.5); margin-top: 0.25rem; }
+
+    /* Status step indicator */
+    .status-steps {
+      display: flex; justify-content: space-between;
+      padding: 1.5rem 0.5rem;
+      margin-bottom: 1rem;
+    }
+    .status-step {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 0.5rem; position: relative; flex: 1;
+    }
+    .status-step:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      top: 16px;
+      left: 50%;
+      width: 100%;
+      height: 2px;
+      background: var(--border);
+    }
+    .status-step.completed:not(:last-child)::after { background: var(--success); }
+    .status-step.active:not(:last-child)::after {
+      background: linear-gradient(90deg, var(--success), var(--border));
+    }
+    .step-dot {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--bg); border: 2px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; z-index: 1;
+      transition: all 0.3s ease;
+    }
+    .status-step.completed .step-dot {
+      background: var(--success); border-color: var(--success); color: white;
+    }
+    .status-step.active .step-dot {
+      background: var(--primary); border-color: var(--primary); color: white;
+      box-shadow: 0 0 0 6px var(--primary-light);
+      animation: pulse 2s infinite;
+    }
+    .step-label { font-size: 0.625rem; font-weight: 600; color: var(--text-muted); text-align: center; }
+    .status-step.completed .step-label,
+    .status-step.active .step-label { color: var(--text); }
+
+    /* Order items */
+    .order-items-card {
+      background: white; border-radius: var(--radius);
+      border: 1px solid var(--border-light); overflow: hidden;
+      margin-bottom: 1rem;
+    }
+    .order-items-header {
+      padding: 0.75rem 1rem; background: var(--bg);
+      font-weight: 600; font-size: 0.875rem;
+      border-bottom: 1px solid var(--border-light);
+      display: flex; justify-content: space-between;
+    }
+    .order-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .order-item:last-child { border-bottom: none; }
+    .order-item-left { display: flex; align-items: center; gap: 0.75rem; }
+    .order-item-status-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+    }
+    .order-item-status-dot.preparing { background: var(--warning); }
+    .order-item-status-dot.ready { background: var(--success); }
+    .order-item-status-dot.placed { background: var(--info); }
+    .order-item-name { font-weight: 500; font-size: 0.9375rem; }
+    .order-item-qty { font-size: 0.75rem; color: var(--text-secondary); }
+    .order-item-status {
+      font-size: 0.6875rem; font-weight: 600; padding: 0.2rem 0.5rem;
+      border-radius: var(--radius-full);
+    }
+    .order-item-status.preparing { background: var(--warning-light); color: #856404; }
+    .order-item-status.ready { background: var(--success-light); color: #064E3B; }
+
+    /* ETA banner */
+    .eta-banner {
+      background: var(--success-light); border: 1px solid var(--success);
+      border-radius: var(--radius); padding: 0.875rem 1rem;
+      display: flex; align-items: center; gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .eta-icon { font-size: 1.5rem; }
+    .eta-text { font-weight: 600; font-size: 0.9375rem; color: #064E3B; }
+    .eta-sub { font-size: 0.75rem; color: var(--text-secondary); }
+
+    /* Actions */
+    .status-actions {
+      display: flex; gap: 0.75rem; margin-top: 1rem;
+    }
+    .status-action-btn {
+      flex: 1; padding: 0.75rem;
+      border-radius: var(--radius); border: 1.5px solid var(--border);
+      background: white; text-align: center; cursor: pointer;
+      transition: all var(--transition);
+    }
+    .status-action-btn:hover { border-color: var(--primary); }
+    .status-action-btn .icon { font-size: 1.25rem; margin-bottom: 0.25rem; }
+    .status-action-btn .label { font-size: 0.8125rem; font-weight: 600; color: var(--text); }
+    .status-action-btn .sub { font-size: 0.6875rem; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+
+  <div class="status-header">
+    <button class="status-back" onclick="history.back()">←</button>
+    <div class="status-title">Order Status</div>
+  </div>
+
+  <div class="status-body">
+    <!-- Order Hero -->
+    <div class="order-hero">
+      <div class="order-hero-label">Your Order ID</div>
+      <div class="order-hero-id">ORD-20260826-0042</div>
+      <div class="order-hero-table">Table 12 · Annapurna Kitchen</div>
+      <div class="order-hero-time">Placed at 7:45 PM</div>
+    </div>
+
+    <!-- Step Indicator -->
+    <div class="status-steps">
+      <div class="status-step completed">
+        <div class="step-dot">✓</div>
+        <div class="step-label">Placed</div>
+      </div>
+      <div class="status-step completed">
+        <div class="step-dot">✓</div>
+        <div class="step-label">Accepted</div>
+      </div>
+      <div class="status-step active">
+        <div class="step-dot">👨‍🍳</div>
+        <div class="step-label">Preparing</div>
+      </div>
+      <div class="status-step">
+        <div class="step-dot">✓</div>
+        <div class="step-label">Ready</div>
+      </div>
+      <div class="status-step">
+        <div class="step-dot">🍽️</div>
+        <div class="step-label">Served</div>
+      </div>
+    </div>
+
+    <!-- ETA -->
+    <div class="eta-banner">
+      <div class="eta-icon">⏱️</div>
+      <div>
+        <div class="eta-text">Estimated ~12 minutes</div>
+        <div class="eta-sub">Your order is being prepared by the kitchen</div>
+      </div>
+    </div>
+
+    <!-- Order Items -->
+    <div class="order-items-card">
+      <div class="order-items-header">
+        <span>Items (5)</span>
+        <span>₹1,176</span>
+      </div>
+      <div class="order-item">
+        <div class="order-item-left">
+          <div class="order-item-status-dot preparing"></div>
+          <div>
+            <div class="order-item-name">Chicken 65</div>
+            <div class="order-item-qty">× 2</div>
+          </div>
+        </div>
+        <span class="order-item-status preparing">Preparing</span>
+      </div>
+      <div class="order-item">
+        <div class="order-item-left">
+          <div class="order-item-status-dot preparing"></div>
+          <div>
+            <div class="order-item-name">Butter Naan</div>
+            <div class="order-item-qty">× 4</div>
+          </div>
+        </div>
+        <span class="order-item-status preparing">Preparing</span>
+      </div>
+      <div class="order-item">
+        <div class="order-item-left">
+          <div class="order-item-status-dot placed"></div>
+          <div>
+            <div class="order-item-name">Chicken Biryani</div>
+            <div class="order-item-qty">× 1 · No onions, extra raita</div>
+          </div>
+        </div>
+        <span class="order-item-status preparing">Preparing</span>
+      </div>
+      <div class="order-item">
+        <div class="order-item-left">
+          <div class="order-item-status-dot ready"></div>
+          <div>
+            <div class="order-item-name">Lime Soda</div>
+            <div class="order-item-qty">× 2</div>
+          </div>
+        </div>
+        <span class="order-item-status ready">Ready</span>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="status-actions">
+      <div class="status-action-btn" onclick="window.location.href='service-requests.html'">
+        <div class="icon">💧</div>
+        <div class="label">Need Something?</div>
+        <div class="sub">Water, tissue, etc.</div>
+      </div>
+      <div class="status-action-btn" onclick="window.location.href='menu.html?session=active'">
+        <div class="icon">➕</div>
+        <div class="label">Add More Items</div>
+        <div class="sub">Continue ordering</div>
+      </div>
+      <div class="status-action-btn" onclick="window.location.href='bill.html'">
+        <div class="icon">📄</div>
+        <div class="label">Request Bill</div>
+        <div class="sub">View & pay</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Simulate status updates
+    setTimeout(() => {
+      const dots = document.querySelectorAll('.order-item-status-dot.preparing');
+      const statuses = document.querySelectorAll('.order-item-status.preparing');
+      if (dots[0]) { dots[0].className = 'order-item-status-dot ready'; }
+      if (statuses[0]) { statuses[0].className = 'order-item-status ready'; statuses[0].textContent = 'Ready'; }
+    }, 5000);
+  </script>
+</body>
+</html>

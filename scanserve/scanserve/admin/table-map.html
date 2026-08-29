@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Table Map & Zones — Annapurna Kitchen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/shared.css">
+  <style>
+    .zone-tabs {
+      display: flex; gap: 0; border-bottom: 2px solid var(--border-light);
+      margin-bottom: 1.25rem; background: white; border-radius: var(--radius);
+      border: 1px solid var(--border-light); overflow: hidden;
+    }
+    .zone-tab {
+      flex: 1; padding: 0.75rem 1rem; border: none; background: none;
+      font-weight: 600; font-size: 0.8125rem; color: var(--text-secondary);
+      cursor: pointer; transition: all var(--transition); text-align: center;
+      border-right: 1px solid var(--border-light);
+    }
+    .zone-tab:last-child { border-right: none; }
+    .zone-tab:hover { background: var(--bg); color: var(--text); }
+    .zone-tab.active { background: var(--primary); color: white; }
+    .zone-tab .tab-count { font-size: 0.6875rem; opacity: 0.7; margin-left: 0.25rem; }
+
+    .table-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .table-card {
+      background: white; border-radius: var(--radius); border: 2px solid var(--border-light);
+      padding: 0.875rem; cursor: pointer; transition: all var(--transition);
+      position: relative; overflow: hidden;
+    }
+    .table-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+    .table-card.active { border-color: var(--success); }
+    .table-card.active::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: var(--success);
+    }
+    .table-card.idle { border-color: var(--border); }
+    .table-card.bill-requested { border-color: var(--warning); }
+    .table-card.bill-requested::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: var(--warning);
+    }
+    .table-card.closed { border-color: var(--info); }
+    .table-card.closed::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: var(--info);
+    }
+
+    .table-card-header {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      margin-bottom: 0.5rem;
+    }
+    .table-number {
+      font-family: var(--font-display); font-weight: 800; font-size: 1.25rem;
+      line-height: 1;
+    }
+    .table-seats {
+      display: inline-flex; align-items: center; gap: 0.2rem;
+      font-size: 0.6875rem; color: var(--text-muted); background: var(--bg);
+      padding: 0.15rem 0.4rem; border-radius: var(--radius-full);
+    }
+
+    .table-status-badge {
+      display: inline-flex; align-items: center; gap: 0.2rem;
+      padding: 0.15rem 0.5rem; border-radius: var(--radius-full);
+      font-size: 0.625rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.03em; margin-bottom: 0.375rem;
+    }
+    .table-status-badge.active { background: var(--success-light); color: var(--success); }
+    .table-status-badge.idle { background: #F1F3F5; color: var(--text-muted); }
+    .table-status-badge.bill-requested { background: var(--warning-light); color: #856404; }
+    .table-status-badge.closed { background: var(--info-light); color: var(--info); }
+
+    .table-waiter {
+      display: flex; align-items: center; gap: 0.375rem;
+      font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.375rem;
+    }
+    .table-waiter-dot {
+      width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+    }
+
+    .table-amount {
+      font-weight: 700; font-size: 1rem; font-family: var(--font-display);
+    }
+
+    .table-meta {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: 0.375rem; font-size: 0.6875rem; color: var(--text-muted);
+    }
+
+    .table-requests {
+      display: inline-flex; align-items: center; gap: 0.2rem;
+      font-weight: 600; color: var(--danger);
+    }
+    .table-requests.none { color: var(--text-muted); }
+
+    .table-time {
+      display: inline-flex; align-items: center; gap: 0.2rem;
+    }
+
+    /* Zone summary sidebar */
+    .zone-sidebar {
+      width: 280px; flex-shrink: 0; display: flex; flex-direction: column; gap: 1rem;
+    }
+    .zone-summary-card {
+      background: white; border-radius: var(--radius); border: 1px solid var(--border-light);
+      padding: 1rem;
+    }
+    .zone-summary-title {
+      font-weight: 700; font-size: 0.8125rem; margin-bottom: 0.75rem;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .zone-stats-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0.375rem 0; font-size: 0.8125rem;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .zone-stats-row:last-child { border-bottom: none; }
+    .zone-stats-label { color: var(--text-secondary); }
+    .zone-stats-value { font-weight: 700; }
+
+    .waiter-assign {
+      display: flex; align-items: center; gap: 0.5rem;
+      padding: 0.5rem; background: var(--bg); border-radius: var(--radius-sm);
+      margin-top: 0.5rem;
+    }
+    .waiter-assign select {
+      flex: 1; padding: 0.375rem 0.5rem; border: 1px solid var(--border);
+      border-radius: 6px; font-size: 0.75rem; background: white;
+      cursor: pointer;
+    }
+
+    /* Table detail panel */
+    .detail-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+      z-index: 200; display: none; backdrop-filter: blur(4px);
+    }
+    .detail-overlay.show { display: block; }
+    .detail-panel {
+      position: fixed; top: 0; right: 0; bottom: 0; width: 420px;
+      background: white; z-index: 201; transform: translateX(100%);
+      transition: transform 0.3s ease; display: flex; flex-direction: column;
+      box-shadow: -8px 0 30px rgba(0,0,0,0.15);
+    }
+    .detail-panel.show { transform: translateX(0); }
+    .detail-header {
+      padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-light);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .detail-header h3 { margin: 0; }
+    .detail-close {
+      width: 32px; height: 32px; border: none; background: var(--bg);
+      border-radius: var(--radius-sm); cursor: pointer; display: flex;
+      align-items: center; justify-content: center; font-size: 1.125rem;
+      transition: background var(--transition);
+    }
+    .detail-close:hover { background: var(--danger-light); color: var(--danger); }
+    .detail-body { flex: 1; overflow-y: auto; padding: 1.5rem; }
+
+    .detail-section { margin-bottom: 1.25rem; }
+    .detail-section-title {
+      font-size: 0.6875rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 0.5rem;
+    }
+    .detail-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0.5rem 0; font-size: 0.875rem;
+    }
+    .detail-row-label { color: var(--text-secondary); }
+    .detail-row-value { font-weight: 600; }
+
+    .detail-order-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0.5rem 0; border-bottom: 1px solid var(--border-light);
+      font-size: 0.875rem;
+    }
+    .detail-order-item:last-child { border-bottom: none; }
+
+    .detail-actions {
+      padding: 1rem 1.5rem; border-top: 1px solid var(--border-light);
+      display: flex; gap: 0.5rem;
+    }
+
+    /* Legend */
+    .legend {
+      display: flex; gap: 1.25rem; margin-bottom: 1rem; flex-wrap: wrap;
+    }
+    .legend-item {
+      display: flex; align-items: center; gap: 0.375rem;
+      font-size: 0.75rem; color: var(--text-secondary);
+    }
+    .legend-dot {
+      width: 10px; height: 10px; border-radius: 3px; border: 2px solid;
+    }
+    .legend-dot.active { border-color: var(--success); background: var(--success-light); }
+    .legend-dot.idle { border-color: var(--border); background: white; }
+    .legend-dot.bill-requested { border-color: var(--warning); background: var(--warning-light); }
+    .legend-dot.closed { border-color: var(--info); background: var(--info-light); }
+
+    .content-layout {
+      display: flex; gap: 1.25rem; align-items: flex-start;
+    }
+    .table-grid-area { flex: 1; min-width: 0; }
+
+    @media (max-width: 1100px) {
+      .zone-sidebar { display: none; }
+      .table-grid { grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); }
+    }
+    @media (max-width: 768px) {
+      .table-grid { grid-template-columns: repeat(2, 1fr); }
+      .detail-panel { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">SS</div>
+        <div class="sidebar-brand">ScanServe</div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Main</div>
+        </div>
+        <a class="sidebar-link" href="dashboard.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </a>
+        <a class="sidebar-link" href="orders.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Orders
+        </a>
+        <a class="sidebar-link" href="billing.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          Billing
+        </a>
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Management</div>
+        </div>
+        <a class="sidebar-link" href="menu-management.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          Menu
+        </a>
+        <a class="sidebar-link active" href="table-map.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+          Table Map
+        </a>
+        <a class="sidebar-link" href="waiters.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Waiters
+        </a>
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Intelligence</div>
+        </div>
+        <a class="sidebar-link" href="analytics.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          Analytics
+        </a>
+        <a class="sidebar-link" href="ai-owner.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          AI Assistant
+        </a>
+        <a class="sidebar-link" href="ai-controls.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          AI Controls
+        </a>
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Setup</div>
+        </div>
+        <a class="sidebar-link" href="onboarding.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          Onboarding
+        </a>
+        <a class="sidebar-link" href="#">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Settings
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div style="display:flex;align-items:center;gap:0.625rem;">
+          <div class="avatar avatar-sm">R</div>
+          <div>
+            <div style="font-size:0.8125rem;font-weight:600;">Ravi</div>
+            <div style="font-size:0.6875rem;color:rgba(255,255,255,0.5);">Owner · Premium</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <div class="main-content">
+      <div class="topbar">
+        <div class="topbar-title">Table Map</div>
+        <div class="topbar-actions">
+          <select class="form-select" style="padding:0.375rem 0.75rem;font-size:0.8125rem;border-radius:6px;">
+            <option>All Zones</option>
+            <option>Zone A</option>
+            <option>Zone B</option>
+            <option>Zone C</option>
+          </select>
+          <button class="btn btn-sm btn-primary">Edit Zones</button>
+        </div>
+      </div>
+
+      <div class="page-content">
+        <!-- Zone Tabs -->
+        <div class="zone-tabs">
+          <button class="zone-tab active" onclick="filterZone('all')">
+            All Tables <span class="tab-count">(30)</span>
+          </button>
+          <button class="zone-tab" onclick="filterZone('a')">
+            Zone A <span class="tab-count">T1–10 · Manoj</span>
+          </button>
+          <button class="zone-tab" onclick="filterZone('b')">
+            Zone B <span class="tab-count">T11–20 · Anil</span>
+          </button>
+          <button class="zone-tab" onclick="filterZone('c')">
+            Zone C <span class="tab-count">T21–30 · Kiran</span>
+          </button>
+        </div>
+
+        <!-- Legend -->
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot active"></div> Active session</div>
+          <div class="legend-item"><div class="legend-dot idle"></div> Idle / Available</div>
+          <div class="legend-item"><div class="legend-dot bill-requested"></div> Bill requested</div>
+          <div class="legend-item"><div class="legend-dot closed"></div> Occupied, no session</div>
+        </div>
+
+        <!-- Content Layout -->
+        <div class="content-layout">
+          <!-- Table Grid -->
+          <div class="table-grid-area">
+            <div class="table-grid" id="tableGrid">
+              <!-- Zone A: T1–T10, Waiter: Manoj -->
+              <div class="table-card idle" data-zone="a" data-table="1" onclick="openDetail(1)">
+                <div class="table-card-header">
+                  <div class="table-number">T1</div>
+                  <div class="table-seats">👤 4</div>
+                </div>
+                <div class="table-status-badge idle">● Idle</div>
+                <div class="table-waiter"><div class="table-waiter-dot" style="background:var(--info);"></div>Manoj</div>
+                <div class="table-meta">
+                  <div class="table-requests none">No requests</div>
+                  <div class="table-time">—</div>
+                </div>
+              </div>
+
+              <div class="table-card idle" data-zone="a" data-table="2" onclick="openDetail(2)">
+                <div class="table-card-header">
+                  <div class="table-number">T2</div>
+                  <div class="table-seats">👤 2</div>
+                </div>
+                <div class="table-status-badge idle">● Idle</div>
+                <div class="table-waiter"><div class="table-waiter-dot" style="background:var(--info);"></div>Manoj</div>
+                <div class="table-meta">
+                  <div class="table-requests none">No requests</div>
+                  <div class="table-time">—</div>
+                </div>
+              </div>
+
+              <div class="table-card active" data-zone="a" data-table="3" onclick="openDetail(3)">
+                <div class="table-card-header">
+                  <div class="table-number">T3</div>
+                  <div class="table-seats">👤 4</div>
+                </div>
+                <div class="table-status-badge active">● Active</div>
+                <div class="table-waiter"><div class="table-waiter-dot" style="background:var(--info);"></div>Manoj</div>
+                <div class="table-amount">₹620</div>
+                <div class="table-meta">
+                  <div class="table-requests">🔴 1 request</div>
+                  <div class="table-time">⏱ 42 min</div>
+                </div>
+              </div>
+
+              <div class="table-card idle" data-zone="a" data-table="4" onclick="openDetail(4)">
+                <div class="table-card-header">
+                  <div class="table-number">T4</div>
+                  <div class="table-seats">👤 6</div>
+                </div>
+                <div class="table-status-badge idle">● Idle</div>
+                <div class="table-waiter"><div class="table-waiter-dot" style="background:var(--info);"></div>Manoj</div>
+                <div class="table-meta">
+                  <div class="table-requests none">No requests</div>
+                  <div class="table-time">—</div>
+                </div>
+              </div>
+
+              <div class="table-card active" data-zone="a" data-table="5" onclick="openDetail(5)">
+                <div class="table-card-header">
+                  <div class="table-number">T5</div>
+                  <div class="table-seats">👤 2</div>
+                </div>
+                <div class="table-status-badge active">● Active</div>
+                <div class="table-waiter"><div class="table-waiter-dot" style="background:var(--info);"></div>Manoj</div>
+                <div class="table-amount">₹450</div>
+                <div class="table-meta">
+                  <div class="table-requests none">No requests</div>
+                  <div class="table-time">⏱ 18 min</div>
+                </div>
+              </div>
+
+              <div class="table-card idle" data-zone="a" data-table="6" onclick="openDetail(6)">
+                <div class="table-card-header">
+                  <div class="table-number">T6</div>
+                  <div class="table-seats">👤 4</div>
+                </div>
+                <div class="table-status-badge idle">● Idle</div>
+                <div class="table-waiter"><div class="table-waiter-dot" style="background:var(--info);"></div>Manoj</div>
+                <div class="table-meta">
+                  <div class="table-requests none">No requests</div>
+                  <div class="table-time">—</div>
+                </div>
+              </div>
+
+              <div class="table-card active" data-zone="a" data-table="7" onclick="openDetail(7)">
+                <div class="table-card-header">
+                  <div class="table-number">T7</div>
+                  <div class="table-seats">👤 6</div>
+                </div>
+                <div class="table-status-badge active">● Active</div>
+                <div class="table-waiter"><div class="table-waiter-dot" style="background:var(--info);"></div>Manoj</div>
+                <div class="table-amount">₹920</div>
+                <div class="table-meta">
+                  <div class="table-requests">🔴 2 requests</div>
+                  <div class="table-time">⏱ 58 min</div>
+                </div>
+              </div>
+
+              <div class="table-card idle" data-zone="a" data-table="8" onclick="openDetail(8)">
+                <div class="table-card-header">
+                  <div class="table-number">T8</div>
+                  <div class="table-seats">👤 2</div>
+                </div>
+                <div class="table-status-badge idle">● Idle</div>
+                <div class="table-waiter"><div class="table-waiter-dot" style="background:var(--info);"></div>Manoj</div>
+                <div class="table-meta">
+                  <div class="table-requests none">No requests</div>
+                  <div class="table-time">—</div>
+                </div>
+              </div>
+
+              <div class="table-card active" data-zone="a" data-table="9" onclick="openDetail(9)">
+                <div class="table-card-header">
+                  <div class="table-number">T9</div>
+                  <div class="table-seats">👤 4</div>
+                </div>
+                <div class="table-status-badge active">● Active</div>
+                <div class="table-waiter"><div class="table-waiter-dot" style="background:var(--info);"></div>Manoj</div>
+                <div class="table-amount">₹380</div>
+                <div class="table-meta">
+                  <div class="table-requests none">No requests</div>
+                  <div class="table-time">⏱ 25 min</div>
+                </div>
+              </div>
+
+              <div class="table-card active" data-zone="a" data-table="10" onclick="openDetail(10)">
+                <div class="table-card-header">
+                  <div class="table-number">T10</div>
+                  <div class="table-seats">👤 4</div>
+                </div>
+                <div class="table-status-badge active">● Active</div>
+                <div class="table-waiter"><div class="table-waiter-dot" style="background:var(--info);"></div>Manoj</div>
+                <div class="table-amount">₹560</div>
+                <div class="table-meta">
+                  <div class="table-requests none">No requests</div>
+                  <div class="table-time">⏱ 33 min</div>
+                </div>
+              </div>
+
+              <!-- Zone B: T11–T20, Waiter: Anil -->
+              <div class="table-card idle" data-zone="b" data-table="11" onclick="openDetail(11)">
+                <div class="table-card-header">
+                  <div class="table-number">T11</div>
+                  <div class="table-seats">👤 4</div>
+                </div>
+                <div class="table-status-badge idle">● Idle</div>
+                <div class="table-waiter"><div class="table-waiter-dot" style="background:var(--primary);"></div>Anil</div>
+                <div class="table-meta">
+                  <div class="table-requests none">No requests</div>
+                  <div class="table-time">—</div>
+                </div>
+              </div>
+
+              <div class="table-card bill-requested" data-zone="b" data-table="12" onclick="openDetail(12)">
+                <div class="table-card-header">
+                  <div class="table-number">T12</div>
+                  <div class="table-seats">👤 4</div>
+                </div>
+                <div class="table-status-badge bill-requested">⚠ Bill Requested</div>
+                <div class="table-waiter"><div class="table-waiter-dot" style="background:var(--primary);"></div>Anil</div>
+                <div class="table-amount">₹1,176</div>
+                <div class="table-meta">
+                  <div class="table-requests">🟡 1 request</div>
+                  <div class="table-time">⏱ 1h 12 min</div>
+                </div>
+              </div>
+
+              <div class="table-card idle" data-zone="b" data-table="13" onclick="openDetail(13)">
+                <div class="table-card-header">
+                  <div class="table-number">T13</div>
+                  <div class="table-seats">👤 2</div>
+                </div>
+                <div class="table-status-badge idle">● Idle</div>
+                <div class="table-waiter"><div class="table-waiter-dot" style="background:var(--primary);"></div>Anil</div>
+                <div class="table-meta">
+                  <div class="table-requests none">No requests</div>
+                  <div class="table-time">—</div>
+                </div>
+              </div>
+
+              <div class="table-card active" data-zone="b" data-table="14" onclick="openDetail(14)">
+                <div class="table-card-header">
+                  <div class="table-number">T14</div>
+                  <div class="table-seats">👤 6</div>
+                </div>
+                <div class="table-status-badge active">● Active</div>
+                <div class="table-waiter"><div class="table-waiter-dot" style="background:var(--primary);"></div>Anil</div>
+                <div class="table-amount">₹840</div>
+                <div class="table-meta">
+                  <div class="table-requests">🔴 1 request</div>
+                  <div class="table-time">⏱ 47 min</div>
+                </div>
+              </div>
+
+              <div class="table-card closed" data-zone="b" data-table="15" onclick="openDetail(15)">
+                <div class="table-card-header">
+                  <div class="table-number">T15</div>
+                  <div class="table-seats">👤 4</div>
+                </div>
+                <div class="table-status-badge closed">◉ Occupied</div>
+                <div class="table-waiter"><div class="table-waiter-dot" style="background:var(--primary);"></div>Anil</div>
+                <div class="table-meta">
+                  <div class="table-requests none">No session</div>
+                  <div class="table-time">—</div>
+                </div>
+              </div>
+
+              <div class="table-card bill-requested" data-zone="b" data-table="16" onclick="openDetail(16)">
+                <div class="table-card-header">
+                  <div class="table-number">T16</div>
+                  <div class="table-seats">👤 4</div>
+                </div>
+                <div class="table-status-badge bill-requested">⚠ Bill Requested</div>
+                <div class="table-waiter"><div class="table-waiter-dot" style="background:var(--primary);"></div>Anil</div>
+                <div class="table-amount">₹650</div>
+                <div class="table-meta">
+                  <div class="table-requests">🟡 1 request</div>
+                  <div class="table-time">⏱ 55 min</div>
+                </div>
+              </div>
+
+              <div class="table-card active" data-zone="b" data-table="17" onclick="openDetail(17)">
+                <div class="table-card-header">
+                  <div class="table-number">T17</div>
+                  <div class="table-seats">👤 8</div>
+                </div>
+                <div class="table-status-badge active">● Active</div>
+                <div class="table-waiter"><div class="table-waiter-dot" style="background:var(--primary);"></div>Anil</div>
+                <div class="table-amount">₹1,340</div>
+                <div class="table-meta">
+                  <div class="table-requests none">No requests</div>
+                  <div class="table-time">⏱ 1h 5 min</div>
+                </div>
+              </div>
+
+              <div class="table-card active" data-zone="b" data-table="18" onclick="openDetail(18)">
+                <div class="table-card-header">
+                  <div class="table-number">T18</div>
+                  <div class="table-seats">👤 2</div>
+                </div>
+                <div class="table-status-badge active">● Active</div>
+                <div class="table-waiter"><div class="table-waiter-dot" style="background:var(--primary);"></div>Anil</div>
+                <div class="table-amount">₹340</div>
+                <div class="table-meta">
+                  <div class="table-requests none">No requests</div>
+                  <div class="table-time">⏱ 14 min</div>
+                </div>
+              </div>
+
+              <div class="table-card idle" data-zone="b" data-table="19" onclick="openDetail(19)">
+                <div class="table-card-header">
+                  <div class="table-number">T19</div>
+                  <div class="table-seats">👤 4</div>
+                </div>
+                <div class="table-status-badge idle">● Idle</div>
+                <div class="table-waiter"><div class="table-waiter-dot" style="background:var(--primary);"></div>Anil</div>
+                <div class="table-meta">
+                  <div class="table-requests none">No requests</div>
+                  <div class="table-time">—</div>
+                </div>
+              </div>
+
+              <div class="table-card idle" data-zone="b" data-table="20" onclick="openDetail(20)">
+                <div class="table-card-header">
+                  <div class="table-number">T20</div>
+                  <div class="table-seats">👤 2</div>
+                </div>
+                <div class="table-status-badge idle">● Idle</div>
+                <div class="table-waiter"><div class="table-waiter-dot" style="background:var(--primary);"></div>Anil</div>
+                <div class="table-meta">
+                  <div class="table-requests none">No requests</div>
+                  <div class="table-time">—</div>
+                </div>
+              </div>
+
+              <!-- Zone C: T21–T30, Waiter: Kiran -->
+              <div class="table-card idle" data-zone="c" data-table="21" onclick="openDetail(21)">
+                <div class="table-card-header">
+                  <div class="table-number">T21</div>
+                  <div class="table-seats">👤 4</div>
+                </div>
+                <div class="table-status-badge idle">● Idle</div>
+                <div class="table-waiter"><div class="table-waiter-dot" style="background:var(--accent);"></div>Kiran</div>
+                <div class="table-meta">
+                  <div class="table-requests none">No requests</div>
+                  <div class="table-time">—</div>
+                </div>
+              </div>
+
+              <div class="table-card active" data-zone="c" data-table="22" onclick="openDetail(22)">
+                <div class="table-card-header">
+                  <div class="table-number">T22</div>
+                  <div class="table-seats">👤 8</div>
+                </div>
+                <div class="table-status-badge active">● Active</div>
+                <div class="table-waiter"><div class="table-waiter-dot" style="background:var(--accent);"></div>Kiran</div>
+                <div class="table-amount">₹1,450</div>
+                <div class="table-meta">
+                  <div class="table-requests none">No requests</div>
+                  <div class="table-time">⏱ 1h 20 min</div>
+                </div>
+              </div>
+
+              <div class="table-card idle" data-zone="c" data-table="23" onclick="openDetail(23)">
+                <div class="table-card-header">
+                  <div class="table-number">T23</div>
+                  <div class="table-seats">👤 2</div>
+                </div>
+                <div class="table-status-badge idle">● Idle</div>
+                <div class="table-waiter"><div class="table-waiter-dot" style="background:var(--accent);"></div>Kiran</div>
+                <div class="table-meta">
+                  <div class="table-requests none">No requests</div>
+                  <div class="table-time">—</div>
+                </div>
+              </div>
+
+              <div class="table-card idle" data-zone="c" data-table="24" onclick="openDetail(24)">
+                <div class="table-card-header">
+                  <div class="table-number">T24</div>
+                  <div class="table-seats">👤 4</div>
+                </div>
+                <div class="table-status-badge idle">● Idle</div>
+                <div class="table-waiter"><div class="table-waiter-dot" style="background:var(--accent);"></div>Kiran</div>
+                <div class="table-meta">
+                  <div class="table-requests none">No requests</div>
+                  <div class="table-time">—</div>
+                </div>
+              </div>
+
+              <div class="table-card active" data-zone="c" data-table="25" onclick="openDetail(25)">
+                <div class="table-card-header">
+                  <div class="table-number">T25</div>
+                  <div class="table-seats">👤 4</div>
+                </div>
+                <div class="table-status-badge active">● Active</div>
+                <div class="table-waiter"><div class="table-waiter-dot" style="background:var(--accent);"></div>Kiran</div>
+                <div class="table-amount">₹720</div>
+                <div class="table-meta">
+                  <div class="table-requests">🔴 1 request</div>
+                  <div class="table-time">⏱ 38 min</div>
+                </div>
+              </div>
+
+              <div class="table-card closed" data-zone="c" data-table="26" onclick="openDetail(26)">
+                <div class="table-card-header">
+                  <div class="table-number">T26</div>
+                  <div class="table-seats">👤 6</div>
+                </div>
+                <div class="table-status-badge closed">◉ Occupied</div>
+                <div class="table-waiter"><div class="table-waiter-dot" style="background:var(--accent);"></div>Kiran</div>
+                <div class="table-meta">
+                  <div class="table-requests none">No session</div>
+                  <div class="table-time">—</div>
+                </div>
+              </div>
+
+              <div class="table-card idle" data-zone="c" data-table="27" onclick="openDetail(27)">
+                <div class="table-card-header">
+                  <div class="table-number">T27</div>
+                  <div class="table-seats">👤 2</div>
+                </div>
+                <div class="table-status-badge idle">● Idle</div>
+                <div class="table-waiter"><div class="table-waiter-dot" style="background:var(--accent);"></div>Kiran</div>
+                <div class="table-meta">
+                  <div class="table-requests none">No requests</div>
+                  <div class="table-time">—</div>
+                </div>
+              </div>
+
+              <div class="table-card active" data-zone="c" data-table="28" onclick="openDetail(28)">
+                <div class="table-card-header">
+                  <div class="table-number">T28</div>
+                  <div class="table-seats">👤 2</div>
+                </div>
+                <div class="table-status-badge active">● Active</div>
+                <div class="table-waiter"><div class="table-waiter-dot" style="background:var(--accent);"></div>Kiran</div>
+                <div class="table-amount">₹280</div>
+                <div class="table-meta">
+                  <div class="table-requests none">No requests</div>
+                  <div class="table-time">⏱ 10 min</div>
+                </div>
+              </div>
+
+              <div class="table-card idle" data-zone="c" data-table="29" onclick="openDetail(29)">
+                <div class="table-card-header">
+                  <div class="table-number">T29</div>
+                  <div class="table-seats">👤 4</div>
+                </div>
+                <div class="table-status-badge idle">● Idle</div>
+                <div class="table-waiter"><div class="table-waiter-dot" style="background:var(--accent);"></div>Kiran</div>
+                <div class="table-meta">
+                  <div class="table-requests none">No requests</div>
+                  <div class="table-time">—</div>
+                </div>
+              </div>
+
+              <div class="table-card idle" data-zone="c" data-table="30" onclick="openDetail(30)">
+                <div class="table-card-header">
+                  <div class="table-number">T30</div>
+                  <div class="table-seats">👤 6</div>
+                </div>
+                <div class="table-status-badge idle">● Idle</div>
+                <div class="table-waiter"><div class="table-waiter-dot" style="background:var(--accent);"></div>Kiran</div>
+                <div class="table-meta">
+                  <div class="table-requests none">No requests</div>
+                  <div class="table-time">—</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Zone Summary Sidebar -->
+          <div class="zone-sidebar desktop-only">
+            <!-- Zone A -->
+            <div class="zone-summary-card">
+              <div class="zone-summary-title">
+                <span>Zone A — T1–10</span>
+                <span class="badge badge-info">5 active</span>
+              </div>
+              <div class="zone-stats-row">
+                <span class="zone-stats-label">Total tables</span>
+                <span class="zone-stats-value">10</span>
+              </div>
+              <div class="zone-stats-row">
+                <span class="zone-stats-label">Active sessions</span>
+                <span class="zone-stats-value" style="color:var(--success);">5</span>
+              </div>
+              <div class="zone-stats-row">
+                <span class="zone-stats-label">Idle</span>
+                <span class="zone-stats-value">5</span>
+              </div>
+              <div class="zone-stats-row">
+                <span class="zone-stats-label">Zone revenue</span>
+                <span class="zone-stats-value" style="color:var(--success);">₹2,930</span>
+              </div>
+              <div class="waiter-assign">
+                <div class="avatar avatar-sm" style="background:var(--info);width:28px;height:28px;font-size:0.6875rem;">M</div>
+                <select>
+                  <option selected>Manoj</option>
+                  <option>Anil</option>
+                  <option>Kiran</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Zone B -->
+            <div class="zone-summary-card">
+              <div class="zone-summary-title">
+                <span>Zone B — T11–20</span>
+                <span class="badge badge-warning">5 active · 2 billed</span>
+              </div>
+              <div class="zone-stats-row">
+                <span class="zone-stats-label">Total tables</span>
+                <span class="zone-stats-value">10</span>
+              </div>
+              <div class="zone-stats-row">
+                <span class="zone-stats-label">Active sessions</span>
+                <span class="zone-stats-value" style="color:var(--success);">3</span>
+              </div>
+              <div class="zone-stats-row">
+                <span class="zone-stats-label">Bill requested</span>
+                <span class="zone-stats-value" style="color:#856404;">2</span>
+              </div>
+              <div class="zone-stats-row">
+                <span class="zone-stats-label">Idle / Occupied</span>
+                <span class="zone-stats-value">5</span>
+              </div>
+              <div class="zone-stats-row">
+                <span class="zone-stats-label">Zone revenue</span>
+                <span class="zone-stats-value" style="color:var(--success);">₹4,006</span>
+              </div>
+              <div class="waiter-assign">
+                <div class="avatar avatar-sm" style="background:var(--primary);width:28px;height:28px;font-size:0.6875rem;">A</div>
+                <select>
+                  <option>Manoj</option>
+                  <option selected>Anil</option>
+                  <option>Kiran</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Zone C -->
+            <div class="zone-summary-card">
+              <div class="zone-summary-title">
+                <span>Zone C — T21–30</span>
+                <span class="badge badge-info">3 active</span>
+              </div>
+              <div class="zone-stats-row">
+                <span class="zone-stats-label">Total tables</span>
+                <span class="zone-stats-value">10</span>
+              </div>
+              <div class="zone-stats-row">
+                <span class="zone-stats-label">Active sessions</span>
+                <span class="zone-stats-value" style="color:var(--success);">3</span>
+              </div>
+              <div class="zone-stats-row">
+                <span class="zone-stats-label">Idle</span>
+                <span class="zone-stats-value">6</span>
+              </div>
+              <div class="zone-stats-row">
+                <span class="zone-stats-label">Occupied (no session)</span>
+                <span class="zone-stats-value">1</span>
+              </div>
+              <div class="zone-stats-row">
+                <span class="zone-stats-label">Zone revenue</span>
+                <span class="zone-stats-value" style="color:var(--success);">₹2,450</span>
+              </div>
+              <div class="waiter-assign">
+                <div class="avatar avatar-sm" style="background:var(--accent);width:28px;height:28px;font-size:0.6875rem;">K</div>
+                <select>
+                  <option>Manoj</option>
+                  <option>Anil</option>
+                  <option selected>Kiran</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Total Summary -->
+            <div class="zone-summary-card" style="background:var(--secondary);color:white;border:none;">
+              <div class="zone-summary-title" style="color:rgba(255,255,255,0.7);">
+                <span>Total — All Zones</span>
+              </div>
+              <div class="zone-stats-row" style="border-color:rgba(255,255,255,0.1);">
+                <span style="opacity:0.7;">Total revenue</span>
+                <span style="font-weight:800;font-size:1.125rem;">₹9,386</span>
+              </div>
+              <div class="zone-stats-row" style="border-color:rgba(255,255,255,0.1);">
+                <span style="opacity:0.7;">Active sessions</span>
+                <span style="font-weight:700;">12</span>
+              </div>
+              <div class="zone-stats-row" style="border:none;">
+                <span style="opacity:0.7;">Bill requested</span>
+                <span style="font-weight:700;">2</span>
+              </div>
+              <div class="zone-stats-row" style="border:none;">
+                <span style="opacity:0.7;">Available tables</span>
+                <span style="font-weight:700;">16</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table Detail Panel -->
+  <div class="detail-overlay" id="detailOverlay" onclick="closeDetail()"></div>
+  <div class="detail-panel" id="detailPanel">
+    <div class="detail-header">
+      <div style="display:flex;align-items:center;gap:0.75rem;">
+        <h3 id="detailTitle">T3</h3>
+        <span class="table-status-badge active" id="detailBadge">● Active</span>
+      </div>
+      <button class="detail-close" onclick="closeDetail()">×</button>
+    </div>
+    <div class="detail-body">
+      <!-- Table Info -->
+      <div class="detail-section">
+        <div class="detail-section-title">Table Info</div>
+        <div class="detail-row">
+          <span class="detail-row-label">Seats</span>
+          <span class="detail-row-value" id="detailSeats">4</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-row-label">Zone</span>
+          <span class="detail-row-value" id="detailZone">A</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-row-label">Assigned Waiter</span>
+          <span class="detail-row-value" id="detailWaiter">Manoj</span>
+        </div>
+      </div>
+
+      <!-- Session Info -->
+      <div class="detail-section" id="detailSession">
+        <div class="detail-section-title">Current Session</div>
+        <div class="detail-row">
+          <span class="detail-row-label">Duration</span>
+          <span class="detail-row-value" id="detailDuration">42 min</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-row-label">Running tab</span>
+          <span class="detail-row-value" style="color:var(--success);font-size:1.125rem;" id="detailAmount">₹620</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-row-label">Orders placed</span>
+          <span class="detail-row-value" id="detailOrders">3</span>
+        </div>
+      </div>
+
+      <!-- Recent Orders -->
+      <div class="detail-section" id="detailOrderList">
+        <div class="detail-section-title">Recent Orders</div>
+        <div class="detail-order-item">
+          <div>
+            <div style="font-weight:600;">Veg Biryani × 1</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);">7:42 PM</div>
+          </div>
+          <span style="font-weight:600;">₹220</span>
+        </div>
+        <div class="detail-order-item">
+          <div>
+            <div style="font-weight:600;">Paneer Butter Masala × 1</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);">7:38 PM</div>
+          </div>
+          <span style="font-weight:600;">₹280</span>
+        </div>
+        <div class="detail-order-item">
+          <div>
+            <div style="font-weight:600;">Lime Soda × 2</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);">7:35 PM</div>
+          </div>
+          <span style="font-weight:600;">₹120</span>
+        </div>
+      </div>
+
+      <!-- Open Requests -->
+      <div class="detail-section" id="detailRequests">
+        <div class="detail-section-title">Open Requests</div>
+        <div style="display:flex;align-items:center;gap:0.5rem;padding:0.625rem;background:var(--danger-light);border-radius:var(--radius-sm);border:1px solid rgba(230,57,70,0.2);">
+          <span>💧</span>
+          <div style="flex:1;">
+            <div style="font-weight:600;font-size:0.8125rem;">Water refill</div>
+            <div style="font-size:0.6875rem;color:var(--text-secondary);">Waiting 3:12</div>
+          </div>
+          <span class="badge badge-danger">Pending</span>
+        </div>
+      </div>
+    </div>
+    <div class="detail-actions">
+      <button class="btn btn-primary" style="flex:1;">Print Bill</button>
+      <button class="btn btn-outline">Reassign</button>
+      <button class="btn btn-ghost btn-icon">⋯</button>
+    </div>
+  </div>
+
+  <script>
+    const tableData = {
+      1:  { num:'T1',  seats:4, zone:'A', waiter:'Manoj', status:'idle', amount:null, duration:null, orders:0, requests:[], recentOrders:[] },
+      2:  { num:'T2',  seats:2, zone:'A', waiter:'Manoj', status:'idle', amount:null, duration:null, orders:0, requests:[], recentOrders:[] },
+      3:  { num:'T3',  seats:4, zone:'A', waiter:'Manoj', status:'active', amount:'₹620', duration:'42 min', orders:3, requests:['Water refill — 3:12'], recentOrders:[{name:'Veg Biryani × 1',price:'₹220',time:'7:42 PM'},{name:'Paneer Butter Masala × 1',price:'₹280',time:'7:38 PM'},{name:'Lime Soda × 2',price:'₹120',time:'7:35 PM'}] },
+      4:  { num:'T4',  seats:6, zone:'A', waiter:'Manoj', status:'idle', amount:null, duration:null, orders:0, requests:[], recentOrders:[] },
+      5:  { num:'T5',  seats:2, zone:'A', waiter:'Manoj', status:'active', amount:'₹450', duration:'18 min', orders:2, requests:[], recentOrders:[{name:'Chicken Biryani × 1',price:'₹320',time:'8:12 PM'},{name:'Raita × 1',price:'₹80',time:'8:10 PM'},{name:'Lime Soda × 1',price:'₹50',time:'8:08 PM'}] },
+      6:  { num:'T6',  seats:4, zone:'A', waiter:'Manoj', status:'idle', amount:null, duration:null, orders:0, requests:[], recentOrders:[] },
+      7:  { num:'T7',  seats:6, zone:'A', waiter:'Manoj', status:'active', amount:'₹920', duration:'58 min', orders:5, requests:['Tissue — 2:05','Extra plates — 0:45'], recentOrders:[{name:'Butter Chicken × 1',price:'₹380',time:'7:22 PM'},{name:'Butter Naan × 3',price:'₹270',time:'7:20 PM'},{name:'Chicken 65 × 1',price:'₹220',time:'7:15 PM'},{name:'Lime Soda × 1',price:'₹50',time:'7:12 PM'}] },
+      8:  { num:'T8',  seats:2, zone:'A', waiter:'Manoj', status:'idle', amount:null, duration:null, orders:0, requests:[], recentOrders:[] },
+      9:  { num:'T9',  seats:4, zone:'A', waiter:'Manoj', status:'active', amount:'₹380', duration:'25 min', orders:2, requests:[], recentOrders:[{name:'Veg Thali × 1',price:'₹250',time:'7:55 PM'},{name:'Sweet Lassi × 1',price:'₹130',time:'7:52 PM'}] },
+      10: { num:'T10', seats:4, zone:'A', waiter:'Manoj', status:'active', amount:'₹560', duration:'33 min', orders:3, requests:[], recentOrders:[{name:'Mutton Biryani × 1',price:'₹420',time:'7:48 PM'},{name:'Salna × 1',price:'₹80',time:'7:45 PM'},{name:'Mineral Water × 1',price:'₹60',time:'7:42 PM'}] },
+      11: { num:'T11', seats:4, zone:'B', waiter:'Anil', status:'idle', amount:null, duration:null, orders:0, requests:[], recentOrders:[] },
+      12: { num:'T12', seats:4, zone:'B', waiter:'Anil', status:'bill-requested', amount:'₹1,176', duration:'1h 12 min', orders:6, requests:['Tissue — 1:05'], recentOrders:[{name:'Chicken Biryani × 2',price:'₹640',time:'7:08 PM'},{name:'Paneer Tikka × 1',price:'₹280',time:'7:02 PM'},{name:'Garlic Naan × 2',price:'₹180',time:'6:58 PM'},{name:'Mango Lassi × 1',price:'₹130',time:'6:55 PM'}] },
+      13: { num:'T13', seats:2, zone:'B', waiter:'Anil', status:'idle', amount:null, duration:null, orders:0, requests:[], recentOrders:[] },
+      14: { num:'T14', seats:6, zone:'B', waiter:'Anil', status:'active', amount:'₹840', duration:'47 min', orders:4, requests:['Water — escalated 2:32'], recentOrders:[{name:'Egg Biryani × 2',price:'₹560',time:'7:28 PM'},{name:'Chicken Kabab × 1',price:'₹180',time:'7:25 PM'},{name:'Raita × 1',price:'₹80',time:'7:22 PM'}] },
+      15: { num:'T15', seats:4, zone:'B', waiter:'Anil', status:'closed', amount:null, duration:null, orders:0, requests:[], recentOrders:[] },
+      16: { num:'T16', seats:4, zone:'B', waiter:'Anil', status:'bill-requested', amount:'₹650', duration:'55 min', orders:3, requests:['Request Bill — 0:18'], recentOrders:[{name:'Veg Biryani × 1',price:'₹220',time:'7:18 PM'},{name:'Paneer Butter Masala × 1',price:'₹280',time:'7:15 PM'},{name:'Garlic Naan × 2',price:'₹150',time:'7:12 PM'}] },
+      17: { num:'T17', seats:8, zone:'B', waiter:'Anil', status:'active', amount:'₹1,340', duration:'1h 5 min', orders:7, requests:[], recentOrders:[{name:'Family Thali × 3',price:'₹1,050',time:'7:02 PM'},{name:'Chicken 65 × 2',price:'₹220',time:'6:58 PM'},{name:'Soft Drinks × 2',price:'₹70',time:'6:55 PM'}] },
+      18: { num:'T18', seats:2, zone:'B', waiter:'Anil', status:'active', amount:'₹340', duration:'14 min', orders:1, requests:[], recentOrders:[{name:'Chicken Biryani × 1',price:'₹320',time:'8:16 PM'},{name:'Lime Soda × 1',price:'₹50',time:'8:14 PM'}] },
+      19: { num:'T19', seats:4, zone:'B', waiter:'Anil', status:'idle', amount:null, duration:null, orders:0, requests:[], recentOrders:[] },
+      20: { num:'T20', seats:2, zone:'B', waiter:'Anil', status:'idle', amount:null, duration:null, orders:0, requests:[], recentOrders:[] },
+      21: { num:'T21', seats:4, zone:'C', waiter:'Kiran', status:'idle', amount:null, duration:null, orders:0, requests:[], recentOrders:[] },
+      22: { num:'T22', seats:8, zone:'C', waiter:'Kiran', status:'active', amount:'₹1,450', duration:'1h 20 min', orders:8, requests:[], recentOrders:[{name:'Mutton Biryani × 3',price:'₹1,260',time:'6:52 PM'},{name:'Chicken 65 × 2',price:'₹180',time:'6:48 PM'},{name:'Lime Soda × 2',price:'₹100',time:'6:45 PM'}] },
+      23: { num:'T23', seats:2, zone:'C', waiter:'Kiran', status:'idle', amount:null, duration:null, orders:0, requests:[], recentOrders:[] },
+      24: { num:'T24', seats:4, zone:'C', waiter:'Kiran', status:'idle', amount:null, duration:null, orders:0, requests:[], recentOrders:[] },
+      25: { num:'T25', seats:4, zone:'C', waiter:'Kiran', status:'active', amount:'₹720', duration:'38 min', orders:3, requests:['Extra napkins — 1:30'], recentOrders:[{name:'Butter Chicken × 1',price:'₹380',time:'7:42 PM'},{name:'Butter Naan × 2',price:'₹180',time:'7:38 PM'},{name:'Raita × 1',price:'₹80',time:'7:35 PM'}] },
+      26: { num:'T26', seats:6, zone:'C', waiter:'Kiran', status:'closed', amount:null, duration:null, orders:0, requests:[], recentOrders:[] },
+      27: { num:'T27', seats:2, zone:'C', waiter:'Kiran', status:'idle', amount:null, duration:null, orders:0, requests:[], recentOrders:[] },
+      28: { num:'T28', seats:2, zone:'C', waiter:'Kiran', status:'active', amount:'₹280', duration:'10 min', orders:1, requests:[], recentOrders:[{name:'Chicken Biryani × 1',price:'₹320',time:'8:20 PM'},{name:'Lime Soda × 1',price:'₹50',time:'8:18 PM'}] },
+      29: { num:'T29', seats:4, zone:'C', waiter:'Kiran', status:'idle', amount:null, duration:null, orders:0, requests:[], recentOrders:[] },
+      30: { num:'T30', seats:6, zone:'C', waiter:'Kiran', status:'idle', amount:null, duration:null, orders:0, requests:[], recentOrders:[] },
+    };
+
+    function filterZone(zone) {
+      document.querySelectorAll('.zone-tab').forEach(t => t.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+      document.querySelectorAll('.table-card').forEach(card => {
+        if (zone === 'all' || card.dataset.zone === zone) {
+          card.style.display = '';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
+
+    function openDetail(tableNum) {
+      const d = tableData[tableNum];
+      if (!d) return;
+
+      document.getElementById('detailTitle').textContent = d.num;
+      document.getElementById('detailSeats').textContent = d.seats;
+      document.getElementById('detailZone').textContent = d.zone;
+      document.getElementById('detailWaiter').textContent = d.waiter;
+
+      const badge = document.getElementById('detailBadge');
+      badge.className = 'table-status-badge ' + d.status;
+      if (d.status === 'active') badge.innerHTML = '● Active';
+      else if (d.status === 'idle') badge.innerHTML = '● Idle';
+      else if (d.status === 'bill-requested') badge.innerHTML = '⚠ Bill Requested';
+      else if (d.status === 'closed') badge.innerHTML = '◉ Occupied';
+
+      const sessionSection = document.getElementById('detailSession');
+      const orderList = document.getElementById('detailOrderList');
+      const requestSection = document.getElementById('detailRequests');
+
+      if (d.status === 'active' || d.status === 'bill-requested') {
+        sessionSection.style.display = '';
+        document.getElementById('detailDuration').textContent = d.duration;
+        document.getElementById('detailAmount').textContent = d.amount;
+        document.getElementById('detailOrders').textContent = d.orders;
+
+        orderList.style.display = '';
+        orderList.innerHTML = '<div class="detail-section-title">Recent Orders</div>';
+        d.recentOrders.forEach(o => {
+          orderList.innerHTML += `<div class="detail-order-item"><div><div style="font-weight:600;">${o.name}</div><div style="font-size:0.75rem;color:var(--text-muted);">${o.time}</div></div><span style="font-weight:600;">${o.price}</span></div>`;
+        });
+
+        if (d.requests.length > 0) {
+          requestSection.style.display = '';
+          requestSection.innerHTML = '<div class="detail-section-title">Open Requests</div>';
+          d.requests.forEach(r => {
+            const parts = r.split(' — ');
+            const icon = parts[0].includes('Water') ? '💧' : parts[0].includes('Tissue') || parts[0].includes('napkin') ? '🧻' : parts[0].includes('Bill') ? '📄' : parts[0].includes('plate') ? '🍽️' : '📌';
+            requestSection.innerHTML += `<div style="display:flex;align-items:center;gap:0.5rem;padding:0.625rem;background:var(--warning-light);border-radius:var(--radius-sm);border:1px solid rgba(233,196,106,0.3);margin-top:0.5rem;"><span>${icon}</span><div style="flex:1;"><div style="font-weight:600;font-size:0.8125rem;">${parts[0]}</div><div style="font-size:0.6875rem;color:var(--text-secondary);">Waiting ${parts[1]}</div></div><span class="badge badge-warning">Pending</span></div>`;
+          });
+        } else {
+          requestSection.style.display = 'none';
+        }
+      } else {
+        sessionSection.style.display = 'none';
+        orderList.style.display = 'none';
+        requestSection.style.display = 'none';
+      }
+
+      document.getElementById('detailOverlay').classList.add('show');
+      document.getElementById('detailPanel').classList.add('show');
+    }
+
+    function closeDetail() {
+      document.getElementById('detailOverlay').classList.remove('show');
+      document.getElementById('detailPanel').classList.remove('show');
+    }
+
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetail(); });
+  </script>
+</body>
+</html>

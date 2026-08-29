@@ -1,0 +1,1491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Menu Onboarding — ScanServe</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/shared.css">
+  <style>
+    /* ── Onboarding Timer ── */
+    .ob-timer {
+      display: flex; align-items: center; gap: 0.5rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.875rem; font-weight: 600;
+      padding: 0.375rem 0.875rem;
+      border-radius: var(--radius-full);
+      background: var(--success-light); color: var(--success);
+      border: 1px solid rgba(45,147,108,0.2);
+    }
+    .ob-timer.warning { background: var(--warning-light); color: #92400E; border-color: rgba(233,196,106,0.3); }
+    .ob-timer.danger { background: var(--danger-light); color: var(--danger); border-color: rgba(230,57,70,0.2); }
+    .ob-timer-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: currentColor; animation: pulse 1.5s infinite;
+    }
+
+    /* ── Horizontal Stepper ── */
+    .stepper {
+      display: flex; align-items: flex-start; justify-content: center;
+      padding: 1.5rem 2rem; background: white;
+      border-radius: var(--radius); border: 1px solid var(--border-light);
+      margin-bottom: 1.5rem; position: relative;
+      box-shadow: var(--shadow-sm);
+    }
+    .stepper-step {
+      display: flex; flex-direction: column; align-items: center;
+      position: relative; z-index: 1; flex: 1; max-width: 180px;
+      cursor: default;
+    }
+    .stepper-circle {
+      width: 44px; height: 44px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.875rem;
+      background: var(--bg); color: var(--text-muted);
+      border: 2px solid var(--border);
+      transition: all var(--transition-slow);
+      position: relative; z-index: 2;
+    }
+    .stepper-step.completed .stepper-circle {
+      background: var(--success); color: white;
+      border-color: var(--success);
+    }
+    .stepper-step.active .stepper-circle {
+      background: var(--primary); color: white;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 6px var(--primary-light);
+    }
+    .stepper-label {
+      margin-top: 0.625rem; font-size: 0.75rem; font-weight: 600;
+      color: var(--text-muted); text-align: center;
+      transition: color var(--transition);
+      line-height: 1.3;
+    }
+    .stepper-step.completed .stepper-label { color: var(--success); }
+    .stepper-step.active .stepper-label { color: var(--primary); }
+    .stepper-connector {
+      position: absolute; top: 22px;
+      left: calc(50% + 28px); right: calc(-50% + 28px);
+      height: 2px; background: var(--border);
+      z-index: 0; transition: background var(--transition-slow);
+    }
+    .stepper-step.completed .stepper-connector { background: var(--success); }
+    .stepper-step:last-child .stepper-connector { display: none; }
+
+    /* ── Step Content ── */
+    .step-panel {
+      display: none;
+      animation: fadeIn 0.35s ease;
+    }
+    .step-panel.active { display: block; }
+    .step-header {
+      margin-bottom: 1.5rem;
+    }
+    .step-header h2 {
+      font-family: var(--font-display);
+      font-size: 1.5rem; font-weight: 800;
+      margin-bottom: 0.375rem;
+    }
+    .step-header p {
+      color: var(--text-secondary); font-size: 0.9375rem;
+    }
+
+    /* ── Step 1: Form Grid ── */
+    .form-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+    }
+    .form-grid .full-width { grid-column: 1 / -1; }
+
+    /* ── Step 2: Upload Area ── */
+    .upload-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius-lg);
+      padding: 3rem 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all var(--transition);
+      background: var(--bg);
+      position: relative;
+    }
+    .upload-zone:hover, .upload-zone.dragover {
+      border-color: var(--primary);
+      background: var(--primary-light);
+    }
+    .upload-zone-icon {
+      width: 72px; height: 72px; border-radius: 50%;
+      background: var(--primary-light); color: var(--primary);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 1rem; font-size: 2rem;
+    }
+    .upload-zone h3 { font-size: 1.125rem; margin-bottom: 0.375rem; }
+    .upload-zone p { color: var(--text-secondary); font-size: 0.875rem; }
+    .upload-zone .browse-link { color: var(--primary); font-weight: 600; cursor: pointer; }
+    .upload-thumbnails {
+      display: flex; gap: 1rem; margin-top: 1.5rem; flex-wrap: wrap;
+    }
+    .upload-thumb {
+      width: 140px; height: 140px;
+      border-radius: var(--radius); overflow: hidden;
+      border: 2px solid var(--border-light);
+      position: relative; background: var(--bg);
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 0.25rem;
+      transition: border-color var(--transition);
+    }
+    .upload-thumb:hover { border-color: var(--primary); }
+    .upload-thumb-img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+    .upload-thumb-overlay {
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,0.45);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity var(--transition);
+    }
+    .upload-thumb:hover .upload-thumb-overlay { opacity: 1; }
+    .upload-thumb-remove {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: white; color: var(--danger);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; font-weight: 700; cursor: pointer;
+      border: none;
+    }
+    .camera-btn {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      margin-top: 1rem; padding: 0.75rem 1.5rem;
+      background: var(--secondary); color: white;
+      border: none; border-radius: var(--radius-sm);
+      font-weight: 600; font-size: 0.9375rem; cursor: pointer;
+      transition: all var(--transition);
+    }
+    .camera-btn:hover { background: var(--secondary-light); transform: translateY(-1px); }
+    .upload-meta {
+      display: flex; align-items: center; gap: 0.5rem;
+      margin-top: 0.75rem; font-size: 0.8125rem; color: var(--text-secondary);
+    }
+    .upload-meta strong { color: var(--success); }
+
+    /* ── Step 3: Extraction Table ── */
+    .extraction-layout {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 1.5rem; align-items: start;
+    }
+    .extraction-table-wrap {
+      overflow-x: auto;
+    }
+    .extraction-table {
+      width: 100%; border-collapse: collapse;
+    }
+    .extraction-table th {
+      padding: 0.75rem 1rem; text-align: left;
+      font-size: 0.75rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      color: var(--text-secondary); background: var(--bg);
+      border-bottom: 2px solid var(--border);
+    }
+    .extraction-table td {
+      padding: 0.75rem 1rem; font-size: 0.875rem;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .extraction-table tr:hover td { background: #FAFBFC; }
+    .extraction-table .item-name {
+      font-weight: 600; color: var(--text);
+    }
+    .extraction-table .item-price {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600; color: var(--text);
+    }
+    .confidence-bar {
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .confidence-fill {
+      width: 56px; height: 6px;
+      border-radius: 3px; background: var(--border-light);
+      overflow: hidden;
+    }
+    .confidence-fill-inner {
+      height: 100%; border-radius: 3px;
+      transition: width var(--transition-slow);
+    }
+    .confidence-fill-inner.high { background: var(--success); }
+    .confidence-fill-inner.medium { background: var(--warning); }
+    .confidence-fill-inner.low { background: var(--danger); }
+    .confidence-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem; font-weight: 600;
+    }
+    .confidence-value.high { color: var(--success); }
+    .confidence-value.medium { color: #92400E; }
+    .confidence-value.low { color: var(--danger); }
+    .veg-badge-sm, .nonveg-badge-sm {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 18px; height: 18px; border-radius: 3px; border: 1.5px solid;
+      font-size: 0; flex-shrink: 0;
+    }
+    .veg-badge-sm { border-color: var(--success); }
+    .veg-badge-sm::after {
+      content: ''; width: 8px; height: 8px;
+      background: var(--success); border-radius: 50%;
+    }
+    .nonveg-badge-sm { border-color: var(--danger); }
+    .nonveg-badge-sm::after {
+      content: ''; width: 0; height: 0;
+      border-left: 3.5px solid transparent;
+      border-right: 3.5px solid transparent;
+      border-bottom: 6px solid var(--danger);
+    }
+    .image-preview-pane {
+      background: white; border-radius: var(--radius);
+      border: 1px solid var(--border-light);
+      overflow: hidden; position: sticky; top: 80px;
+    }
+    .image-preview-header {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border-light);
+      font-size: 0.8125rem; font-weight: 600;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .image-preview-body {
+      aspect-ratio: 3/4; background: #F0F0F0;
+      display: flex; align-items: center; justify-content: center;
+      position: relative; overflow: hidden;
+    }
+    .image-preview-placeholder {
+      display: flex; flex-direction: column;
+      align-items: center; gap: 0.5rem;
+      color: var(--text-muted); font-size: 0.875rem;
+    }
+    .image-preview-placeholder .icon { font-size: 2.5rem; opacity: 0.4; }
+    .ocr-highlight-overlay {
+      position: absolute;
+      border: 2px solid var(--primary);
+      background: rgba(230,57,70,0.08);
+      border-radius: 4px;
+    }
+
+    /* ── Step 4: Translation ── */
+    .translation-card {
+      background: white; border-radius: var(--radius);
+      border: 1px solid var(--border-light);
+      margin-bottom: 1rem; overflow: hidden;
+    }
+    .translation-card-header {
+      padding: 0.875rem 1.25rem;
+      border-bottom: 1px solid var(--border-light);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .translation-card-header .item-title {
+      font-weight: 700; font-size: 0.9375rem;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .translation-grid {
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      gap: 0; /* borders handle spacing */
+    }
+    .translation-col {
+      padding: 1rem 1.25rem;
+      border-right: 1px solid var(--border-light);
+    }
+    .translation-col:last-child { border-right: none; }
+    .translation-lang {
+      font-size: 0.6875rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--text-muted); margin-bottom: 0.5rem;
+      display: flex; align-items: center; gap: 0.375rem;
+    }
+    .translation-text {
+      font-size: 1rem; font-weight: 600;
+      line-height: 1.4;
+    }
+    .translation-diff {
+      background: #FEF3C7; padding: 1px 4px;
+      border-radius: 3px; border-bottom: 2px solid var(--warning);
+    }
+    .translation-confident {
+      color: var(--text);
+    }
+    .translation-uncertain {
+      color: #92400E;
+    }
+
+    /* ── Step 5: QR Ready ── */
+    .qr-layout {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 1.5rem; align-items: start;
+    }
+    .qr-code-box {
+      width: 220px; height: 220px;
+      background: white; border-radius: var(--radius);
+      border: 2px solid var(--border);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      position: relative; overflow: hidden;
+      margin: 0 auto;
+    }
+    .qr-pattern {
+      width: 160px; height: 160px;
+      display: grid; grid-template-columns: repeat(11, 1fr);
+      grid-template-rows: repeat(11, 1fr);
+      gap: 2px; padding: 4px;
+    }
+    .qr-cell {
+      border-radius: 1px;
+    }
+    .qr-cell.dark { background: var(--secondary); }
+    .qr-cell.light { background: white; }
+    .qr-center-logo {
+      position: absolute;
+      width: 36px; height: 36px;
+      background: var(--primary); border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-weight: 900; font-size: 0.625rem;
+      font-family: var(--font-display);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    .qr-code-label {
+      text-align: center; margin-top: 0.75rem;
+      font-weight: 600; font-size: 0.875rem;
+    }
+    .qr-code-sublabel {
+      text-align: center; font-size: 0.75rem;
+      color: var(--text-secondary); margin-top: 0.125rem;
+    }
+    .table-qr-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+    .table-qr-item {
+      text-align: center;
+    }
+    .table-qr-mini {
+      width: 80px; height: 80px;
+      background: white; border-radius: var(--radius-sm);
+      border: 1.5px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 0.375rem;
+      position: relative;
+    }
+    .table-qr-mini-pattern {
+      width: 56px; height: 56px;
+      display: grid; grid-template-columns: repeat(7, 1fr);
+      grid-template-rows: repeat(7, 1fr);
+      gap: 1px;
+    }
+    .table-qr-mini .qr-cell.dark { background: var(--secondary); }
+    .table-qr-mini .qr-cell.light { background: white; }
+    .table-qr-label {
+      font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);
+    }
+    .poster-preview {
+      background: white; border: 2px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
+      aspect-ratio: 3/4; max-width: 320px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 2rem; text-align: center;
+      margin: 0 auto;
+      box-shadow: var(--shadow);
+    }
+    .poster-logo {
+      width: 60px; height: 60px;
+      background: var(--primary); border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-weight: 900; font-size: 1.125rem;
+      font-family: var(--font-display);
+      margin-bottom: 1rem;
+    }
+    .poster-title {
+      font-family: var(--font-display);
+      font-weight: 800; font-size: 1.25rem;
+      margin-bottom: 0.25rem;
+    }
+    .poster-subtitle {
+      font-size: 0.8125rem; color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+    }
+    .poster-qr {
+      width: 120px; height: 120px;
+      border-radius: var(--radius-sm);
+      display: grid; grid-template-columns: repeat(9, 1fr);
+      grid-template-rows: repeat(9, 1fr);
+      gap: 1.5px; margin-bottom: 1rem;
+      background: white; padding: 6px;
+      border: 1.5px solid var(--border-light);
+    }
+    .poster-qr .qr-cell.dark { background: var(--secondary); }
+    .poster-qr .qr-cell.light { background: white; }
+    .poster-cta {
+      font-size: 0.75rem; font-weight: 600;
+      color: var(--primary); text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .live-success-banner {
+      background: linear-gradient(135deg, #D8F3DC 0%, #B7E4C7 100%);
+      border: 2px solid var(--success);
+      border-radius: var(--radius-lg);
+      padding: 2.5rem; text-align: center;
+      margin-top: 1.5rem;
+      animation: slideUp 0.5s ease;
+    }
+    .live-success-icon {
+      width: 72px; height: 72px; border-radius: 50%;
+      background: var(--success); color: white;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 1rem; font-size: 2rem;
+      box-shadow: 0 4px 16px rgba(45,147,108,0.3);
+    }
+    .live-success-banner h3 {
+      font-size: 1.375rem; color: #064E3B; margin-bottom: 0.375rem;
+    }
+    .live-success-banner p {
+      color: #065F46; font-size: 0.9375rem;
+    }
+
+    /* ── Navigation Footer ── */
+    .wizard-nav {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-top: 2rem; padding-top: 1.5rem;
+      border-top: 1px solid var(--border-light);
+    }
+    .wizard-nav-left, .wizard-nav-right {
+      display: flex; align-items: center; gap: 0.75rem;
+    }
+
+    /* ── Misc ── */
+    .section-divider {
+      display: flex; align-items: center; gap: 0.75rem;
+      margin: 1.5rem 0; color: var(--text-muted);
+      font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .section-divider::before, .section-divider::after {
+      content: ''; flex: 1; height: 1px; background: var(--border-light);
+    }
+    .category-tag {
+      display: inline-block; padding: 0.15rem 0.5rem;
+      border-radius: var(--radius-full);
+      font-size: 0.6875rem; font-weight: 600;
+      background: var(--info-light); color: var(--info);
+    }
+    .inline-edit {
+      border: 1.5px solid transparent;
+      border-radius: 4px; padding: 2px 6px;
+      transition: border-color var(--transition);
+      background: transparent;
+      font-family: inherit; font-size: inherit;
+      color: inherit; font-weight: inherit;
+      width: 100%;
+    }
+    .inline-edit:hover { border-color: var(--border); }
+    .inline-edit:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px var(--primary-light); }
+
+    @media (max-width: 768px) {
+      .stepper { flex-wrap: wrap; gap: 0.5rem; padding: 1rem; }
+      .stepper-connector { display: none; }
+      .stepper-step { max-width: none; flex: unset; width: 30%; }
+      .form-grid { grid-template-columns: 1fr; }
+      .extraction-layout { grid-template-columns: 1fr; }
+      .translation-grid { grid-template-columns: 1fr; }
+      .translation-col { border-right: none; border-bottom: 1px solid var(--border-light); }
+      .translation-col:last-child { border-bottom: none; }
+      .qr-layout { grid-template-columns: 1fr; }
+      .table-qr-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">SS</div>
+        <div class="sidebar-brand">ScanServe</div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Main</div>
+        </div>
+        <a class="sidebar-link" href="dashboard.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </a>
+        <a class="sidebar-link" href="orders.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Orders
+        </a>
+        <a class="sidebar-link" href="billing.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          Billing
+        </a>
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Management</div>
+        </div>
+        <a class="sidebar-link" href="menu-management.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          Menu
+        </a>
+        <a class="sidebar-link" href="table-map.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+          Table Map
+        </a>
+        <a class="sidebar-link" href="waiters.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Waiters
+        </a>
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Intelligence</div>
+        </div>
+        <a class="sidebar-link" href="analytics.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          Analytics
+        </a>
+        <a class="sidebar-link" href="ai-owner.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          AI Assistant
+        </a>
+        <a class="sidebar-link" href="ai-controls.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          AI Controls
+        </a>
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Setup</div>
+        </div>
+        <a class="sidebar-link active" href="onboarding.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          Onboarding
+        </a>
+        <a class="sidebar-link" href="#">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Settings
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div style="display:flex;align-items:center;gap:0.625rem;">
+          <div class="avatar avatar-sm">R</div>
+          <div>
+            <div style="font-size:0.8125rem;font-weight:600;">Ravi</div>
+            <div style="font-size:0.6875rem;color:rgba(255,255,255,0.5);">Owner · Premium</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <div class="main-content">
+      <div class="topbar">
+        <div class="topbar-title">AI Menu Onboarding</div>
+        <div class="topbar-actions">
+          <div class="ob-timer" id="obTimer">
+            <div class="ob-timer-dot"></div>
+            <span id="timerDisplay">00:00</span>
+          </div>
+          <button class="btn btn-sm btn-outline" onclick="if(confirm('Exit onboarding? Progress will be saved as draft.')) window.location='dashboard.html'">Save & Exit</button>
+        </div>
+      </div>
+
+      <div class="page-content">
+        <!-- Stepper -->
+        <div class="stepper" id="stepper">
+          <div class="stepper-step active" data-step="1">
+            <div class="stepper-circle">1</div>
+            <div class="stepper-label">Restaurant<br>Details</div>
+            <div class="stepper-connector"></div>
+          </div>
+          <div class="stepper-step" data-step="2">
+            <div class="stepper-circle">2</div>
+            <div class="stepper-label">Photo Menu<br>Upload</div>
+            <div class="stepper-connector"></div>
+          </div>
+          <div class="stepper-step" data-step="3">
+            <div class="stepper-circle">3</div>
+            <div class="stepper-label">AI Extraction<br>Review</div>
+            <div class="stepper-connector"></div>
+          </div>
+          <div class="stepper-step" data-step="4">
+            <div class="stepper-circle">4</div>
+            <div class="stepper-label">Translation<br>Review</div>
+            <div class="stepper-connector"></div>
+          </div>
+          <div class="stepper-step" data-step="5">
+            <div class="stepper-circle">5</div>
+            <div class="stepper-label">QR Ready</div>
+          </div>
+        </div>
+
+        <!-- ═══════ Step 1: Restaurant Details ═══════ -->
+        <div class="step-panel active" id="step1">
+          <div class="step-header">
+            <h2>Tell us about your restaurant</h2>
+            <p>We'll set up your digital menu profile. You can always edit these later.</p>
+          </div>
+
+          <div class="card">
+            <div class="card-body">
+              <div class="form-grid">
+                <div class="form-group full-width">
+                  <label class="form-label">Outlet Name *</label>
+                  <input type="text" class="form-input" value="Annapurna Kitchen" placeholder="e.g. Annapurna Kitchen">
+                </div>
+                <div class="form-group full-width">
+                  <label class="form-label">Address *</label>
+                  <input type="text" class="form-input" value="42, 5th Main, Indiranagar, Bengaluru, Karnataka 560038" placeholder="Full address with pincode">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Phone Number *</label>
+                  <input type="tel" class="form-input" value="+91 98765 43210" placeholder="+91 XXXXX XXXXX">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Cuisine Type *</label>
+                  <select class="form-select">
+                    <option selected>South Indian · North Indian · Chinese</option>
+                    <option>North Indian · Mughlai</option>
+                    <option>South Indian · Kerala</option>
+                    <option>Chinese · Thai</option>
+                    <option>Continental · Italian</option>
+                    <option>Multi-cuisine</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Opening Time *</label>
+                  <input type="time" class="form-input" value="07:00">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Closing Time *</label>
+                  <input type="time" class="form-input" value="23:00">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Number of Tables</label>
+                  <input type="number" class="form-input" value="24" placeholder="e.g. 24">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">FSSAI License Number</label>
+                  <input type="text" class="form-input" value="12345678901234" placeholder="14-digit FSSAI number">
+                </div>
+                <div class="form-group full-width">
+                  <label class="form-label">Special Notes for AI (optional)</label>
+                  <textarea class="form-textarea" rows="2" placeholder="e.g. We also serve breakfast thali before 11am. Mention daily specials on weekdays.">We also serve breakfast thali before 11am. Mention daily specials on weekdays.</textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="wizard-nav">
+            <div class="wizard-nav-left">
+              <button class="btn btn-ghost" onclick="window.location='dashboard.html'">Cancel</button>
+            </div>
+            <div class="wizard-nav-right">
+              <button class="btn btn-outline" onclick="skipStep()">Skip for now</button>
+              <button class="btn btn-primary btn-lg" onclick="goToStep(2)">Continue →</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══════ Step 2: Photo Menu Upload ═══════ -->
+        <div class="step-panel" id="step2">
+          <div class="step-header">
+            <h2>Upload your menu photos</h2>
+            <p>Take clear photos of each menu page. Our AI will extract all items, prices, and descriptions automatically.</p>
+          </div>
+
+          <div class="card" style="margin-bottom:1.5rem;">
+            <div class="card-body">
+              <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+                <input type="file" id="fileInput" multiple accept="image/*" style="display:none" onchange="handleFiles(this.files)">
+                <div class="upload-zone-icon">📸</div>
+                <h3>Drag & drop menu photos here</h3>
+                <p>or <span class="browse-link">browse files</span> from your device</p>
+                <p style="font-size:0.75rem;margin-top:0.75rem;color:var(--text-muted);">Supports JPG, PNG, HEIC — Up to 20MB per file</p>
+              </div>
+
+              <div style="text-align:center;margin-top:1rem;">
+                <button class="camera-btn" onclick="alert('Camera capture would open device camera on mobile')">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                  Take Photo with Camera
+                </button>
+              </div>
+
+              <div class="upload-thumbnails" id="thumbContainer">
+                <!-- Pre-filled sample thumbnails -->
+                <div class="upload-thumb" style="background:linear-gradient(135deg,#E8D5B7,#C4A882);">
+                  <div style="font-size:2.5rem;opacity:0.6;">📄</div>
+                  <div style="font-size:0.625rem;font-weight:600;color:var(--text-secondary);">Menu — Page 1</div>
+                  <div class="upload-thumb-overlay">
+                    <button class="upload-thumb-remove">×</button>
+                  </div>
+                </div>
+                <div class="upload-thumb" style="background:linear-gradient(135deg,#D4E8F5,#A8C8DC);">
+                  <div style="font-size:2.5rem;opacity:0.6;">📄</div>
+                  <div style="font-size:0.625rem;font-weight:600;color:var(--text-secondary);">Menu — Page 2</div>
+                  <div class="upload-thumb-overlay">
+                    <button class="upload-thumb-remove">×</button>
+                  </div>
+                </div>
+                <div class="upload-thumb" style="background:linear-gradient(135deg,#D8F3DC,#A8D8B9);">
+                  <div style="font-size:2.5rem;opacity:0.6;">📄</div>
+                  <div style="font-size:0.625rem;font-weight:600;color:var(--text-secondary);">Menu — Page 3</div>
+                  <div class="upload-thumb-overlay">
+                    <button class="upload-thumb-remove">×</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="upload-meta" id="uploadMeta">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><strong>3 photos</strong> uploaded · Ready for AI extraction</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="alert alert-info">
+            <strong>Tip:</strong> For best results, lay the menu flat under good lighting. Avoid glare and shadows. The AI handles handwritten and printed menus.
+          </div>
+
+          <div class="wizard-nav">
+            <div class="wizard-nav-left">
+              <button class="btn btn-outline" onclick="goToStep(1)">← Back</button>
+            </div>
+            <div class="wizard-nav-right">
+              <button class="btn btn-primary btn-lg" onclick="goToStep(3)">Run AI Extraction →</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══════ Step 3: AI Extraction Review ═══════ -->
+        <div class="step-panel" id="step3">
+          <div class="step-header">
+            <h2>AI extracted your menu</h2>
+            <p>Review and edit the extracted items. Click any field to correct it. Items with low confidence are flagged for review.</p>
+          </div>
+
+          <div class="alert alert-success" style="margin-bottom:1.5rem;">
+            <strong>AI Extraction Complete</strong> — Found <strong>47 items</strong> across <strong>6 categories</strong> from 3 menu pages. Processing time: 8.2s
+          </div>
+
+          <div class="extraction-layout">
+            <!-- Table -->
+            <div class="card">
+              <div class="card-header">
+                <h3>Extracted Items</h3>
+                <div style="display:flex;gap:0.5rem;">
+                  <span class="badge badge-success">42 High</span>
+                  <span class="badge badge-warning">4 Medium</span>
+                  <span class="badge badge-danger">1 Low</span>
+                </div>
+              </div>
+              <div class="extraction-table-wrap">
+                <table class="extraction-table">
+                  <thead>
+                    <tr>
+                      <th style="width:36px;"></th>
+                      <th>Item Name</th>
+                      <th>Price</th>
+                      <th>Category</th>
+                      <th>Confidence</th>
+                      <th style="width:36px;"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><div class="nonveg-badge-sm"></div></td>
+                      <td><input class="inline-edit item-name" value="Chicken Biryani"></td>
+                      <td><input class="inline-edit item-price" value="₹280" style="width:80px;"></td>
+                      <td><span class="category-tag">Biryani</span></td>
+                      <td>
+                        <div class="confidence-bar">
+                          <div class="confidence-fill"><div class="confidence-fill-inner high" style="width:95%;"></div></div>
+                          <span class="confidence-value high">95%</span>
+                        </div>
+                      </td>
+                      <td style="color:var(--text-muted);cursor:pointer;">⋯</td>
+                    </tr>
+                    <tr>
+                      <td><div class="veg-badge-sm"></div></td>
+                      <td><input class="inline-edit item-name" value="Paneer Tikka"></td>
+                      <td><input class="inline-edit item-price" value="₹240" style="width:80px;"></td>
+                      <td><span class="category-tag">Starters</span></td>
+                      <td>
+                        <div class="confidence-bar">
+                          <div class="confidence-fill"><div class="confidence-fill-inner high" style="width:87%;"></div></div>
+                          <span class="confidence-value high">87%</span>
+                        </div>
+                      </td>
+                      <td style="color:var(--text-muted);cursor:pointer;">⋯</td>
+                    </tr>
+                    <tr>
+                      <td><div class="veg-badge-sm"></div></td>
+                      <td><input class="inline-edit item-name" value="Butter Naan"></td>
+                      <td><input class="inline-edit item-price" value="₹60" style="width:80px;"></td>
+                      <td><span class="category-tag">Breads</span></td>
+                      <td>
+                        <div class="confidence-bar">
+                          <div class="confidence-fill"><div class="confidence-fill-inner high" style="width:98%;"></div></div>
+                          <span class="confidence-value high">98%</span>
+                        </div>
+                      </td>
+                      <td style="color:var(--text-muted);cursor:pointer;">⋯</td>
+                    </tr>
+                    <tr>
+                      <td><div class="nonveg-badge-sm"></div></td>
+                      <td><input class="inline-edit item-name" value="Chicken 65"></td>
+                      <td><input class="inline-edit item-price" value="₹190" style="width:80px;"></td>
+                      <td><span class="category-tag">Starters</span></td>
+                      <td>
+                        <div class="confidence-bar">
+                          <div class="confidence-fill"><div class="confidence-fill-inner high" style="width:92%;"></div></div>
+                          <span class="confidence-value high">92%</span>
+                        </div>
+                      </td>
+                      <td style="color:var(--text-muted);cursor:pointer;">⋯</td>
+                    </tr>
+                    <tr>
+                      <td><div class="veg-badge-sm"></div></td>
+                      <td><input class="inline-edit item-name" value="Veg Biryani"></td>
+                      <td><input class="inline-edit item-price" value="₹180" style="width:80px;"></td>
+                      <td><span class="category-tag">Biryani</span></td>
+                      <td>
+                        <div class="confidence-bar">
+                          <div class="confidence-fill"><div class="confidence-fill-inner high" style="width:96%;"></div></div>
+                          <span class="confidence-value high">96%</span>
+                        </div>
+                      </td>
+                      <td style="color:var(--text-muted);cursor:pointer;">⋯</td>
+                    </tr>
+                    <tr style="background:#FFFBEB;">
+                      <td><div class="nonveg-badge-sm"></div></td>
+                      <td><input class="inline-edit item-name" value="Mutton Rogan Josh" style="color:#92400E;"></td>
+                      <td><input class="inline-edit item-price" value="₹320" style="width:80px;color:#92400E;"></td>
+                      <td><span class="category-tag">Curry</span></td>
+                      <td>
+                        <div class="confidence-bar">
+                          <div class="confidence-fill"><div class="confidence-fill-inner medium" style="width:72%;"></div></div>
+                          <span class="confidence-value medium">72%</span>
+                        </div>
+                      </td>
+                      <td style="color:var(--text-muted);cursor:pointer;">⋯</td>
+                    </tr>
+                    <tr>
+                      <td><div class="veg-badge-sm"></div></td>
+                      <td><input class="inline-edit item-name" value="Masala Dosa"></td>
+                      <td><input class="inline-edit item-price" value="₹90" style="width:80px;"></td>
+                      <td><span class="category-tag">Dosa</span></td>
+                      <td>
+                        <div class="confidence-bar">
+                          <div class="confidence-fill"><div class="confidence-fill-inner high" style="width:99%;"></div></div>
+                          <span class="confidence-value high">99%</span>
+                        </div>
+                      </td>
+                      <td style="color:var(--text-muted);cursor:pointer;">⋯</td>
+                    </tr>
+                    <tr>
+                      <td><div class="veg-badge-sm"></div></td>
+                      <td><input class="inline-edit item-name" value="Garlic Naan"></td>
+                      <td><input class="inline-edit item-price" value="₹70" style="width:80px;"></td>
+                      <td><span class="category-tag">Breads</span></td>
+                      <td>
+                        <div class="confidence-bar">
+                          <div class="confidence-fill"><div class="confidence-fill-inner high" style="width:97%;"></div></div>
+                          <span class="confidence-value high">97%</span>
+                        </div>
+                      </td>
+                      <td style="color:var(--text-muted);cursor:pointer;">⋯</td>
+                    </tr>
+                    <tr>
+                      <td><div class="nonveg-badge-sm"></div></td>
+                      <td><input class="inline-edit item-name" value="Egg Fried Rice"></td>
+                      <td><input class="inline-edit item-price" value="₹140" style="width:80px;"></td>
+                      <td><span class="category-tag">Chinese</span></td>
+                      <td>
+                        <div class="confidence-bar">
+                          <div class="confidence-fill"><div class="confidence-fill-inner high" style="width:91%;"></div></div>
+                          <span class="confidence-value high">91%</span>
+                        </div>
+                      </td>
+                      <td style="color:var(--text-muted);cursor:pointer;">⋯</td>
+                    </tr>
+                    <tr style="background:#FFF5F5;">
+                      <td><div class="veg-badge-sm"></div></td>
+                      <td><input class="inline-edit item-name" value="Palak Panner" style="color:var(--danger);"></td>
+                      <td><input class="inline-edit item-price" value="₹200" style="width:80px;color:var(--danger);"></td>
+                      <td><span class="category-tag">Curry</span></td>
+                      <td>
+                        <div class="confidence-bar">
+                          <div class="confidence-fill"><div class="confidence-fill-inner low" style="width:54%;"></div></div>
+                          <span class="confidence-value low">54%</span>
+                        </div>
+                      </td>
+                      <td style="color:var(--text-muted);cursor:pointer;">⋯</td>
+                    </tr>
+                    <tr>
+                      <td><div class="veg-badge-sm"></div></td>
+                      <td><input class="inline-edit item-name" value="Gulab Jamun"></td>
+                      <td><input class="inline-edit item-price" value="₹80" style="width:80px;"></td>
+                      <td><span class="category-tag">Desserts</span></td>
+                      <td>
+                        <div class="confidence-bar">
+                          <div class="confidence-fill"><div class="confidence-fill-inner high" style="width:94%;"></div></div>
+                          <span class="confidence-value high">94%</span>
+                        </div>
+                      </td>
+                      <td style="color:var(--text-muted);cursor:pointer;">⋯</td>
+                    </tr>
+                    <tr>
+                      <td><div class="veg-badge-sm"></div></td>
+                      <td><input class="inline-edit item-name" value="Lime Soda"></td>
+                      <td><input class="inline-edit item-price" value="₹50" style="width:80px;"></td>
+                      <td><span class="category-tag">Beverages</span></td>
+                      <td>
+                        <div class="confidence-bar">
+                          <div class="confidence-fill"><div class="confidence-fill-inner high" style="width:99%;"></div></div>
+                          <span class="confidence-value high">99%</span>
+                        </div>
+                      </td>
+                      <td style="color:var(--text-muted);cursor:pointer;">⋯</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Image Preview -->
+            <div class="image-preview-pane">
+              <div class="image-preview-header">
+                <span>Menu Page 1</span>
+                <span class="badge badge-primary">Source Image</span>
+              </div>
+              <div class="image-preview-body" style="background:linear-gradient(160deg,#F5E6D3,#E8D5B7 30%,#D4C4A8 60%,#C8B896);">
+                <div style="position:absolute;inset:0;padding:1.5rem;font-family:'Georgia',serif;color:#5C4A32;overflow:hidden;">
+                  <div style="text-align:center;margin-bottom:1.25rem;">
+                    <div style="font-size:1.5rem;font-weight:700;letter-spacing:0.05em;">ANNAPURNA KITCHEN</div>
+                    <div style="font-size:0.625rem;margin-top:0.25rem;letter-spacing:0.1em;text-transform:uppercase;">Est. 2018 · Authentic Indian Cuisine</div>
+                  </div>
+                  <div style="font-size:0.875rem;font-weight:700;margin-bottom:0.5rem;color:#8B4513;">── BIRYANI ──</div>
+                  <div style="display:flex;justify-content:space-between;font-size:0.75rem;margin-bottom:0.25rem;"><span>Chicken Biryani</span><span>₹280</span></div>
+                  <div style="display:flex;justify-content:space-between;font-size:0.75rem;margin-bottom:0.75rem;"><span>Veg Biryani</span><span>₹180</span></div>
+                  <div style="font-size:0.875rem;font-weight:700;margin-bottom:0.5rem;color:#8B4513;">── STARTERS ──</div>
+                  <div style="display:flex;justify-content:space-between;font-size:0.75rem;margin-bottom:0.25rem;"><span>Paneer Tikka</span><span>₹240</span></div>
+                  <div style="display:flex;justify-content:space-between;font-size:0.75rem;margin-bottom:0.25rem;"><span>Chicken 65</span><span>₹190</span></div>
+                  <div style="display:flex;justify-content:space-between;font-size:0.75rem;margin-bottom:0.75rem;"><span>Gobi Manchurian</span><span>₹150</span></div>
+                  <div style="font-size:0.875rem;font-weight:700;margin-bottom:0.5rem;color:#8B4513;">── BREADS ──</div>
+                  <div style="display:flex;justify-content:space-between;font-size:0.75rem;margin-bottom:0.25rem;"><span>Butter Naan</span><span>₹60</span></div>
+                  <div style="display:flex;justify-content:space-between;font-size:0.75rem;margin-bottom:0.25rem;"><span>Garlic Naan</span><span>₹70</span></div>
+                </div>
+                <!-- OCR highlight boxes -->
+                <div class="ocr-highlight-overlay" style="top:27%;left:12%;width:42%;height:5%;"></div>
+                <div class="ocr-highlight-overlay" style="top:36%;left:12%;width:38%;height:4%;"></div>
+                <div class="ocr-highlight-overlay" style="top:42%;left:12%;width:30%;height:4%;"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="wizard-nav">
+            <div class="wizard-nav-left">
+              <button class="btn btn-outline" onclick="goToStep(2)">← Back</button>
+            </div>
+            <div class="wizard-nav-right">
+              <button class="btn btn-outline" onclick="skipStep()">Skip for now</button>
+              <button class="btn btn-primary btn-lg" onclick="goToStep(4)">Approve & Translate →</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══════ Step 4: Translation Review ═══════ -->
+        <div class="step-panel" id="step4">
+          <div class="step-header">
+            <h2>Review translations</h2>
+            <p>Your menu has been translated to English, Kannada, and Hindi. Uncertain translations are highlighted for your review.</p>
+          </div>
+
+          <div class="alert alert-info" style="margin-bottom:1.5rem;">
+            <strong>AI Translation Complete</strong> — 47 items translated across 3 languages. <strong>6 items</strong> flagged with uncertain translations (highlighted in yellow).
+          </div>
+
+          <!-- Item 1 -->
+          <div class="translation-card">
+            <div class="translation-card-header">
+              <div class="item-title"><div class="nonveg-badge-sm"></div> Chicken Biryani — ₹280</div>
+              <span class="badge badge-success">All confident</span>
+            </div>
+            <div class="translation-grid">
+              <div class="translation-col">
+                <div class="translation-lang">
+                  <span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--primary);"></span>
+                  English
+                </div>
+                <div class="translation-text translation-confident">Chicken Biryani</div>
+              </div>
+              <div class="translation-col">
+                <div class="translation-lang">
+                  <span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--info);"></span>
+                  Kannada
+                </div>
+                <div class="translation-text translation-confident">ಚಿಕ್ಕನ್ ಬಿರ್ಯಾನಿ</div>
+              </div>
+              <div class="translation-col">
+                <div class="translation-lang">
+                  <span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--accent);"></span>
+                  Hindi
+                </div>
+                <div class="translation-text translation-confident">चिकन बिरयानी</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Item 2 -->
+          <div class="translation-card">
+            <div class="translation-card-header">
+              <div class="item-title"><div class="veg-badge-sm"></div> Paneer Tikka — ₹240</div>
+              <span class="badge badge-success">All confident</span>
+            </div>
+            <div class="translation-grid">
+              <div class="translation-col">
+                <div class="translation-lang">
+                  <span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--primary);"></span>
+                  English
+                </div>
+                <div class="translation-text translation-confident">Paneer Tikka</div>
+              </div>
+              <div class="translation-col">
+                <div class="translation-lang">
+                  <span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--info);"></span>
+                  Kannada
+                </div>
+                <div class="translation-text translation-confident">ಪನೀರ್ ಟಿಕ್ಕಾ</div>
+              </div>
+              <div class="translation-col">
+                <div class="translation-lang">
+                  <span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--accent);"></span>
+                  Hindi
+                </div>
+                <div class="translation-text translation-confident">पनीर टिक्का</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Item 3 — uncertain -->
+          <div class="translation-card" style="border-color:var(--warning);">
+            <div class="translation-card-header" style="background:var(--warning-light);">
+              <div class="item-title"><div class="nonveg-badge-sm"></div> Mutton Rogan Josh — ₹320</div>
+              <span class="badge badge-warning">Needs review</span>
+            </div>
+            <div class="translation-grid">
+              <div class="translation-col">
+                <div class="translation-lang">
+                  <span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--primary);"></span>
+                  English
+                </div>
+                <div class="translation-text translation-confident">Mutton Rogan Josh</div>
+              </div>
+              <div class="translation-col">
+                <div class="translation-lang">
+                  <span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--info);"></span>
+                  Kannada
+                </div>
+                <div class="translation-text translation-uncertain">ಮಟನ್ <span class="translation-diff">ರೋಗನ್ ಜೋಶ್</span></div>
+                <div style="font-size:0.6875rem;color:var(--text-muted);margin-top:0.25rem;">Alternative: ಮಟನ್ ರೊಗನ್ ಜೋಷ್</div>
+              </div>
+              <div class="translation-col">
+                <div class="translation-lang">
+                  <span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--accent);"></span>
+                  Hindi
+                </div>
+                <div class="translation-text translation-confident">मटन रोगन जोश</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Item 4 -->
+          <div class="translation-card">
+            <div class="translation-card-header">
+              <div class="item-title"><div class="veg-badge-sm"></div> Masala Dosa — ₹90</div>
+              <span class="badge badge-success">All confident</span>
+            </div>
+            <div class="translation-grid">
+              <div class="translation-col">
+                <div class="translation-lang">
+                  <span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--primary);"></span>
+                  English
+                </div>
+                <div class="translation-text translation-confident">Masala Dosa</div>
+              </div>
+              <div class="translation-col">
+                <div class="translation-lang">
+                  <span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--info);"></span>
+                  Kannada
+                </div>
+                <div class="translation-text translation-confident">ಮಸಾಲಾ ದೋಸೆ</div>
+              </div>
+              <div class="translation-col">
+                <div class="translation-lang">
+                  <span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--accent);"></span>
+                  Hindi
+                </div>
+                <div class="translation-text translation-confident">मसाला डोसा</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Item 5 — uncertain -->
+          <div class="translation-card" style="border-color:var(--warning);">
+            <div class="translation-card-header" style="background:var(--warning-light);">
+              <div class="item-title"><div class="veg-badge-sm"></div> Palak Paneer — ₹200</div>
+              <span class="badge badge-warning">Needs review</span>
+            </div>
+            <div class="translation-grid">
+              <div class="translation-col">
+                <div class="translation-lang">
+                  <span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--primary);"></span>
+                  English
+                </div>
+                <div class="translation-text translation-confident">Spinach Paneer Curry</div>
+              </div>
+              <div class="translation-col">
+                <div class="translation-lang">
+                  <span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--info);"></span>
+                  Kannada
+                </div>
+                <div class="translation-text translation-uncertain">ಪಾಲಕ್ <span class="translation-diff">ಪನೀರ್</span></div>
+                <div style="font-size:0.6875rem;color:var(--text-muted);margin-top:0.25rem;">AI was unsure about script transliteration</div>
+              </div>
+              <div class="translation-col">
+                <div class="translation-lang">
+                  <span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--accent);"></span>
+                  Hindi
+                </div>
+                <div class="translation-text translation-confident">पालक पनीर</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Item 6 -->
+          <div class="translation-card">
+            <div class="translation-card-header">
+              <div class="item-title"><div class="veg-badge-sm"></div> Gulab Jamun — ₹80</div>
+              <span class="badge badge-success">All confident</span>
+            </div>
+            <div class="translation-grid">
+              <div class="translation-col">
+                <div class="translation-lang">
+                  <span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--primary);"></span>
+                  English
+                </div>
+                <div class="translation-text translation-confident">Gulab Jamun</div>
+              </div>
+              <div class="translation-col">
+                <div class="translation-lang">
+                  <span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--info);"></span>
+                  Kannada
+                </div>
+                <div class="translation-text translation-confident">ಗುಲಾಬ್ ಜಾಮುನ್</div>
+              </div>
+              <div class="translation-col">
+                <div class="translation-lang">
+                  <span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--accent);"></span>
+                  Hindi
+                </div>
+                <div class="translation-text translation-confident">गुलाब जामुन</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="wizard-nav">
+            <div class="wizard-nav-left">
+              <button class="btn btn-outline" onclick="goToStep(3)">← Back</button>
+            </div>
+            <div class="wizard-nav-right">
+              <button class="btn btn-outline" onclick="skipStep()">Skip for now</button>
+              <button class="btn btn-primary btn-lg" onclick="goToStep(5)">Approve & Generate QR →</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══════ Step 5: QR Ready ═══════ -->
+        <div class="step-panel" id="step5">
+          <div class="step-header">
+            <h2>Your QR codes are ready!</h2>
+            <p>Print the outlet QR for your entrance and individual table QRs for each table. Customers scan to view the menu instantly.</p>
+          </div>
+
+          <div class="qr-layout">
+            <!-- Outlet QR -->
+            <div class="card">
+              <div class="card-header">
+                <h3>Outlet QR Code</h3>
+                <button class="btn btn-sm btn-outline" onclick="alert('Download QR image')">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Download
+                </button>
+              </div>
+              <div class="card-body" style="text-align:center;padding:2rem;">
+                <div class="qr-code-box">
+                  <div class="qr-pattern">
+                    <div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div>
+                    <div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div>
+                    <div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div>
+                    <div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div>
+                    <div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div>
+                    <div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div>
+                    <div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div>
+                    <div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div>
+                    <div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div>
+                    <div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div>
+                    <div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div>
+                  </div>
+                  <div class="qr-center-logo">SS</div>
+                </div>
+                <div class="qr-code-label">Annapurna Kitchen</div>
+                <div class="qr-code-sublabel">Main menu — scanserve.in/ak</div>
+              </div>
+            </div>
+
+            <!-- Table QRs + Poster -->
+            <div>
+              <div class="card" style="margin-bottom:1rem;">
+                <div class="card-header">
+                  <h3>Table QR Codes</h3>
+                  <span class="badge badge-primary">24 Tables</span>
+                </div>
+                <div class="card-body">
+                  <div class="table-qr-grid">
+                    <div class="table-qr-item">
+                      <div class="table-qr-mini">
+                        <div class="table-qr-mini-pattern">
+                          <div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div>
+                          <div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div>
+                          <div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div>
+                          <div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div>
+                          <div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div>
+                          <div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div>
+                          <div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div>
+                        </div>
+                      </div>
+                      <div class="table-qr-label">T1</div>
+                    </div>
+                    <div class="table-qr-item">
+                      <div class="table-qr-mini">
+                        <div class="table-qr-mini-pattern">
+                          <div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div>
+                          <div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div>
+                          <div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div>
+                          <div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div>
+                          <div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div>
+                          <div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div>
+                          <div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div>
+                        </div>
+                      </div>
+                      <div class="table-qr-label">T2</div>
+                    </div>
+                    <div class="table-qr-item">
+                      <div class="table-qr-mini">
+                        <div class="table-qr-mini-pattern">
+                          <div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div>
+                          <div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div>
+                          <div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div>
+                          <div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div>
+                          <div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div>
+                          <div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div>
+                          <div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div>
+                        </div>
+                      </div>
+                      <div class="table-qr-label">T3</div>
+                    </div>
+                    <div class="table-qr-item">
+                      <div class="table-qr-mini">
+                        <div class="table-qr-mini-pattern">
+                          <div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div>
+                          <div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div>
+                          <div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div>
+                          <div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div>
+                          <div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div>
+                          <div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div>
+                          <div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div>
+                        </div>
+                      </div>
+                      <div class="table-qr-label">T4</div>
+                    </div>
+                    <div class="table-qr-item">
+                      <div class="table-qr-mini">
+                        <div class="table-qr-mini-pattern">
+                          <div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div>
+                          <div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div>
+                          <div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div>
+                          <div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div>
+                          <div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div>
+                          <div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div>
+                          <div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div>
+                        </div>
+                      </div>
+                      <div class="table-qr-label">T5</div>
+                    </div>
+                    <div class="table-qr-item">
+                      <div class="table-qr-mini">
+                        <div class="table-qr-mini-pattern">
+                          <div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div>
+                          <div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div>
+                          <div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div>
+                          <div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div>
+                          <div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div>
+                          <div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div>
+                          <div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div>
+                        </div>
+                      </div>
+                      <div class="table-qr-label">T6</div>
+                    </div>
+                  </div>
+                  <div style="text-align:center;margin-top:1rem;">
+                    <button class="btn btn-sm btn-outline">Download All 24 Table QRs (ZIP)</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Poster Preview -->
+              <div class="card">
+                <div class="card-header">
+                  <h3>Printable Poster</h3>
+                  <button class="btn btn-sm btn-outline">Print</button>
+                </div>
+                <div class="card-body" style="text-align:center;">
+                  <div class="poster-preview">
+                    <div class="poster-logo">SS</div>
+                    <div class="poster-title">Scan to View Menu</div>
+                    <div class="poster-subtitle">Annapurna Kitchen</div>
+                    <div class="poster-qr">
+                      <div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div>
+                      <div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div>
+                      <div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div>
+                      <div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div>
+                      <div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div>
+                      <div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div>
+                      <div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div>
+                      <div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div>
+                      <div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell light"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div><div class="qr-cell dark"></div>
+                    </div>
+                    <div class="poster-cta">Powered by ScanServe</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Go Live Banner (hidden until step 5 final) -->
+          <div class="wizard-nav">
+            <div class="wizard-nav-left">
+              <button class="btn btn-outline" onclick="goToStep(4)">← Back</button>
+            </div>
+            <div class="wizard-nav-right">
+              <button class="btn btn-success btn-lg" id="goLiveBtn" onclick="goLive()" style="padding:1rem 2.5rem;font-size:1.0625rem;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                Go Live 🚀
+              </button>
+            </div>
+          </div>
+
+          <!-- Success banner (shown after Go Live) -->
+          <div class="live-success-banner" id="liveSuccess" style="display:none;">
+            <div class="live-success-icon">✓</div>
+            <h3>Your restaurant is now LIVE!</h3>
+            <p>Customers can now scan QR codes to view your trilingual menu. You'll receive your first scan notification within minutes.</p>
+            <div style="display:flex;gap:0.75rem;justify-content:center;margin-top:1.5rem;">
+              <a href="dashboard.html" class="btn btn-primary">Go to Dashboard</a>
+              <a href="menu-management.html" class="btn btn-outline">View Menu</a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentStep = 1;
+    const totalSteps = 5;
+    let startTime = Date.now();
+    let timerInterval = setInterval(updateTimer, 1000);
+
+    function updateTimer() {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
+      const secs = String(elapsed % 60).padStart(2, '0');
+      document.getElementById('timerDisplay').textContent = mins + ':' + secs;
+
+      const timerEl = document.getElementById('obTimer');
+      timerEl.classList.remove('warning', 'danger');
+      if (elapsed > 600) {
+        timerEl.classList.add('danger');
+      } else if (elapsed > 420) {
+        timerEl.classList.add('warning');
+      }
+    }
+
+    function goToStep(step) {
+      if (step < 1 || step > totalSteps) return;
+
+      document.getElementById('step' + currentStep).classList.remove('active');
+      document.getElementById('step' + step).classList.add('active');
+
+      document.querySelectorAll('.stepper-step').forEach(function(el) {
+        const s = parseInt(el.dataset.step);
+        el.classList.remove('active', 'completed');
+        if (s < step) el.classList.add('completed');
+        if (s === step) el.classList.add('active');
+      });
+
+      currentStep = step;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function skipStep() {
+      if (currentStep < totalSteps) {
+        goToStep(currentStep + 1);
+      }
+    }
+
+    function goLive() {
+      var btn = document.getElementById('goLiveBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span style="display:inline-block;width:18px;height:18px;border:2.5px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.6s linear infinite;"></span> Activating...';
+
+      setTimeout(function() {
+        btn.style.display = 'none';
+        document.getElementById('liveSuccess').style.display = 'block';
+        clearInterval(timerInterval);
+      }, 2000);
+    }
+
+    // Drag & drop
+    var uploadZone = document.getElementById('uploadZone');
+    uploadZone.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      this.classList.add('dragover');
+    });
+    uploadZone.addEventListener('dragleave', function() {
+      this.classList.remove('dragover');
+    });
+    uploadZone.addEventListener('drop', function(e) {
+      e.preventDefault();
+      this.classList.remove('dragover');
+      handleFiles(e.dataTransfer.files);
+    });
+
+    function handleFiles(files) {
+      for (var i = 0; i < files.length; i++) {
+        var file = files[i];
+        if (!file.type.startsWith('image/')) continue;
+        var container = document.getElementById('thumbContainer');
+        var thumb = document.createElement('div');
+        thumb.className = 'upload-thumb';
+        var reader = new FileReader();
+        (function(t) {
+          reader.onload = function(e) {
+            t.innerHTML = '<div class="upload-thumb-img" style="background-image:url(' + e.target.result + ');background-size:cover;background-position:center;"></div><div class="upload-thumb-overlay"><button class="upload-thumb-remove">×</button></div>';
+          };
+        })(thumb);
+        reader.readAsDataURL(file);
+        container.appendChild(thumb);
+      }
+    }
+  </script>
+</body>
+</html>

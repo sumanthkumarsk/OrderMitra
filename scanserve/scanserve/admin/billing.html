@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Billing & Orders — Annapurna Kitchen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/shared.css">
+  <style>
+    .order-id {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      font-size: 0.8125rem;
+      color: var(--secondary);
+    }
+    .table-tag {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--secondary);
+      color: white;
+      font-weight: 700;
+      font-size: 0.75rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      min-width: 32px;
+    }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.2rem 0.625rem;
+      border-radius: var(--radius-full);
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .status-new { background: #DBEAFE; color: #1D4ED8; }
+    .status-preparing { background: #FEF3C7; color: #92400E; }
+    .status-ready { background: #D1FAE5; color: #065F46; }
+    .status-served { background: #E0E7FF; color: #3730A3; }
+    .status-billed { background: #F3F4F6; color: #4B5563; }
+    .status-paid { background: #DCFCE7; color: #166534; }
+    .orders-table th {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+    .orders-table td {
+      vertical-align: middle;
+      font-size: 0.875rem;
+    }
+    .orders-table tr {
+      cursor: pointer;
+      transition: background var(--transition);
+    }
+    .orders-table tbody tr:hover td {
+      background: #F8F9FA;
+    }
+    .item-text {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      max-width: 240px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .amount {
+      font-weight: 700;
+      font-size: 0.9375rem;
+    }
+    .time-text {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+    }
+    .action-btns { display: flex; gap: 0.25rem; }
+    .action-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: white;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.8125rem;
+      transition: all var(--transition);
+    }
+    .action-btn:hover {
+      border-color: var(--primary);
+      background: var(--primary-light);
+    }
+
+    /* Hourly revenue bar chart */
+    .hour-bar-wrap {
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+      height: 120px;
+    }
+    .hour-bar-group {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100%;
+      justify-content: flex-end;
+    }
+    .hour-bar {
+      width: 100%;
+      border-radius: 4px 4px 0 0;
+      background: var(--primary);
+      transition: height 0.4s ease;
+      position: relative;
+      min-height: 2px;
+    }
+    .hour-bar:hover { opacity: 0.85; }
+    .hour-label {
+      font-size: 0.625rem;
+      color: var(--text-muted);
+      margin-top: 0.375rem;
+      font-weight: 500;
+    }
+
+    /* Payment method row */
+    .pay-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .pay-row:last-child { border-bottom: none; }
+    .pay-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 1rem;
+      backdrop-filter: blur(4px);
+    }
+    .modal {
+      background: white;
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 480px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow-xl);
+    }
+    .modal-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border-light);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .modal-body { padding: 1.5rem; }
+    .modal-footer {
+      padding: 1rem 1.5rem;
+      border-top: 1px solid var(--border-light);
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+    }
+    .modal-divider {
+      height: 1px;
+      background: var(--border-light);
+      margin: 0.75rem 0;
+    }
+    .modal-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.875rem;
+      padding: 0.3rem 0;
+    }
+    .modal-row.total {
+      font-weight: 700;
+      font-size: 1rem;
+    }
+    .modal-item-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0;
+      font-size: 0.875rem;
+      border-bottom: 1px dashed var(--border-light);
+    }
+    .modal-item-row:last-child { border-bottom: none; }
+    .modal-item-name { display: flex; align-items: center; gap: 0.5rem; }
+    .modal-item-qty {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+    .payment-option {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    .payment-option:hover { border-color: var(--primary); }
+    .payment-option.selected { border-color: var(--primary); background: var(--primary-light); }
+    .payment-option input[type="radio"] { accent-color: var(--primary); }
+    .share-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.75rem;
+      border-radius: var(--radius-sm);
+      border: 1.5px solid var(--border);
+      background: white;
+      cursor: pointer;
+      transition: all var(--transition);
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+    .share-btn:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: var(--primary-light);
+    }
+    .share-btn .share-icon { font-size: 1.25rem; }
+
+    /* Date picker */
+    .date-picker {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.375rem 0.75rem;
+      background: white;
+      cursor: pointer;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--text);
+      transition: all var(--transition);
+    }
+    .date-picker:hover { border-color: var(--primary); }
+    .date-picker svg { width: 16px; height: 16px; color: var(--text-secondary); }
+
+    /* Summary metrics */
+    .summary-metric {
+      background: white;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    .summary-metric-label {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+    .summary-metric-value {
+      font-size: 1.375rem;
+      font-weight: 700;
+      font-family: var(--font-display);
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">SS</div>
+        <div class="sidebar-brand">ScanServe</div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Main</div>
+        </div>
+        <a class="sidebar-link" href="dashboard.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </a>
+        <a class="sidebar-link" href="orders.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Orders
+        </a>
+        <a class="sidebar-link active" href="billing.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          Billing
+        </a>
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Management</div>
+        </div>
+        <a class="sidebar-link" href="menu-management.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          Menu
+        </a>
+        <a class="sidebar-link" href="table-map.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+          Table Map
+        </a>
+        <a class="sidebar-link" href="waiters.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Waiters
+        </a>
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Intelligence</div>
+        </div>
+        <a class="sidebar-link" href="analytics.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          Analytics
+        </a>
+        <a class="sidebar-link" href="ai-owner.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          AI Assistant
+        </a>
+        <a class="sidebar-link" href="ai-controls.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          AI Controls
+        </a>
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Setup</div>
+        </div>
+        <a class="sidebar-link" href="onboarding.html">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          Onboarding
+        </a>
+        <a class="sidebar-link" href="#">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Settings
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div style="display:flex;align-items:center;gap:0.625rem;">
+          <div class="avatar avatar-sm">R</div>
+          <div>
+            <div style="font-size:0.8125rem;font-weight:600;">Ravi</div>
+            <div style="font-size:0.6875rem;color:rgba(255,255,255,0.5);">Owner · Premium</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <div class="main-content">
+      <!-- Topbar -->
+      <div class="topbar">
+        <div class="topbar-title">Billing & Orders</div>
+        <div class="topbar-actions">
+          <div class="date-picker">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            26 Aug 2026
+          </div>
+          <button class="btn btn-sm btn-outline">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export CSV
+          </button>
+        </div>
+      </div>
+
+      <div class="page-content">
+        <!-- Tabs -->
+        <div class="tabs" id="mainTabs">
+          <button class="tab-btn active" onclick="switchTab('all')">All Orders</button>
+          <button class="tab-btn" onclick="switchTab('pending')">Pending Bills</button>
+          <button class="tab-btn" onclick="switchTab('paid')">Paid Today</button>
+          <button class="tab-btn" onclick="switchTab('summary')">Daily Summary</button>
+        </div>
+
+        <!-- Stats Row -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin:1.25rem 0;">
+          <div class="stat-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span class="stat-card-label">Total Revenue Today</span>
+              <div class="stat-card-icon" style="background:#DCFCE7;color:#16A34A;">💰</div>
+            </div>
+            <div class="stat-card-value">₹42,680</div>
+            <span class="stat-card-change up">↑ 14% vs last Wednesday</span>
+          </div>
+          <div class="stat-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span class="stat-card-label">Pending Bills</span>
+              <div class="stat-card-icon" style="background:#FEF3C7;color:#D97706;">⏳</div>
+            </div>
+            <div class="stat-card-value">5</div>
+            <span class="stat-card-change" style="color:var(--warning);">₹3,420 awaiting payment</span>
+          </div>
+          <div class="stat-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span class="stat-card-label">Paid Bills</span>
+              <div class="stat-card-icon" style="background:#DBEAFE;color:#2563EB;">✅</div>
+            </div>
+            <div class="stat-card-value">87</div>
+            <span class="stat-card-change up">↑ 9% vs last Wednesday</span>
+          </div>
+          <div class="stat-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span class="stat-card-label">Avg Bill Amount</span>
+              <div class="stat-card-icon" style="background:#F3E8FF;color:#9333EA;">📊</div>
+            </div>
+            <div class="stat-card-value">₹490</div>
+            <span class="stat-card-change up">↑ ₹18 increase</span>
+          </div>
+        </div>
+
+        <!-- Tab: All Orders -->
+        <div class="tab-panel active" id="tab-all">
+          <div class="card">
+            <div class="card-header">
+              <h3>Today's Orders</h3>
+              <div style="display:flex;gap:0.5rem;align-items:center;">
+                <input type="text" class="form-input search-input" placeholder="Search order..." style="width:180px;padding:0.375rem 0.625rem 0.375rem 2rem;font-size:0.8125rem;">
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table class="orders-table">
+                <thead>
+                  <tr>
+                    <th>Order ID</th>
+                    <th>Table</th>
+                    <th>Items</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Time</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr onclick="openBillModal('ORD-20260826-0038','T2','₹680')">
+                    <td><span class="order-id">ORD-20260826-0038</span></td>
+                    <td><span class="table-tag">T2</span></td>
+                    <td><span class="item-text">Veg Biryani × 2, Paneer Tikka × 1, Lime Soda × 2</span></td>
+                    <td><span class="amount">₹680</span></td>
+                    <td><span class="status-badge status-paid">● Paid</span></td>
+                    <td><span class="time-text">12:15 PM</span></td>
+                    <td>
+                      <div class="action-btns">
+                        <button class="action-btn" title="View Bill" onclick="event.stopPropagation();openBillModal('ORD-20260826-0038','T2','₹680')">📄</button>
+                        <button class="action-btn" title="Reprint" onclick="event.stopPropagation()">🖨</button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr onclick="openBillModal('ORD-20260826-0039','T5','₹820')">
+                    <td><span class="order-id">ORD-20260826-0039</span></td>
+                    <td><span class="table-tag">T5</span></td>
+                    <td><span class="item-text">Butter Chicken × 1, Butter Naan × 3, Dal Makhani × 1</span></td>
+                    <td><span class="amount">₹820</span></td>
+                    <td><span class="status-badge status-paid">● Paid</span></td>
+                    <td><span class="time-text">12:32 PM</span></td>
+                    <td>
+                      <div class="action-btns">
+                        <button class="action-btn" title="View Bill" onclick="event.stopPropagation()">📄</button>
+                        <button class="action-btn" title="Reprint" onclick="event.stopPropagation()">🖨</button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr onclick="openBillModal('ORD-20260826-0040','T8','₹760')">
+                    <td><span class="order-id">ORD-20260826-0040</span></td>
+                    <td><span class="table-tag">T8</span></td>
+                    <td><span class="item-text">Chicken Biryani × 2, Gobi Manchurian × 1, Coke × 2</span></td>
+                    <td><span class="amount">₹760</span></td>
+                    <td><span class="status-badge status-paid">● Paid</span></td>
+                    <td><span class="time-text">12:45 PM</span></td>
+                    <td>
+                      <div class="action-btns">
+                        <button class="action-btn" title="View Bill" onclick="event.stopPropagation()">📄</button>
+                        <button class="action-btn" title="Reprint" onclick="event.stopPropagation()">🖨</button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr onclick="openBillModal('ORD-20260826-0041','T2','₹370')">
+                    <td><span class="order-id">ORD-20260826-0041</span></td>
+                    <td><span class="table-tag">T2</span></td>
+                    <td><span class="item-text">Paneer Butter Masala × 1, Garlic Naan × 2</span></td>
+                    <td><span class="amount">₹370</span></td>
+                    <td><span class="status-badge status-ready">● Ready</span></td>
+                    <td><span class="time-text">1:02 PM</span></td>
+                    <td>
+                      <div class="action-btns">
+                        <button class="action-btn" title="Serve" onclick="event.stopPropagation()">✅</button>
+                        <button class="action-btn" title="Bill" onclick="event.stopPropagation();openBillModal('ORD-20260826-0041','T2','₹370')">📄</button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr onclick="openBillModal('ORD-20260826-0042','T12','₹1,176')">
+                    <td><span class="order-id">ORD-20260826-0042</span></td>
+                    <td><span class="table-tag">T12</span></td>
+                    <td><span class="item-text">Chicken 65 × 2, Mutton Rogan Josh × 1, Jeera Rice × 2, Raita × 1</span></td>
+                    <td><span class="amount">₹1,176</span></td>
+                    <td><span class="status-badge status-billed">● Billed</span></td>
+                    <td><span class="time-text">1:15 PM</span></td>
+                    <td>
+                      <div class="action-btns">
+                        <button class="action-btn" title="View Bill" onclick="event.stopPropagation();openBillModal('ORD-20260826-0042','T12','₹1,176')">📄</button>
+                        <button class="action-btn" title="Send Reminder" onclick="event.stopPropagation()">💬</button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr onclick="openBillModal('ORD-20260826-0043','T12','₹340')">
+                    <td><span class="order-id">ORD-20260826-0043</span></td>
+                    <td><span class="table-tag">T12</span></td>
+                    <td><span class="item-text">Chicken Biryani × 1, Lime Soda × 1</span></td>
+                    <td><span class="amount">₹340</span></td>
+                    <td><span class="status-badge status-new">● New</span></td>
+                    <td><span class="time-text">1:28 PM</span></td>
+                    <td>
+                      <div class="action-btns">
+                        <button class="action-btn" title="View" onclick="event.stopPropagation()">👁</button>
+                        <button class="action-btn" title="Bill" onclick="event.stopPropagation()">📄</button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr onclick="openBillModal('ORD-20260826-0044','T15','₹720')">
+                    <td><span class="order-id">ORD-20260826-0044</span></td>
+                    <td><span class="table-tag">T15</span></td>
+                    <td><span class="item-text">Veg Biryani × 2, Chicken Kabab × 1, Masala Chai × 2</span></td>
+                    <td><span class="amount">₹720</span></td>
+                    <td><span class="status-badge status-preparing">● Preparing</span></td>
+                    <td><span class="time-text">1:35 PM</span></td>
+                    <td>
+                      <div class="action-btns">
+                        <button class="action-btn" title="Status" onclick="event.stopPropagation()">🔥</button>
+                        <button class="action-btn" title="Bill" onclick="event.stopPropagation()">📄</button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr onclick="openBillModal('ORD-20260826-0045','T18','₹510')">
+                    <td><span class="order-id">ORD-20260826-0045</span></td>
+                    <td><span class="table-tag">T18</span></td>
+                    <td><span class="item-text">Palak Paneer × 1, Butter Naan × 2, Mango Lassi × 2</span></td>
+                    <td><span class="amount">₹510</span></td>
+                    <td><span class="status-badge status-served">● Served</span></td>
+                    <td><span class="time-text">1:42 PM</span></td>
+                    <td>
+                      <div class="action-btns">
+                        <button class="action-btn" title="Bill" onclick="event.stopPropagation();openBillModal('ORD-20260826-0045','T18','₹510')">📄</button>
+                        <button class="action-btn" title="More" onclick="event.stopPropagation()">⋯</button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr onclick="openBillModal('ORD-20260826-0046','T20','₹640')">
+                    <td><span class="order-id">ORD-20260826-0046</span></td>
+                    <td><span class="table-tag">T20</span></td>
+                    <td><span class="item-text">Fish Curry × 1, Steamed Rice × 1, Papad × 2, Filter Coffee × 2</span></td>
+                    <td><span class="amount">₹640</span></td>
+                    <td><span class="status-badge status-preparing">● Preparing</span></td>
+                    <td><span class="time-text">1:50 PM</span></td>
+                    <td>
+                      <div class="action-btns">
+                        <button class="action-btn" title="Status" onclick="event.stopPropagation()">🔥</button>
+                        <button class="action-btn" title="Bill" onclick="event.stopPropagation()">📄</button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr onclick="openBillModal('ORD-20260826-0047','T22','₹890')">
+                    <td><span class="order-id">ORD-20260826-0047</span></td>
+                    <td><span class="table-tag">T22</span></td>
+                    <td><span class="item-text">Tandoori Platter × 1, Naan Basket × 1, Lassi × 2</span></td>
+                    <td><span class="amount">₹890</span></td>
+                    <td><span class="status-badge status-paid">● Paid</span></td>
+                    <td><span class="time-text">11:55 AM</span></td>
+                    <td>
+                      <div class="action-btns">
+                        <button class="action-btn" title="View Bill" onclick="event.stopPropagation()">📄</button>
+                        <button class="action-btn" title="Reprint" onclick="event.stopPropagation()">🖨</button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab: Pending Bills -->
+        <div class="tab-panel" id="tab-pending">
+          <div class="card">
+            <div class="card-header">
+              <h3>Pending Bills</h3>
+              <span class="badge badge-warning">5 Orders</span>
+            </div>
+            <div class="table-wrap">
+              <table class="orders-table">
+                <thead>
+                  <tr>
+                    <th>Order ID</th>
+                    <th>Table</th>
+                    <th>Items</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Time</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr onclick="openBillModal('ORD-20260826-0041','T2','₹370')">
+                    <td><span class="order-id">ORD-20260826-0041</span></td>
+                    <td><span class="table-tag">T2</span></td>
+                    <td><span class="item-text">Paneer Butter Masala × 1, Garlic Naan × 2</span></td>
+                    <td><span class="amount">₹370</span></td>
+                    <td><span class="status-badge status-ready">● Ready</span></td>
+                    <td><span class="time-text">1:02 PM</span></td>
+                    <td>
+                      <div class="action-btns">
+                        <button class="action-btn" title="Generate Bill" onclick="event.stopPropagation();openBillModal('ORD-20260826-0041','T2','₹370')">📄</button>
+                        <button class="action-btn" title="Serve" onclick="event.stopPropagation()">✅</button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr onclick="openBillModal('ORD-20260826-0042','T12','₹1,176')">
+                    <td><span class="order-id">ORD-20260826-0042</span></td>
+                    <td><span class="table-tag">T12</span></td>
+                    <td><span class="item-text">Chicken 65 × 2, Mutton Rogan Josh × 1, Jeera Rice × 2</span></td>
+                    <td><span class="amount">₹1,176</span></td>
+                    <td><span class="status-badge status-billed">● Billed</span></td>
+                    <td><span class="time-text">1:15 PM</span></td>
+                    <td>
+                      <div class="action-btns">
+                        <button class="action-btn" title="View Bill" onclick="event.stopPropagation();openBillModal('ORD-20260826-0042','T12','₹1,176')">📄</button>
+                        <button class="action-btn" title="Send Reminder" onclick="event.stopPropagation()">💬</button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr onclick="openBillModal('ORD-20260826-0045','T18','₹510')">
+                    <td><span class="order-id">ORD-20260826-0045</span></td>
+                    <td><span class="table-tag">T18</span></td>
+                    <td><span class="item-text">Palak Paneer × 1, Butter Naan × 2, Mango Lassi × 2</span></td>
+                    <td><span class="amount">₹510</span></td>
+                    <td><span class="status-badge status-served">● Served</span></td>
+                    <td><span class="time-text">1:42 PM</span></td>
+                    <td>
+                      <div class="action-btns">
+                        <button class="action-btn" title="Generate Bill" onclick="event.stopPropagation();openBillModal('ORD-20260826-0045','T18','₹510')">📄</button>
+                        <button class="action-btn" title="More" onclick="event.stopPropagation()">⋯</button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr onclick="openBillModal('ORD-20260826-0043','T12','₹340')">
+                    <td><span class="order-id">ORD-20260826-0043</span></td>
+                    <td><span class="table-tag">T12</span></td>
+                    <td><span class="item-text">Chicken Biryani × 1, Lime Soda × 1</span></td>
+                    <td><span class="amount">₹340</span></td>
+                    <td><span class="status-badge status-new">● New</span></td>
+                    <td><span class="time-text">1:28 PM</span></td>
+                    <td>
+                      <div class="action-btns">
+                        <button class="action-btn" title="View" onclick="event.stopPropagation()">👁</button>
+                        <button class="action-btn" title="Bill" onclick="event.stopPropagation()">📄</button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr onclick="openBillModal('ORD-20260826-0044','T15','₹720')">
+                    <td><span class="order-id">ORD-20260826-0044</span></td>
+                    <td><span class="table-tag">T15</span></td>
+                    <td><span class="item-text">Veg Biryani × 2, Chicken Kabab × 1, Masala Chai × 2</span></td>
+                    <td><span class="amount">₹720</span></td>
+                    <td><span class="status-badge status-preparing">● Preparing</span></td>
+                    <td><span class="time-text">1:35 PM</span></td>
+                    <td>
+                      <div class="action-btns">
+                        <button class="action-btn" title="Status" onclick="event.stopPropagation()">🔥</button>
+                        <button class="action-btn" title="Bill" onclick="event.stopPropagation()">📄</button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab: Paid Today -->
+        <div class="tab-panel" id="tab-paid">
+          <div class="card">
+            <div class="card-header">
+              <h3>Paid Today</h3>
+              <span class="badge badge-success">87 Bills</span>
+            </div>
+            <div class="table-wrap">
+              <table class="orders-table">
+                <thead>
+                  <tr>
+                    <th>Order ID</th>
+                    <th>Table</th>
+                    <th>Items</th>
+                    <th>Amount</th>
+                    <th>Payment</th>
+                    <th>Time</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="order-id">ORD-20260826-0038</span></td>
+                    <td><span class="table-tag">T2</span></td>
+                    <td><span class="item-text">Veg Biryani × 2, Paneer Tikka × 1, Lime Soda × 2</span></td>
+                    <td><span class="amount">₹680</span></td>
+                    <td><span class="badge badge-success">💵 Cash</span></td>
+                    <td><span class="time-text">12:15 PM</span></td>
+                    <td>
+                      <div class="action-btns">
+                        <button class="action-btn" title="View Receipt">📄</button>
+                        <button class="action-btn" title="Reprint">🖨</button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><span class="order-id">ORD-20260826-0039</span></td>
+                    <td><span class="table-tag">T5</span></td>
+                    <td><span class="item-text">Butter Chicken × 1, Butter Naan × 3, Dal Makhani × 1</span></td>
+                    <td><span class="amount">₹820</span></td>
+                    <td><span class="badge badge-info">📱 UPI</span></td>
+                    <td><span class="time-text">12:32 PM</span></td>
+                    <td>
+                      <div class="action-btns">
+                        <button class="action-btn" title="View Receipt">📄</button>
+                        <button class="action-btn" title="Reprint">🖨</button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><span class="order-id">ORD-20260826-0040</span></td>
+                    <td><span class="table-tag">T8</span></td>
+                    <td><span class="item-text">Chicken Biryani × 2, Gobi Manchurian × 1, Coke × 2</span></td>
+                    <td><span class="amount">₹760</span></td>
+                    <td><span class="badge badge-warning">💳 Card</span></td>
+                    <td><span class="time-text">12:45 PM</span></td>
+                    <td>
+                      <div class="action-btns">
+                        <button class="action-btn" title="View Receipt">📄</button>
+                        <button class="action-btn" title="Reprint">🖨</button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><span class="order-id">ORD-20260826-0047</span></td>
+                    <td><span class="table-tag">T22</span></td>
+                    <td><span class="item-text">Tandoori Platter × 1, Naan Basket × 1, Lassi × 2</span></td>
+                    <td><span class="amount">₹890</span></td>
+                    <td><span class="badge badge-success">💵 Cash</span></td>
+                    <td><span class="time-text">11:55 AM</span></td>
+                    <td>
+                      <div class="action-btns">
+                        <button class="action-btn" title="View Receipt">📄</button>
+                        <button class="action-btn" title="Reprint">🖨</button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab: Daily Summary -->
+        <div class="tab-panel" id="tab-summary">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.25rem;">
+            <div class="summary-metric">
+              <span class="summary-metric-label">Total Revenue</span>
+              <span class="summary-metric-value" style="color:var(--success);">₹42,680</span>
+            </div>
+            <div class="summary-metric">
+              <span class="summary-metric-label">GST Collected (5%)</span>
+              <span class="summary-metric-value">₹2,032</span>
+            </div>
+            <div class="summary-metric">
+              <span class="summary-metric-label">Service Charges</span>
+              <span class="summary-metric-value">₹1,280</span>
+            </div>
+            <div class="summary-metric">
+              <span class="summary-metric-label">Discounts Given</span>
+              <span class="summary-metric-value" style="color:var(--danger);">−₹840</span>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:2fr 1fr;gap:1rem;">
+            <!-- Revenue by Hour -->
+            <div class="card">
+              <div class="card-header">
+                <h3>Revenue by Hour</h3>
+                <span style="font-size:0.75rem;color:var(--text-muted);">26 Aug 2026</span>
+              </div>
+              <div class="card-body">
+                <div class="hour-bar-wrap">
+                  <div class="hour-bar-group">
+                    <div class="hour-bar" style="height:15%;background:var(--primary-light);" title="₹1,200"></div>
+                    <span class="hour-label">9AM</span>
+                  </div>
+                  <div class="hour-bar-group">
+                    <div class="hour-bar" style="height:35%;background:var(--primary-light);" title="₹3,400"></div>
+                    <span class="hour-label">10AM</span>
+                  </div>
+                  <div class="hour-bar-group">
+                    <div class="hour-bar" style="height:70%;background:var(--primary);opacity:0.7;" title="₹6,800"></div>
+                    <span class="hour-label">11AM</span>
+                  </div>
+                  <div class="hour-bar-group">
+                    <div class="hour-bar" style="height:100%;background:var(--primary);" title="₹12,400"></div>
+                    <span class="hour-label">12PM</span>
+                  </div>
+                  <div class="hour-bar-group">
+                    <div class="hour-bar" style="height:85%;background:var(--primary);opacity:0.85;" title="₹10,200"></div>
+                    <span class="hour-label">1PM</span>
+                  </div>
+                  <div class="hour-bar-group">
+                    <div class="hour-bar" style="height:40%;background:var(--primary-light);" title="₹4,600"></div>
+                    <span class="hour-label">2PM</span>
+                  </div>
+                  <div class="hour-bar-group">
+                    <div class="hour-bar" style="height:10%;background:var(--border);" title="₹1,080"></div>
+                    <span class="hour-label">3PM</span>
+                  </div>
+                  <div class="hour-bar-group">
+                    <div class="hour-bar" style="height:2px;background:var(--border);" title="₹0"></div>
+                    <span class="hour-label">4PM</span>
+                  </div>
+                  <div class="hour-bar-group">
+                    <div class="hour-bar" style="height:25%;background:var(--primary-light);" title="₹2,200"></div>
+                    <span class="hour-label">5PM</span>
+                  </div>
+                  <div class="hour-bar-group">
+                    <div class="hour-bar" style="height:55%;background:var(--primary);opacity:0.6;" title="₹6,000"></div>
+                    <span class="hour-label">6PM</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Top Payment Methods -->
+            <div class="card">
+              <div class="card-header">
+                <h3>Payment Methods</h3>
+              </div>
+              <div class="card-body" style="padding:0.5rem 1.25rem;">
+                <div class="pay-row">
+                  <div class="pay-icon" style="background:#E0E7FF;">📱</div>
+                  <div style="flex:1;">
+                    <div style="font-weight:600;font-size:0.875rem;">UPI</div>
+                    <div style="font-size:0.75rem;color:var(--text-muted);">42 transactions</div>
+                  </div>
+                  <div style="text-align:right;">
+                    <div style="font-weight:700;font-size:0.9375rem;">₹18,960</div>
+                    <div style="font-size:0.6875rem;color:var(--success);font-weight:600;">44%</div>
+                  </div>
+                </div>
+                <div class="pay-row">
+                  <div class="pay-icon" style="background:#D1FAE5;">💵</div>
+                  <div style="flex:1;">
+                    <div style="font-weight:600;font-size:0.875rem;">Cash</div>
+                    <div style="font-size:0.75rem;color:var(--text-muted);">31 transactions</div>
+                  </div>
+                  <div style="text-align:right;">
+                    <div style="font-weight:700;font-size:0.9375rem;">₹14,520</div>
+                    <div style="font-size:0.6875rem;color:var(--text-secondary);font-weight:600;">34%</div>
+                  </div>
+                </div>
+                <div class="pay-row">
+                  <div class="pay-icon" style="background:#FEF3C7;">💳</div>
+                  <div style="flex:1;">
+                    <div style="font-weight:600;font-size:0.875rem;">Card</div>
+                    <div style="font-size:0.75rem;color:var(--text-muted);">14 transactions</div>
+                  </div>
+                  <div style="text-align:right;">
+                    <div style="font-weight:700;font-size:0.9375rem;">₹9,200</div>
+                    <div style="font-size:0.6875rem;color:var(--text-secondary);font-weight:600;">22%</div>
+                  </div>
+                </div>
+              </div>
+              <div class="card-footer" style="display:flex;gap:0.5rem;">
+                <button class="btn btn-sm btn-outline" style="flex:1;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Export CSV
+                </button>
+                <button class="btn btn-sm btn-outline" style="flex:1;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  Save PDF
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- GST Collection -->
+          <div class="card" style="margin-top:1rem;">
+            <div class="card-header">
+              <h3>GST Collection Summary</h3>
+            </div>
+            <div class="card-body">
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;">
+                <div>
+                  <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.25rem;">Subtotal (before GST)</div>
+                  <div style="font-size:1.25rem;font-weight:700;">₹39,368</div>
+                </div>
+                <div>
+                  <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.25rem;">CGST (2.5%)</div>
+                  <div style="font-size:1.25rem;font-weight:700;">₹984</div>
+                </div>
+                <div>
+                  <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.25rem;">SGST (2.5%)</div>
+                  <div style="font-size:1.25rem;font-weight:700;">₹1,048</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bill Generation Modal -->
+  <div class="modal-overlay" id="billModal" style="display:none;" onclick="closeBillModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3 style="font-size:1rem;">Generate Bill</h3>
+        <button class="btn btn-ghost btn-sm" onclick="closeBillModal()" style="font-size:1.25rem;line-height:1;padding:0.25rem;">✕</button>
+      </div>
+      <div class="modal-body">
+        <!-- Order Info -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
+          <div>
+            <span class="order-id" id="modalOrderId" style="font-size:0.875rem;">ORD-20260826-0045</span>
+          </div>
+          <span class="table-tag" id="modalTable">T18</span>
+        </div>
+        <div style="font-size:0.8125rem;color:var(--text-muted);margin-bottom:0.75rem;">Palak Paneer × 1, Butter Naan × 2, Mango Lassi × 2</div>
+
+        <div class="modal-divider"></div>
+
+        <!-- Items -->
+        <div style="margin-bottom:0.25rem;">
+          <div class="modal-item-row">
+            <div class="modal-item-name">
+              <span class="veg-indicator"></span>
+              <span>Palak Paneer</span>
+              <span class="modal-item-qty">× 1</span>
+            </div>
+            <span style="font-weight:600;">₹220</span>
+          </div>
+          <div class="modal-item-row">
+            <div class="modal-item-name">
+              <span class="veg-indicator"></span>
+              <span>Butter Naan</span>
+              <span class="modal-item-qty">× 2</span>
+            </div>
+            <span style="font-weight:600;">₹120</span>
+          </div>
+          <div class="modal-item-row">
+            <div class="modal-item-name">
+              <span class="veg-indicator"></span>
+              <span>Mango Lassi</span>
+              <span class="modal-item-qty">× 2</span>
+            </div>
+            <span style="font-weight:600;">₹150</span>
+          </div>
+        </div>
+
+        <div class="modal-divider"></div>
+
+        <!-- GST Breakdown -->
+        <div class="modal-row">
+          <span style="color:var(--text-secondary);">Subtotal</span>
+          <span id="modalSubtotal">₹490</span>
+        </div>
+        <div class="modal-row">
+          <span style="color:var(--text-secondary);">CGST (2.5%)</span>
+          <span id="modalCgst">₹12.25</span>
+        </div>
+        <div class="modal-row">
+          <span style="color:var(--text-secondary);">SGST (2.5%)</span>
+          <span id="modalSgst">₹12.25</span>
+        </div>
+
+        <!-- Service Charge -->
+        <div class="modal-row" style="align-items:center;">
+          <span style="color:var(--text-secondary);display:flex;align-items:center;gap:0.5rem;">
+            Service Charge (10%)
+            <button class="toggle active" id="serviceChargeToggle" onclick="toggleServiceCharge()"></button>
+          </span>
+          <span id="modalServiceCharge">₹49.00</span>
+        </div>
+
+        <!-- Discount -->
+        <div class="modal-row" style="align-items:center;">
+          <span style="color:var(--text-secondary);">Discount</span>
+          <div style="display:flex;align-items:center;gap:0.375rem;">
+            <span style="color:var(--danger);font-weight:600;" id="modalDiscount">−₹0</span>
+            <input type="number" class="form-input" id="discountInput" placeholder="0" style="width:70px;padding:0.25rem 0.5rem;font-size:0.8125rem;text-align:right;" value="0" oninput="updateModalTotal()">
+          </div>
+        </div>
+
+        <div class="modal-divider"></div>
+
+        <!-- Total -->
+        <div class="modal-row total">
+          <span>Total</span>
+          <span id="modalTotal">₹563.50</span>
+        </div>
+
+        <div class="modal-divider"></div>
+
+        <!-- Payment Method -->
+        <div style="margin-bottom:0;">
+          <div style="font-size:0.8125rem;font-weight:600;color:var(--text-secondary);margin-bottom:0.625rem;">Payment Method</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;">
+            <label class="payment-option selected" id="payCash">
+              <input type="radio" name="payment" value="cash" checked onchange="selectPayment(this)">
+              <div>
+                <div style="font-weight:600;font-size:0.8125rem;">💵 Cash</div>
+              </div>
+            </label>
+            <label class="payment-option" id="payUpi">
+              <input type="radio" name="payment" value="upi" onchange="selectPayment(this)">
+              <div>
+                <div style="font-weight:600;font-size:0.8125rem;">📱 UPI</div>
+              </div>
+            </label>
+            <label class="payment-option" id="payCard">
+              <input type="radio" name="payment" value="card" onchange="selectPayment(this)">
+              <div>
+                <div style="font-weight:600;font-size:0.8125rem;">💳 Card</div>
+              </div>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer: Share/Print + Actions -->
+      <div class="modal-footer" style="flex-direction:column;gap:0.75rem;">
+        <div style="display:flex;gap:0.5rem;">
+          <button class="share-btn" onclick="closeBillModal()">
+            <span class="share-icon">🖨</span>
+            Print Bill
+          </button>
+          <button class="share-btn">
+            <span class="share-icon">📄</span>
+            Save PDF
+          </button>
+          <button class="share-btn">
+            <span class="share-icon">💬</span>
+            WhatsApp
+          </button>
+        </div>
+        <div style="display:flex;gap:0.5rem;width:100%;">
+          <button class="btn btn-outline" style="flex:1;" onclick="closeBillModal()">Cancel</button>
+          <button class="btn btn-success" style="flex:2;" onclick="closeBillModal()">Mark as Paid</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Tab switching
+    function switchTab(tab) {
+      document.querySelectorAll('#mainTabs .tab-btn').forEach(function(btn) { btn.classList.remove('active'); });
+      document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
+
+      var names = ['all','pending','paid','summary'];
+      var idx = names.indexOf(tab);
+      if (idx >= 0) {
+        document.querySelectorAll('#mainTabs .tab-btn')[idx].classList.add('active');
+        document.getElementById('tab-' + tab).classList.add('active');
+      }
+    }
+
+    // Bill modal
+    function openBillModal(orderId, table, amount) {
+      document.getElementById('billModal').style.display = 'flex';
+      document.getElementById('modalOrderId').textContent = orderId;
+      document.getElementById('modalTable').textContent = table;
+    }
+
+    function closeBillModal(e) {
+      if (!e || e.target === document.getElementById('billModal')) {
+        document.getElementById('billModal').style.display = 'none';
+      }
+    }
+
+    // Service charge toggle
+    function toggleServiceCharge() {
+      document.getElementById('serviceChargeToggle').classList.toggle('active');
+      updateModalTotal();
+    }
+
+    // Payment method selection
+    function selectPayment(radio) {
+      document.querySelectorAll('.payment-option').forEach(function(o) { o.classList.remove('selected'); });
+      radio.closest('.payment-option').classList.add('selected');
+    }
+
+    // Recalculate modal total
+    function updateModalTotal() {
+      var subtotal = 490;
+      var cgst = subtotal * 0.025;
+      var sgst = subtotal * 0.025;
+      var hasService = document.getElementById('serviceChargeToggle').classList.contains('active');
+      var serviceCharge = hasService ? subtotal * 0.10 : 0;
+      var discount = parseFloat(document.getElementById('discountInput').value) || 0;
+      var total = subtotal + cgst + sgst + serviceCharge - discount;
+
+      document.getElementById('modalCgst').textContent = '₹' + cgst.toFixed(2);
+      document.getElementById('modalSgst').textContent = '₹' + sgst.toFixed(2);
+      document.getElementById('modalServiceCharge').textContent = '₹' + serviceCharge.toFixed(2);
+      document.getElementById('modalDiscount').textContent = '−₹' + discount.toFixed(2);
+      document.getElementById('modalTotal').textContent = '₹' + total.toFixed(2);
+    }
+  </script>
+</body>
+</html>
