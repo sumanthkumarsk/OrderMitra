@@ -10,30 +10,31 @@
   <style>
     body { background: var(--bg); min-height: 100vh; }
     .waiter-header {
-      background: var(--secondary); color: white;
+      background: var(--bg-white); color: var(--text);
       padding: 1rem 1.25rem; position: sticky; top: 0; z-index: 50;
+      border-bottom: 1px solid var(--border-light);
     }
     .waiter-header-top {
       display: flex; align-items: center; justify-content: space-between;
       margin-bottom: 0.5rem;
     }
     .waiter-profile { display: flex; align-items: center; gap: 0.625rem; }
-    .waiter-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700; }
+    .waiter-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; }
     .waiter-name { font-weight: 700; font-size: 1rem; }
-    .waiter-zone { font-size: 0.75rem; color: rgba(255,255,255,0.6); }
+    .waiter-zone { font-size: 0.75rem; color: var(--text-secondary); }
     .waiter-on-duty {
       display: flex; align-items: center; gap: 0.5rem;
       padding: 0.375rem 0.75rem; border-radius: var(--radius-full);
-      background: rgba(45,147,108,0.2); border: 1px solid rgba(45,147,108,0.3);
-      font-size: 0.75rem; font-weight: 600; cursor: pointer;
+      background: rgba(45,147,108,0.1); border: 1px solid rgba(45,147,108,0.3);
+      color: #167D41; font-size: 0.75rem; font-weight: 600; cursor: pointer;
     }
     .waiter-on-duty .dot { width: 8px; height: 8px; border-radius: 50%; background: #22C55E; }
     .waiter-stats {
-      display: flex; gap: 1.5rem;
+      display: flex; gap: 0.75rem;
     }
     .waiter-stat { text-align: center; }
     .waiter-stat-val { font-weight: 700; font-size: 1.125rem; }
-    .waiter-stat-label { font-size: 0.625rem; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.05em; }
+    .waiter-stat-label { font-size: 0.625rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
 
     .waiter-body { padding: 1rem; max-width: 600px; margin: 0 auto; }
 
@@ -51,7 +52,7 @@
 
     /* Request Cards */
     .request-card {
-      background: white; border-radius: var(--radius);
+      background: white; border-radius: var(--radius-sm);
       border: 2px solid var(--border-light); overflow: hidden;
       margin-bottom: 0.75rem; transition: all 0.3s ease;
     }
@@ -108,7 +109,7 @@
     /* Escalated alert */
     .escalation-alert {
       background: var(--danger-light); border: 1px solid var(--danger);
-      border-radius: var(--radius); padding: 0.75rem 1rem;
+      border-radius: var(--radius-sm); padding: 0.75rem 1rem;
       display: flex; align-items: center; gap: 0.625rem;
       margin-bottom: 1rem;
     }
@@ -117,7 +118,7 @@
 
     /* Fulfilled section */
     .fulfilled-card {
-      background: white; border-radius: var(--radius);
+      background: white; border-radius: var(--radius-sm);
       border: 1px solid var(--border-light); padding: 0.625rem 1rem;
       margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.75rem;
       opacity: 0.6;
