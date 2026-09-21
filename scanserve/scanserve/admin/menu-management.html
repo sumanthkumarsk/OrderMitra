@@ -10,9 +10,9 @@
   <style>
     .category-filters { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
     .menu-table-img {
-      width: 48px; height: 48px; border-radius: var(--radius-sm);
+      width: 36px; height: 36px; border-radius: var(--radius-sm);
       background: var(--border-light); display: flex; align-items: center;
-      justify-content: center; font-size: 1.5rem; flex-shrink: 0;
+      justify-content: center; font-size: 1rem; flex-shrink: 0;
     }
     .menu-table-name { font-weight: 600; font-size: 0.875rem; }
     .menu-table-desc { font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.125rem; }
@@ -31,7 +31,7 @@
     }
     .bulk-bar {
       background: var(--secondary); color: white; padding: 0.75rem 1.5rem;
-      border-radius: var(--radius); display: none; align-items: center;
+      border-radius: var(--radius-sm); display: none; align-items: center;
       justify-content: space-between; margin-bottom: 1rem; animation: slideUp 0.2s ease;
     }
     .bulk-bar.visible { display: flex; }
@@ -58,21 +58,21 @@
     }
     .item-count { font-size: 0.8125rem; color: var(--text-secondary); }
     .summary-bar {
-      display: flex; gap: 1.5rem; margin-bottom: 1.25rem; padding: 0.875rem 1rem;
-      background: white; border-radius: var(--radius); border: 1px solid var(--border-light);
+      display: flex; gap: 0.75rem; margin-bottom: 1.25rem; padding: 0.875rem 1rem;
+      background: white; border-radius: var(--radius-sm); border: 1px solid var(--border-light);
     }
     .summary-stat { display: flex; flex-direction: column; }
     .summary-stat .label { font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); font-weight: 600; }
-    .summary-stat .value { font-size: 1.125rem; font-weight: 700; font-family: var(--font-display); }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    .form-radio-group { display: flex; gap: 1rem; margin-top: 0.25rem; }
+    .summary-stat .value { font-size: 1rem; font-weight: 700; font-family: var(--font-display); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .form-radio-group { display: flex; gap: 0.75rem; margin-top: 0.25rem; }
     .form-radio-group label {
       display: flex; align-items: center; gap: 0.375rem; font-size: 0.875rem;
       cursor: pointer; font-weight: 500;
     }
     .form-radio-group input[type="radio"] { accent-color: var(--primary); width: 16px; height: 16px; }
     @media (max-width: 768px) {
-      .summary-bar { flex-wrap: wrap; gap: 1rem; }
+      .summary-bar { flex-wrap: wrap; gap: 0.75rem; }
       .form-row { grid-template-columns: 1fr; }
       .topbar-search input { width: 160px; }
       .topbar-search input:focus { width: 200px; }
@@ -466,6 +466,21 @@
           <div class="form-group">
             <label class="form-label">Prep Time (min)</label>
             <input type="number" class="form-input" placeholder="e.g. 15">
+          </div>
+        </div>
+        <div class="form-row" style="margin-bottom:1rem;">
+          <div class="form-group" style="grid-column: span 2;">
+            <label class="form-label">Promotions & Visibility</label>
+            <div style="display:flex;gap:1.5rem;margin-top:0.25rem;">
+              <label style="display:flex;align-items:center;gap:0.375rem;font-size:0.875rem;cursor:pointer;font-weight:500;">
+                <input type="checkbox" style="width:16px;height:16px;accent-color:var(--primary);">
+                Mark as Today's Offer
+              </label>
+              <label style="display:flex;align-items:center;gap:0.375rem;font-size:0.875rem;cursor:pointer;font-weight:500;">
+                <input type="checkbox" style="width:16px;height:16px;accent-color:var(--primary);">
+                Mark as Special Item
+              </label>
+            </div>
           </div>
         </div>
         <div class="form-group">
