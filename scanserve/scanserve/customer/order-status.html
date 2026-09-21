@@ -3,261 +3,299 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Order Status — Annapurna Kitchen</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <title>Order Status — OrderMitra</title>
   <link rel="stylesheet" href="../css/shared.css">
   <style>
-    body { background: var(--bg); min-height: 100vh; display: flex; flex-direction: column; }
+    body { background: var(--bg); display: flex; flex-direction: column; min-height: 100vh; }
+    
     .status-header {
-      background: white; border-bottom: 1px solid var(--border-light);
-      padding: 1rem 1.25rem; display: flex; align-items: center; gap: 0.75rem;
-      position: sticky; top: 0; z-index: 50;
+      background: var(--bg-white); border-bottom: 1px solid var(--border-light);
+      padding: 0.75rem 1rem; display: flex; align-items: center; gap: 0.75rem;
+      position: sticky; top: 0; z-index: 50; box-shadow: var(--shadow-sm);
     }
-    .status-back { width: 36px; height: 36px; border: none; background: var(--bg); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.125rem; }
-    .status-title { font-weight: 700; font-size: 1.125rem; }
-    .status-body { flex: 1; padding: 1rem; max-width: 600px; margin: 0 auto; width: 100%; }
+    .status-back { 
+      width: 32px; height: 32px; border: none; background: var(--bg); border-radius: 50%; 
+      cursor: pointer; display: flex; align-items: center; justify-content: center; 
+      font-size: 1.125rem; transition: background var(--transition);
+    }
+    .status-back:hover { background: var(--border-light); }
+    .status-title { font-weight: 800; font-size: 1.125rem; font-family: var(--font-display); }
 
-    /* Order ID hero */
+    .main-container {
+      flex: 1; padding: 1rem 1rem; max-width: 700px; margin: 0 auto; width: 100%;
+    }
+
+    /* Order Hero */
     .order-hero {
-      text-align: center; padding: 2rem 1rem;
-      background: linear-gradient(135deg, var(--secondary), #264673);
-      border-radius: var(--radius-lg); color: white;
-      margin-bottom: 1.5rem;
+      text-align: center; padding: 1.5rem 1rem;
+      background: linear-gradient(135deg, var(--secondary), var(--secondary-light));
+      border-radius: var(--radius); color: white;
+      margin-bottom: 1.5rem; box-shadow: var(--shadow-sm); position: relative; overflow: hidden;
     }
-    .order-hero-label { font-size: 0.8125rem; color: rgba(255,255,255,0.7); margin-bottom: 0.25rem; }
-    .order-hero-id { font-family: var(--font-display); font-size: 1.75rem; font-weight: 800; letter-spacing: 0.02em; }
-    .order-hero-table { font-size: 0.875rem; color: rgba(255,255,255,0.6); margin-top: 0.5rem; }
-    .order-hero-time { font-size: 0.75rem; color: rgba(255,255,255,0.5); margin-top: 0.25rem; }
+    .order-hero::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background: url('data:image/svg+xml;utf8,<svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="2" fill="rgba(255,255,255,0.05)"/></svg>');
+    }
+    .order-hero-inner { position: relative; z-index: 10; }
+    .order-hero-label { font-size: 0.875rem; color: rgba(255,255,255,0.7); margin-bottom: 0.25rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+    .order-hero-id { font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; letter-spacing: 0.02em; margin-bottom: 0.25rem; text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+    .order-hero-table { font-size: 0.875rem; font-weight: 500; color: rgba(255,255,255,0.9); margin-bottom: 0.125rem; }
+    .order-hero-time { font-size: 0.75rem; color: rgba(255,255,255,0.6); }
 
-    /* Status step indicator */
-    .status-steps {
-      display: flex; justify-content: space-between;
-      padding: 1.5rem 0.5rem;
-      margin-bottom: 1rem;
+    /* Timeline Indicator */
+    .status-timeline {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      margin-bottom: 1.5rem; padding: 0 0.5rem; position: relative;
     }
-    .status-step {
+    .timeline-step {
       display: flex; flex-direction: column; align-items: center;
-      gap: 0.5rem; position: relative; flex: 1;
+      gap: 0.5rem; position: relative; flex: 1; z-index: 2;
     }
-    .status-step:not(:last-child)::after {
-      content: '';
-      position: absolute;
-      top: 16px;
-      left: 50%;
-      width: 100%;
-      height: 2px;
-      background: var(--border);
+    .timeline-step::after {
+      content: ''; position: absolute; top: 16px; left: 50%;
+      width: 100%; height: 2px; background: var(--border); z-index: -1;
     }
-    .status-step.completed:not(:last-child)::after { background: var(--success); }
-    .status-step.active:not(:last-child)::after {
-      background: linear-gradient(90deg, var(--success), var(--border));
+    .timeline-step:last-child::after { display: none; }
+    
+    .timeline-step.completed::after { background: var(--success); }
+    .timeline-step.active::after {
+      background: linear-gradient(90deg, var(--success) 50%, var(--border) 50%);
+      background-size: 200% 100%; animation: loadProgress 2s infinite linear;
     }
-    .step-dot {
+    @keyframes loadProgress {
+      0% { background-position: 100% 0; }
+      100% { background-position: -100% 0; }
+    }
+
+    .step-icon-wrap {
       width: 32px; height: 32px; border-radius: 50%;
-      background: var(--bg); border: 2px solid var(--border);
+      background: var(--bg-white); border: 2px solid var(--border);
       display: flex; align-items: center; justify-content: center;
-      font-size: 0.75rem; z-index: 1;
-      transition: all 0.3s ease;
+      font-size: 0.875rem; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
-    .status-step.completed .step-dot {
+    .timeline-step.completed .step-icon-wrap {
       background: var(--success); border-color: var(--success); color: white;
     }
-    .status-step.active .step-dot {
+    .timeline-step.active .step-icon-wrap {
       background: var(--primary); border-color: var(--primary); color: white;
-      box-shadow: 0 0 0 6px var(--primary-light);
-      animation: pulse 2s infinite;
+      box-shadow: 0 0 0 6px var(--primary-light); transform: scale(1.1);
+      animation: pulse-soft 2s infinite;
     }
-    .step-label { font-size: 0.625rem; font-weight: 600; color: var(--text-muted); text-align: center; }
-    .status-step.completed .step-label,
-    .status-step.active .step-label { color: var(--text); }
-
-    /* Order items */
-    .order-items-card {
-      background: white; border-radius: var(--radius);
-      border: 1px solid var(--border-light); overflow: hidden;
-      margin-bottom: 1rem;
+    @keyframes pulse-soft {
+      0% { box-shadow: 0 0 0 0 rgba(226, 74, 41, 0.4); }
+      70% { box-shadow: 0 0 0 10px rgba(226, 74, 41, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(226, 74, 41, 0); }
     }
-    .order-items-header {
-      padding: 0.75rem 1rem; background: var(--bg);
-      font-weight: 600; font-size: 0.875rem;
-      border-bottom: 1px solid var(--border-light);
-      display: flex; justify-content: space-between;
-    }
-    .order-item {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 0.75rem 1rem;
-      border-bottom: 1px solid var(--border-light);
-    }
-    .order-item:last-child { border-bottom: none; }
-    .order-item-left { display: flex; align-items: center; gap: 0.75rem; }
-    .order-item-status-dot {
-      width: 8px; height: 8px; border-radius: 50%;
-    }
-    .order-item-status-dot.preparing { background: var(--warning); }
-    .order-item-status-dot.ready { background: var(--success); }
-    .order-item-status-dot.placed { background: var(--info); }
-    .order-item-name { font-weight: 500; font-size: 0.9375rem; }
-    .order-item-qty { font-size: 0.75rem; color: var(--text-secondary); }
-    .order-item-status {
-      font-size: 0.6875rem; font-weight: 600; padding: 0.2rem 0.5rem;
-      border-radius: var(--radius-full);
-    }
-    .order-item-status.preparing { background: var(--warning-light); color: #856404; }
-    .order-item-status.ready { background: var(--success-light); color: #064E3B; }
+    
+    .step-label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-align: center; }
+    .timeline-step.completed .step-label { color: var(--success); }
+    .timeline-step.active .step-label { color: var(--primary); font-weight: 700; }
 
     /* ETA banner */
-    .eta-banner {
-      background: var(--success-light); border: 1px solid var(--success);
-      border-radius: var(--radius); padding: 0.875rem 1rem;
+    .eta-card {
+      background: var(--success-light); border: 1px solid #1DA054;
+      border-radius: var(--radius-sm); padding: 1rem;
       display: flex; align-items: center; gap: 0.75rem;
-      margin-bottom: 1rem;
+      margin-bottom: 1.5rem; box-shadow: var(--shadow-sm);
     }
-    .eta-icon { font-size: 1.5rem; }
-    .eta-text { font-weight: 600; font-size: 0.9375rem; color: #064E3B; }
-    .eta-sub { font-size: 0.75rem; color: var(--text-secondary); }
+    .eta-icon { font-size: 1.5rem; background: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-sm); }
+    .eta-content { flex: 1; }
+    .eta-title { font-weight: 800; font-size: 1rem; color: #126C38; font-family: var(--font-display); margin-bottom: 0.125rem; }
+    .eta-desc { font-size: 0.75rem; color: #126C38; }
 
-    /* Actions */
-    .status-actions {
-      display: flex; gap: 0.75rem; margin-top: 1rem;
+    /* Order Items */
+    .section-title { font-family: var(--font-display); font-weight: 800; font-size: 1rem; margin-bottom: 0.75rem; }
+    .order-items-card {
+      background: var(--bg-white); border-radius: var(--radius-sm);
+      border: 1px solid var(--border); box-shadow: var(--shadow-sm);
+      margin-bottom: 1.5rem; overflow: hidden;
     }
-    .status-action-btn {
-      flex: 1; padding: 0.75rem;
-      border-radius: var(--radius); border: 1.5px solid var(--border);
-      background: white; text-align: center; cursor: pointer;
-      transition: all var(--transition);
+    
+    .order-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-light);
     }
-    .status-action-btn:hover { border-color: var(--primary); }
-    .status-action-btn .icon { font-size: 1.25rem; margin-bottom: 0.25rem; }
-    .status-action-btn .label { font-size: 0.8125rem; font-weight: 600; color: var(--text); }
-    .status-action-btn .sub { font-size: 0.6875rem; color: var(--text-muted); }
+    .order-item:last-child { border-bottom: none; }
+    .order-item-left { display: flex; align-items: flex-start; gap: 0.75rem; }
+    
+    .order-item-status-icon {
+      width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; flex-shrink: 0;
+    }
+    .order-item-status-icon.preparing { background: var(--warning-light); color: var(--warning); }
+    .order-item-status-icon.ready { background: var(--success-light); color: var(--success); }
+    .order-item-status-icon.placed { background: var(--info-light); color: var(--info); }
+    
+    .order-item-details { display: flex; flex-direction: column; gap: 0.125rem; }
+    .order-item-name { font-weight: 700; font-size: 0.875rem; color: var(--text); }
+    .order-item-qty { font-size: 0.75rem; color: var(--text-secondary); }
+    .order-item-note { font-size: 0.6875rem; color: var(--text-muted); font-style: italic; }
+    
+    .badge-status { font-family: var(--font-display); font-weight: 700; font-size: 0.625rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 0.25rem 0.5rem; border-radius: var(--radius-full); }
+    .badge-status.preparing { background: var(--warning-light); color: #92400E; }
+    .badge-status.ready { background: var(--success-light); color: #065F46; }
+
+    /* Actions Grid */
+    .actions-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem;
+    }
+    .action-card {
+      background: var(--bg-white); border-radius: var(--radius-sm);
+      border: 1px solid var(--border); padding: 1rem;
+      display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.375rem;
+      cursor: pointer; transition: all var(--transition); box-shadow: var(--shadow-sm);
+    }
+    .action-card:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: var(--shadow); }
+    .action-icon { font-size: 1.25rem; }
+    .action-label { font-weight: 700; font-size: 0.875rem; color: var(--text); font-family: var(--font-display); }
+    .action-desc { font-size: 0.6875rem; color: var(--text-secondary); }
+    
+    .action-card.full-width { grid-column: 1 / -1; background: var(--primary-light); border-color: transparent; }
+    .action-card.full-width:hover { background: #FDE8E4; border-color: var(--primary-light); }
+    .action-card.full-width .action-label { color: var(--primary-dark); }
   </style>
 </head>
 <body>
 
   <div class="status-header">
-    <button class="status-back" onclick="history.back()">←</button>
-    <div class="status-title">Order Status</div>
+    <button class="status-back" onclick="window.location.href='menu.html?session=active'">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+    </button>
+    <div class="status-title">Track Order</div>
   </div>
 
-  <div class="status-body">
+  <div class="main-container">
+    
     <!-- Order Hero -->
     <div class="order-hero">
-      <div class="order-hero-label">Your Order ID</div>
-      <div class="order-hero-id">ORD-20260826-0042</div>
-      <div class="order-hero-table">Table 12 · Annapurna Kitchen</div>
-      <div class="order-hero-time">Placed at 7:45 PM</div>
+      <div class="order-hero-inner">
+        <div class="order-hero-label">Order ID</div>
+        <div class="order-hero-id">ORD-826-0042</div>
+        <div class="order-hero-table">Table 12 · Annapurna Kitchen</div>
+        <div class="order-hero-time">Placed at 7:45 PM</div>
+      </div>
     </div>
 
-    <!-- Step Indicator -->
-    <div class="status-steps">
-      <div class="status-step completed">
-        <div class="step-dot">✓</div>
+    <!-- Timeline Indicator -->
+    <div class="status-timeline">
+      <div class="timeline-step completed">
+        <div class="step-icon-wrap">✓</div>
         <div class="step-label">Placed</div>
       </div>
-      <div class="status-step completed">
-        <div class="step-dot">✓</div>
+      <div class="timeline-step completed">
+        <div class="step-icon-wrap">✓</div>
         <div class="step-label">Accepted</div>
       </div>
-      <div class="status-step active">
-        <div class="step-dot">👨‍🍳</div>
+      <div class="timeline-step active">
+        <div class="step-icon-wrap">👨‍🍳</div>
         <div class="step-label">Preparing</div>
       </div>
-      <div class="status-step">
-        <div class="step-dot">✓</div>
+      <div class="timeline-step">
+        <div class="step-icon-wrap">🔔</div>
         <div class="step-label">Ready</div>
       </div>
-      <div class="status-step">
-        <div class="step-dot">🍽️</div>
+      <div class="timeline-step">
+        <div class="step-icon-wrap">🍽️</div>
         <div class="step-label">Served</div>
       </div>
     </div>
 
     <!-- ETA -->
-    <div class="eta-banner">
+    <div class="eta-card">
       <div class="eta-icon">⏱️</div>
-      <div>
-        <div class="eta-text">Estimated ~12 minutes</div>
-        <div class="eta-sub">Your order is being prepared by the kitchen</div>
+      <div class="eta-content">
+        <div class="eta-title">Estimated ~12 minutes</div>
+        <div class="eta-desc">Your order is being prepared by the chef</div>
       </div>
     </div>
 
     <!-- Order Items -->
+    <div class="section-title">Order Items (5)</div>
     <div class="order-items-card">
-      <div class="order-items-header">
-        <span>Items (5)</span>
-        <span>₹1,176</span>
-      </div>
+      
       <div class="order-item">
         <div class="order-item-left">
-          <div class="order-item-status-dot preparing"></div>
-          <div>
+          <div class="order-item-status-icon preparing">⌛</div>
+          <div class="order-item-details">
             <div class="order-item-name">Chicken 65</div>
-            <div class="order-item-qty">× 2</div>
+            <div class="order-item-qty">Quantity: 2</div>
           </div>
         </div>
-        <span class="order-item-status preparing">Preparing</span>
+        <span class="badge-status preparing" id="status-1">Preparing</span>
       </div>
+      
       <div class="order-item">
         <div class="order-item-left">
-          <div class="order-item-status-dot preparing"></div>
-          <div>
+          <div class="order-item-status-icon preparing">⌛</div>
+          <div class="order-item-details">
             <div class="order-item-name">Butter Naan</div>
-            <div class="order-item-qty">× 4</div>
+            <div class="order-item-qty">Quantity: 4</div>
           </div>
         </div>
-        <span class="order-item-status preparing">Preparing</span>
+        <span class="badge-status preparing" id="status-2">Preparing</span>
       </div>
+      
       <div class="order-item">
         <div class="order-item-left">
-          <div class="order-item-status-dot placed"></div>
-          <div>
+          <div class="order-item-status-icon placed">🕒</div>
+          <div class="order-item-details">
             <div class="order-item-name">Chicken Biryani</div>
-            <div class="order-item-qty">× 1 · No onions, extra raita</div>
+            <div class="order-item-qty">Quantity: 1</div>
+            <div class="order-item-note">Note: No onions, extra raita</div>
           </div>
         </div>
-        <span class="order-item-status preparing">Preparing</span>
+        <span class="badge-status preparing">Preparing</span>
       </div>
+      
       <div class="order-item">
         <div class="order-item-left">
-          <div class="order-item-status-dot ready"></div>
-          <div>
+          <div class="order-item-status-icon ready">✓</div>
+          <div class="order-item-details">
             <div class="order-item-name">Lime Soda</div>
-            <div class="order-item-qty">× 2</div>
+            <div class="order-item-qty">Quantity: 2</div>
           </div>
         </div>
-        <span class="order-item-status ready">Ready</span>
+        <span class="badge-status ready">Ready</span>
       </div>
+      
     </div>
 
     <!-- Quick Actions -->
-    <div class="status-actions">
-      <div class="status-action-btn" onclick="window.location.href='service-requests.html'">
-        <div class="icon">💧</div>
-        <div class="label">Need Something?</div>
-        <div class="sub">Water, tissue, etc.</div>
+    <div class="section-title" style="margin-top: 2rem;">Quick Actions</div>
+    <div class="actions-grid">
+      <div class="action-card full-width" onclick="window.location.href='menu.html?session=active'">
+        <div class="action-icon">➕</div>
+        <div class="action-label">Add More Items</div>
+        <div class="action-desc">Order more food without leaving your table</div>
       </div>
-      <div class="status-action-btn" onclick="window.location.href='menu.html?session=active'">
-        <div class="icon">➕</div>
-        <div class="label">Add More Items</div>
-        <div class="sub">Continue ordering</div>
+      <div class="action-card" onclick="window.location.href='service-requests.html'">
+        <div class="action-icon">🛎️</div>
+        <div class="action-label">Service Request</div>
+        <div class="action-desc">Need water, tissues, or the waiter?</div>
       </div>
-      <div class="status-action-btn" onclick="window.location.href='bill.html'">
-        <div class="icon">📄</div>
-        <div class="label">Request Bill</div>
-        <div class="sub">View & pay</div>
+      <div class="action-card" onclick="window.location.href='bill.html'">
+        <div class="action-icon">🧾</div>
+        <div class="action-label">Request Bill</div>
+        <div class="action-desc">Ready to leave? View bill and pay.</div>
       </div>
     </div>
+
   </div>
 
   <script>
-    // Simulate status updates
+    // Simulate status updates for demo purposes
     setTimeout(() => {
-      const dots = document.querySelectorAll('.order-item-status-dot.preparing');
-      const statuses = document.querySelectorAll('.order-item-status.preparing');
-      if (dots[0]) { dots[0].className = 'order-item-status-dot ready'; }
-      if (statuses[0]) { statuses[0].className = 'order-item-status ready'; statuses[0].textContent = 'Ready'; }
-    }, 5000);
+      const icons = document.querySelectorAll('.order-item-status-icon.preparing');
+      const badges = document.querySelectorAll('.badge-status.preparing');
+      
+      if (icons[0]) { 
+        icons[0].className = 'order-item-status-icon ready'; 
+        icons[0].textContent = '✓';
+      }
+      if (badges[0]) { 
+        badges[0].className = 'badge-status ready'; 
+        badges[0].textContent = 'Ready'; 
+      }
+    }, 4500);
   </script>
 </body>
 </html>
