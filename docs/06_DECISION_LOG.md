@@ -111,7 +111,17 @@ Add an entry whenever any of the following happens — by a human or an AI agent
 - **Affects:** `01_PRD.md` §7, `10_COMPLIANCE.md` (new), `12_DATABASE_SCHEMA.md` (ConsentRecord table), `SKILL.md` (new principle #8).
 - **Status:** Active.
 
+### [2026-08-29] PRD upgraded to v2.0 (ScanServe / OrderMitra platform specifications)
+- **Made by:** Founding team & AI Assistant.
+- **Context:** Upgrading OrderMitra PRD from v1.1 foundation to comprehensive v2.0 platform specification.
+- **Options considered:** (1) Keep simple v1.1 PRD. (2) Upgrade PRD to v2.0 with expanded platform capabilities, 3 subscription tiers, intelligent table sessions, smart waiter routing, restaurant-controlled AI, POS integration modes, and 10-minute AI onboarding.
+- **Decision:** Option 2. Updated `01_PRD.md` to PRD v2.0 specifications.
+- **Reasoning:** Establishes clear, production-grade specifications for floor automation, Indic language experience, AI discovery, billing engine, KDS, waiter zones, and POS coexistence without replacing venue software.
+- **Affects:** `01_PRD.md` (overwritten with v2.0 specifications).
+- **Status:** Active.
+
 <!--
 Add new entries above this line, most recent at the bottom of the "Log entries" section,
 using the template above. Do not edit or delete entries above.
 -->
+
