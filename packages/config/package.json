@@ -1,0 +1,10 @@
+{
+  "name": "@ordermitra/config",
+  "version": "0.1.0",
+  "private": true,
+  "main": "index.js",
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "eslint": "^9.0.0"
+  }
+}

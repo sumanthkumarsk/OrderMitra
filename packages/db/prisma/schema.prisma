@@ -1,0 +1,305 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// IDENTITY MODULE
+// ============================================================
+
+model Restaurant {
+  id              String           @id @default(cuid())
+  name            String
+  slug            String           @unique  // URL-friendly identifier for QR links
+  phone           String           @unique  // owner's phone, used for auth
+  email           String?
+  address         String?
+  city            String?
+  state           String?
+  pincode         String?
+  gstin           String?          // GST registration number, optional for small restaurants
+  gstRate         Decimal?         @default(0) @db.Decimal(5, 2) // e.g., 5.00 for 5% GST
+  logoUrl         String?
+  currency        String           @default("INR")
+  timezone        String           @default("Asia/Kolkata")
+  isActive        Boolean          @default(true)
+  onboardingStep  Int              @default(0) // tracks guided setup progress
+
+  // Subscription
+  plan            PlanType         @default(TRIAL)
+  planExpiresAt   DateTime?
+
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  // Relations
+  staff           Staff[]
+  menuCategories  MenuCategory[]
+  menuItems       MenuItem[]
+  tables          RestaurantTable[]
+  orders          Order[]
+  payments        Payment[]
+  consentRecords  ConsentRecord[]
+
+  @@map("restaurants")
+}
+
+enum PlanType {
+  TRIAL
+  BASIC     // ₹299/month
+  STANDARD  // ₹599/month
+}
+
+model Staff {
+  id              String       @id @default(cuid())
+  restaurantId    String
+  phone           String
+  name            String
+  role            StaffRole    @default(OWNER)
+  isActive        Boolean      @default(true)
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  restaurant      Restaurant   @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@unique([restaurantId, phone])
+  @@index([restaurantId])
+  @@map("staff")
+}
+
+enum StaffRole {
+  OWNER
+  MANAGER    // Phase 3
+  KITCHEN    // Phase 3
+  WAITER     // Phase 3
+}
+
+// ============================================================
+// MENU MODULE
+// ============================================================
+
+model MenuCategory {
+  id              String       @id @default(cuid())
+  restaurantId    String
+  name            String
+  description     String?
+  displayOrder    Int          @default(0)
+  isActive        Boolean      @default(true)
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  restaurant      Restaurant   @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  items           MenuItem[]
+
+  @@index([restaurantId])
+  @@map("menu_categories")
+}
+
+model MenuItem {
+  id              String       @id @default(cuid())
+  restaurantId    String
+  categoryId      String
+  name            String
+  description     String?
+  price           Decimal      @db.Decimal(10, 2)
+  imageUrl        String?
+  isVeg           Boolean      @default(true)
+  isAvailable     Boolean      @default(true)
+  displayOrder    Int          @default(0)
+  tags            String[]     @default([])
+
+  // AI-generated fields
+  aiUpsellItemIds String[]     @default([])
+  aiDescription   String?
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  restaurant      Restaurant   @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  category        MenuCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  orderItems      OrderItem[]
+
+  @@index([restaurantId])
+  @@index([categoryId])
+  @@map("menu_items")
+}
+
+// ============================================================
+// ORDERING MODULE
+// ============================================================
+
+model RestaurantTable {
+  id              String       @id @default(cuid())
+  restaurantId    String
+  tableNumber     String
+  qrCodeUrl       String?
+  isActive        Boolean      @default(true)
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  restaurant      Restaurant   @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  orders          Order[]
+
+  @@unique([restaurantId, tableNumber])
+  @@index([restaurantId])
+  @@map("restaurant_tables")
+}
+
+model Order {
+  id              String       @id @default(cuid())
+  restaurantId    String
+  tableId         String?
+  orderNumber     Int
+  status          OrderStatus  @default(RECEIVED)
+  orderType       OrderType    @default(DINE_IN)
+
+  dinerPhone      String?
+  dinerName       String?
+
+  subtotal        Decimal      @db.Decimal(10, 2)
+  gstAmount       Decimal      @default(0) @db.Decimal(10, 2)
+  totalAmount     Decimal      @db.Decimal(10, 2)
+
+  idempotencyKey  String       @unique
+  clientTimestamp DateTime?
+
+  notes           String?
+  
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  completedAt     DateTime?
+
+  restaurant      Restaurant   @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  table           RestaurantTable? @relation(fields: [tableId], references: [id])
+  items           OrderItem[]
+  payment         Payment?
+
+  @@index([restaurantId])
+  @@index([restaurantId, createdAt])
+  @@index([idempotencyKey])
+  @@map("orders")
+}
+
+enum OrderStatus {
+  RECEIVED
+  PREPARING
+  READY
+  COMPLETED
+  CANCELLED
+}
+
+enum OrderType {
+  DINE_IN
+  TAKEAWAY
+}
+
+model OrderItem {
+  id              String       @id @default(cuid())
+  orderId         String
+  menuItemId      String
+  quantity        Int
+  unitPrice       Decimal      @db.Decimal(10, 2)
+  totalPrice      Decimal      @db.Decimal(10, 2)
+  notes           String?
+
+  order           Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem        MenuItem     @relation(fields: [menuItemId], references: [id])
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+// ============================================================
+// PAYMENTS MODULE
+// ============================================================
+
+model Payment {
+  id                  String         @id @default(cuid())
+  restaurantId        String
+  orderId             String         @unique
+  method              PaymentMethod
+  status              PaymentStatus  @default(PENDING)
+  amount              Decimal        @db.Decimal(10, 2)
+
+  providerName        String?
+  providerOrderId     String?
+  providerPaymentId   String?
+  providerSignature   String?
+
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  paidAt              DateTime?
+
+  order               Order          @relation(fields: [orderId], references: [id])
+  restaurant          Restaurant     @relation(fields: [restaurantId], references: [id])
+
+  @@index([restaurantId])
+  @@index([providerPaymentId])
+  @@map("payments")
+}
+
+enum PaymentMethod {
+  UPI
+  CARD
+  CASH
+  WALLET
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+// ============================================================
+// COMPLIANCE MODULE
+// ============================================================
+
+model ConsentRecord {
+  id              String       @id @default(cuid())
+  restaurantId    String?
+  phone           String
+  purpose         ConsentPurpose
+  granted         Boolean      @default(true)
+  consentVersion  String       @default("v1")
+  method          String
+  ipAddress       String?
+
+  grantedAt       DateTime     @default(now())
+  revokedAt       DateTime?
+
+  restaurant      Restaurant?  @relation(fields: [restaurantId], references: [id])
+
+  @@index([phone])
+  @@index([restaurantId])
+  @@map("consent_records")
+}
+
+enum ConsentPurpose {
+  ORDER_UPDATES
+  MARKETING
+  LOYALTY
+  ACCOUNT_AUTH
+}
+
+// ============================================================
+// PLATFORM MODULE
+// ============================================================
+
+model FeatureFlag {
+  id              String       @id @default(cuid())
+  key             String       @unique
+  description     String?
+  enabledGlobal   Boolean      @default(false)
+
+  @@map("feature_flags")
+}
