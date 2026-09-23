@@ -1,0 +1,13 @@
+{
+  "name": "@ordermitra/db",
+  "version": "0.1.0",
+  "private": true,
+  "main": "index.ts",
+  "dependencies": {
+    "@prisma/client": "^5.14.0"
+  },
+  "devDependencies": {
+    "prisma": "^5.14.0",
+    "typescript": "^5.0.0"
+  }
+}

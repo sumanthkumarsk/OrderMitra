@@ -17,9 +17,12 @@ Two very different people use this product in the same 90 seconds: a **diner** s
 - `--mitra-slate` `#6B6259` — secondary text, timestamps, metadata.
 
 **Type:**
-- Display/headings: a confident, slightly rounded sans-serif with warmth (e.g., **Poppins** or **Baloo 2** for Devanagari/Latin compatibility) — approachable, not corporate, and renders well for Hindi/regional-language headings without needing a separate display face per script.
-- Body: a highly legible, neutral sans-serif optimized for small screens (e.g., **Inter** or **Noto Sans**, the latter chosen specifically for strong multi-script Indian-language support since Phase 3 requires it).
-- Utility/data (prices, table numbers, timestamps): a tabular-figure variant of the body face — numbers must align cleanly in cart/receipt views.
+- Display/headings: **Poppins** — a confident, rounded sans-serif with warmth. Extremely approachable and renders beautifully for food-tech branding.
+- Body: **Inter** — highly legible, neutral sans-serif optimized for small screens and dense admin data tables.
+- Utility/data (prices, table numbers, timestamps): tabular-figure variant of Inter — numbers must align cleanly in cart/receipt views.
+
+**Icons:**
+- **Lucide React** — The official standard for shadcn/ui. Lightweight, consistent stroke width, and fully customizable via Tailwind classes.
 
 **Layout concept:**
 - Diner menu: a **single-column scrollable card stack**, one category at a time with a sticky category-jump bar — mirrors flipping through a physical menu, not a dense grid. Item cards are full-width, photo-forward, with the AI "pairs well with" suggestion appearing as a small inline chip under the item, not a disruptive popup.
