@@ -1,10 +1,9 @@
-import { Download, Plus, TrendingUp, Users, Activity, Clock, DollarSign, Search, ChevronDown, ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
+import { Download, Plus, TrendingUp, Users, Activity, Clock, DollarSign, ChevronDown, ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export default function TenantsPage() {
   return (

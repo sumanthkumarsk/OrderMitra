@@ -33,7 +33,7 @@ export default function OnboardingPage() {
           {step === 1 && (
             <div className="animate-in fade-in slide-in-from-right-4 duration-500">
               <h1 className="text-3xl font-display font-bold text-gray-900 mb-2 tracking-tight">Welcome to OrderMitra!</h1>
-              <p className="text-gray-500 mb-8">Let's set up your digital restaurant in just a few steps.</p>
+              <p className="text-gray-500 mb-8">Let&apos;s set up your digital restaurant in just a few steps.</p>
               
               <div className="space-y-4">
                 <div>
@@ -60,7 +60,7 @@ export default function OnboardingPage() {
           {step === 2 && (
             <div className="animate-in fade-in slide-in-from-right-4 duration-500">
               <h1 className="text-3xl font-display font-bold text-gray-900 mb-2 tracking-tight">Design your QR Menu</h1>
-              <p className="text-gray-500 mb-8">Choose colors that match your restaurant's vibe.</p>
+              <p className="text-gray-500 mb-8">Choose colors that match your restaurant&apos;s vibe.</p>
               
               <div className="grid grid-cols-2 gap-4">
                 <button className="p-4 rounded-xl border-2 border-[#C1440E] bg-white text-left relative overflow-hidden group shadow-sm">
@@ -83,9 +83,9 @@ export default function OnboardingPage() {
               <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
                 <span className="text-4xl">🚀</span>
               </div>
-              <h1 className="text-3xl font-display font-bold text-gray-900 mb-2 tracking-tight">You're all set!</h1>
+              <h1 className="text-3xl font-display font-bold text-gray-900 mb-2 tracking-tight">You&apos;re all set!</h1>
               <p className="text-gray-500 mb-8 max-w-md mx-auto">
-                We've generated dummy menu data so you can test out the platform. You can change it anytime in Menu Management.
+                We&apos;ve generated dummy menu data so you can test out the platform. You can change it anytime in Menu Management.
               </p>
               
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 inline-block text-left mb-8">

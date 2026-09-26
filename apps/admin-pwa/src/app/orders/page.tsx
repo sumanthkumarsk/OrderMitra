@@ -52,36 +52,6 @@ export default function OrdersPage() {
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
   };
 
-  const filteredOrders = orders.filter(o => {
-    if (filter !== "all" && o.status !== filter) return false;
-    if (search && !o.id.toLowerCase().includes(search.toLowerCase())) return false;
-    return true;
-  });
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'new': return 'bg-blue-100 text-blue-700 border-blue-200';
-      case 'preparing': return 'bg-amber-100 text-amber-700 border-amber-200';
-      case 'ready': return 'bg-green-100 text-green-700 border-green-200';
-      case 'served': return 'bg-purple-100 text-purple-700 border-purple-200';
-      case 'billed': return 'bg-gray-100 text-gray-700 border-gray-200';
-      case 'paid': return 'bg-emerald-100 text-emerald-700 border-emerald-200 opacity-60';
-      default: return 'bg-gray-100 text-gray-700';
-    }
-  };
-
-  const getStatusIndicator = (status: string) => {
-    switch (status) {
-      case 'new': return 'bg-blue-500';
-      case 'preparing': return 'bg-amber-500';
-      case 'ready': return 'bg-green-500';
-      case 'served': return 'bg-purple-500';
-      case 'billed': return 'bg-gray-500';
-      case 'paid': return 'bg-emerald-500';
-      default: return 'bg-gray-500';
-    }
-  };
-
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6">
       
@@ -189,9 +159,23 @@ export default function OrdersPage() {
   );
 }
 
+interface OrderItem {
+  name: string;
+  qty: number;
+  price: number;
+}
+interface Order {
+  id: string;
+  table: string;
+  status: string;
+  time: string;
+  items: OrderItem[];
+  notes?: string;
+}
+
 // Order Card Component
-function OrderCard({ order, color, onAction }: { order: any, color: string, onAction: (status: string) => void }) {
-  const total = order.items.reduce((s: number, i: any) => s + (i.price * i.qty), 0);
+function OrderCard({ order, color, onAction }: { order: Order, color: string, onAction: (status: string) => void }) {
+  const total = order.items.reduce((s: number, i: OrderItem) => s + (i.price * i.qty), 0);
   
   return (
     <div className={`bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden border-l-4 ${
@@ -217,7 +201,7 @@ function OrderCard({ order, color, onAction }: { order: any, color: string, onAc
       </div>
       
       <div className="p-4 space-y-3">
-        {order.items.map((item: any, i: number) => (
+        {order.items.map((item: OrderItem, i: number) => (
           <div key={i} className="flex justify-between items-start text-sm">
             <div className="flex gap-2">
               <span className="font-bold text-gray-900">{item.qty}×</span>

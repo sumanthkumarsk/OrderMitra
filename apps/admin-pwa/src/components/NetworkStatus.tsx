@@ -6,6 +6,7 @@ export default function NetworkStatus() {
   const [isOnline, setIsOnline] = useState(true); 
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsOnline(navigator.onLine);
     
     // Register Service Worker for PWA installability

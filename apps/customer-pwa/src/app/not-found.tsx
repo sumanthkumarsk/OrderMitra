@@ -6,7 +6,7 @@ export default function NotFound() {
       <div className="text-6xl mb-4">🍽️</div>
       <h2 className="text-2xl font-display font-bold text-gray-900 mb-2">Oops! Page Not Found</h2>
       <p className="text-gray-500 mb-8 max-w-[250px]">
-        We couldn't find the page you were looking for in the menu.
+        We couldn&apos;t find the page you were looking for in the menu.
       </p>
       <Link 
         href="/menu" 

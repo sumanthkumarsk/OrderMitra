@@ -12,7 +12,7 @@ export default function AnalyticsPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold font-display text-gray-900 tracking-tight">Analytics & Reports</h1>
-          <p className="text-gray-500 text-sm mt-1">Track your restaurant's performance and sales</p>
+          <p className="text-gray-500 text-sm mt-1">Track your restaurant&apos;s performance and sales</p>
         </div>
         
         <div className="flex gap-2 bg-gray-100 p-1 rounded-lg border border-gray-200">
