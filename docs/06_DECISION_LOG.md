@@ -120,6 +120,15 @@ Add an entry whenever any of the following happens — by a human or an AI agent
 - **Affects:** `01_PRD.md` (overwritten with v2.0 specifications).
 - **Status:** Active.
 
+### [2026-09-26] Pro-Level UX and Edge Case Handling (Phase 1–3 polish)
+- **Made by:** Agent (Antigravity), session with human
+- **Context:** The core Phase 1–3 UI was complete, but lacked production-ready edge case handling (offline drops, transition feedback, micro-interactions).
+- **Options considered:** (1) Leave as prototype. (2) Implement robust offline handling, loaders, and true PWA manifests.
+- **Decision:** Option 2. Implemented `NetworkStatus` listener for offline banners, Next.js `loading.tsx` for route transitions, `sonner` for toast micro-feedback, and complete `manifest.json` + Service Workers.
+- **Reasoning:** A restaurant environment has spotty Wi-Fi; offline banners prevent silent failures. Toast notifications provide critical micro-feedback for actions like "Added to cart" or "Called waiter." `manifest.json` allows the app to be fully installed to a diner's home screen.
+- **Affects:** `apps/customer-pwa`, `apps/admin-pwa` (layout, loading, not-found, components).
+- **Status:** Active.
+
 <!--
 Add new entries above this line, most recent at the bottom of the "Log entries" section,
 using the template above. Do not edit or delete entries above.
