@@ -39,17 +39,25 @@ export function Sidebar() {
             Management
           </div>
           <nav className="flex flex-col gap-1">
+            <Link href="/table-map" className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors font-medium text-sm">
+              <LayoutGrid size={18} />
+              Table Map
+            </Link>
             <Link href="/menu-management" className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors font-medium text-sm">
               <UtensilsCrossed size={18} />
               Menu Management
             </Link>
+            <Link href="/billing" className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors font-medium text-sm">
+              <ClipboardList size={18} />
+              Billing
+            </Link>
+            <Link href="/staff" className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors font-medium text-sm">
+              <Users size={18} />
+              Staff
+            </Link>
             <Link href="/analytics" className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors font-medium text-sm">
               <BarChart3 size={18} />
               Analytics & Reports
-            </Link>
-            <Link href="/staff" className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors font-medium text-sm opacity-50 cursor-not-allowed">
-              <Users size={18} />
-              Staff
             </Link>
           </nav>
         </div>
@@ -57,9 +65,13 @@ export function Sidebar() {
         {/* Setup Section */}
         <div>
           <div className="px-3 text-xs font-bold uppercase tracking-widest text-white/40 mb-3">
-            Setup
+            Setup & AI
           </div>
           <nav className="flex flex-col gap-1">
+            <Link href="/ai-controls" className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors font-medium text-sm">
+              <Rocket size={18} />
+              AI Controls
+            </Link>
             <Link href="/onboarding" className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors font-medium text-sm">
               <Rocket size={18} />
               Onboarding
