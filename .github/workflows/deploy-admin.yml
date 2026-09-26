@@ -1,4 +1,4 @@
-name: Deploy Admin PWA to GitHub Pages
+name: Deploy Platform to GitHub Pages
 
 on:
   # Runs on pushes targeting the default branch
@@ -6,6 +6,7 @@ on:
     branches: ["main", "master"]
     paths:
       - 'apps/admin-pwa/**'
+      - 'apps/customer-pwa/**'
       - 'packages/ui/**'
       - 'pnpm-lock.yaml'
       - 'turbo.json'
@@ -65,16 +66,26 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Build with Next.js
+      - name: Build Admin PWA
         run: pnpm turbo run build --filter admin-pwa
 
-      - name: Disable Jekyll
-        run: touch ./apps/admin-pwa/out/.nojekyll
+      - name: Build Customer PWA
+        run: pnpm turbo run build --filter customer-pwa
+
+      - name: Assemble Deployment Artifact
+        run: |
+          mkdir -p ./deploy-dist/customer
+          # Copy Admin PWA to root
+          cp -R ./apps/admin-pwa/out/* ./deploy-dist/
+          # Copy Customer PWA to /customer
+          cp -R ./apps/customer-pwa/out/* ./deploy-dist/customer/
+          # Disable Jekyll for Next.js routing
+          touch ./deploy-dist/.nojekyll
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./apps/admin-pwa/out
+          path: ./deploy-dist
 
   # Deployment job
   deploy:
