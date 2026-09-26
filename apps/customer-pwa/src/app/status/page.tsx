@@ -135,7 +135,7 @@ export default function OrderStatusPage() {
 
         {/* Quick Actions */}
         <div className="flex gap-3 mt-2">
-          <button className="flex-1 bg-white border border-gray-200 rounded-xl p-3 flex flex-col items-center gap-1.5 shadow-sm active:bg-gray-50">
+          <button onClick={() => router.push("/service")} className="flex-1 bg-white border border-gray-200 rounded-xl p-3 flex flex-col items-center gap-1.5 shadow-sm active:bg-gray-50">
             <div className="text-xl">💧</div>
             <div className="font-bold text-[11px] text-gray-900">Need Service?</div>
             <div className="text-[9px] text-gray-500">Water, tissue...</div>
@@ -145,7 +145,7 @@ export default function OrderStatusPage() {
             <div className="font-bold text-[11px] text-gray-900">Add Items</div>
             <div className="text-[9px] text-gray-500">Order more</div>
           </button>
-          <button className="flex-1 bg-white border border-gray-200 rounded-xl p-3 flex flex-col items-center gap-1.5 shadow-sm active:bg-gray-50">
+          <button onClick={() => router.push("/bill")} className="flex-1 bg-white border border-gray-200 rounded-xl p-3 flex flex-col items-center gap-1.5 shadow-sm active:bg-gray-50">
             <div className="text-xl">📄</div>
             <div className="font-bold text-[11px] text-gray-900">Pay Bill</div>
             <div className="text-[9px] text-gray-500">View & pay</div>
