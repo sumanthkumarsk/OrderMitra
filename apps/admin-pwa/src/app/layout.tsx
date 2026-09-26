@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Poppins } from "next/font/google";
 import "./globals.css";
 
@@ -20,13 +20,16 @@ import NetworkStatus from "@/components/NetworkStatus";
 export const metadata: Metadata = {
   title: "ScanServe Platform Admin",
   description: "Platform administration for ScanServe",
-  themeColor: "#0F1B2D",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     title: "OrderMitra Admin",
     statusBarStyle: "black-translucent",
   }
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0F1B2D",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -19,7 +19,6 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   title: "OrderMitra Menu",
   description: "Browse the menu and place your order.",
-  themeColor: "#1D3557",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -29,6 +28,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
+  themeColor: "#1D3557",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
