@@ -7,6 +7,13 @@ export default function NetworkStatus() {
 
   useEffect(() => {
     setIsOnline(navigator.onLine);
+    
+    // Register Service Worker for PWA installability
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/OrderMitra/sw.js')
+        .catch(err => console.error('Service Worker registration failed:', err));
+    }
+
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
 

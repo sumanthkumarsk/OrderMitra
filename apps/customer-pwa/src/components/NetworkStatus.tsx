@@ -9,6 +9,12 @@ export default function NetworkStatus() {
     // Set initial state on client
     setIsOnline(navigator.onLine);
 
+    // Register Service Worker for PWA installability
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/OrderMitra/customer/sw.js')
+        .catch(err => console.error('Service Worker registration failed:', err));
+    }
+
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
 
