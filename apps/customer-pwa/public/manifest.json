@@ -1,0 +1,16 @@
+{
+  "name": "OrderMitra",
+  "short_name": "OrderMitra",
+  "description": "Browse the menu and place your order.",
+  "start_url": "/OrderMitra/customer/",
+  "display": "standalone",
+  "background_color": "#f9fafb",
+  "theme_color": "#1D3557",
+  "icons": [
+    {
+      "src": "/OrderMitra/customer/favicon.ico",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}

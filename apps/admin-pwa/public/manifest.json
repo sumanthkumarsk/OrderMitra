@@ -1,0 +1,16 @@
+{
+  "name": "OrderMitra Admin",
+  "short_name": "OrderMitra Admin",
+  "description": "Manage your restaurant operations.",
+  "start_url": "/OrderMitra/",
+  "display": "standalone",
+  "background_color": "#f9fafb",
+  "theme_color": "#0F1B2D",
+  "icons": [
+    {
+      "src": "/OrderMitra/favicon.ico",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}

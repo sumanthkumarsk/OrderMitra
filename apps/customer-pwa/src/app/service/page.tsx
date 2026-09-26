@@ -2,13 +2,15 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 
 export default function ServiceRequestsPage() {
   const [requested, setRequested] = useState<string[]>([]);
 
-  const toggleRequest = (type: string) => {
+  const toggleRequest = (type: string, label: string) => {
     if (requested.includes(type)) return;
     setRequested([...requested, type]);
+    toast.success(`${label} request sent! Waiter is on the way.`);
   };
 
   return (
@@ -34,7 +36,7 @@ export default function ServiceRequestsPage() {
         ].map(req => (
           <button 
             key={req.id}
-            onClick={() => toggleRequest(req.id)}
+            onClick={() => toggleRequest(req.id, req.label)}
             disabled={requested.includes(req.id)}
             className={`w-full p-4 rounded-xl flex items-center justify-between font-bold text-lg border-2 transition-all shadow-sm ${
               requested.includes(req.id) 

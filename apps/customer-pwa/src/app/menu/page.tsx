@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 // --- Mock Data ---
 const CATEGORIES = [
@@ -114,6 +115,12 @@ export default function MenuPage() {
     setCart(prev => {
       const current = prev[id] || 0;
       const next = current + delta;
+      
+      if (delta > 0 && current === 0) {
+        const item = MENU_ITEMS.find(i => i.id === id);
+        toast.success(`Added ${item?.name} to cart!`);
+      }
+
       if (next <= 0) {
         const newCart = { ...prev };
         delete newCart[id];
